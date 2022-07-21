@@ -1266,3 +1266,335 @@ static void Task_EnableScriptAfterMusicFade(u8 taskId)
         EnableBothScriptContexts();
     }
 }
+
+static const u32 sPortal_Gfx[] = INCBIN_U32("graphics/misc/portal.4bpp");
+static const u16 sPortal_Pal[] = INCBIN_U16("graphics/misc/portal.gbapal");
+
+#define TAG_PORTAL 0x0100
+
+static const struct SpriteSheet sSpriteSheet_Portal =
+{
+    sPortal_Gfx, sizeof(sPortal_Gfx), TAG_PORTAL
+};
+
+static const struct SpritePalette sSpritePalette_Portal =
+{
+    sPortal_Pal, TAG_PORTAL
+};
+
+// XXX: We actually need subsprites to make top work.
+static const struct OamData sOam_Portal =
+{
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(16x32),
+    .size = SPRITE_SIZE(16x32),
+    .priority = 2,
+};
+
+static const union AnimCmd sAnim_Portal[] =
+{
+    ANIMCMD_FRAME(0, 1),
+    ANIMCMD_END
+};
+
+static const union AnimCmd *const sAnims_Portal[] =
+{
+    sAnim_Portal,
+};
+
+void SpriteCallback_Portal(struct Sprite *sprite)
+{
+    s32 left =   gSaveBlock1Ptr->pos.x - 2;
+    s32 right =  gSaveBlock1Ptr->pos.x + 17;
+    s32 top =    gSaveBlock1Ptr->pos.y;
+    s32 bottom = gSaveBlock1Ptr->pos.y + 16;
+
+    if (sprite->data[0] < left
+     || sprite->data[0] > right
+     || sprite->data[1] < top
+     || sprite->data[1] > bottom)
+    {
+        s32 i, n;
+        for (i = n = 0; i < MAX_SPRITES; i++)
+        {
+            if (gSprites[i].callback == SpriteCallback_Portal)
+                n++;
+        }
+        if (n == 1)
+            DestroySpriteAndFreeResources(sprite);
+        else
+            DestroySprite(sprite);
+    }
+}
+
+static const struct SpriteTemplate sSpriteTemplate_Portal =
+{
+    .tileTag = TAG_PORTAL,
+    .paletteTag = TAG_PORTAL,
+    .oam = &sOam_Portal,
+    .anims = sAnims_Portal,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallback_Portal,
+};
+
+static const struct SubspriteTable sSubspriteTable_Portal =
+{
+    .subspriteCount = 2,
+    .subsprites = (const struct Subsprite[]) {
+        {
+            .x = 0,
+            .y = -16,
+            .shape = SPRITE_SHAPE(16x16),
+            .size = SPRITE_SIZE(16x16),
+            .tileOffset = 0,
+            .priority = 1,
+        },
+        {
+            .x = 0,
+            .y = 0,
+            .shape = SPRITE_SHAPE(16x16),
+            .size = SPRITE_SIZE(16x16),
+            .tileOffset = 4,
+            .priority = 2,
+        },
+    },
+};
+
+void CreatePortalSprite(u32 id)
+{
+    s32 i;
+    const struct Portal *portal;
+    u32 spriteId, tileNum, paletteNum;
+    struct Sprite *sprite;
+
+    for (i = 0; i < MAX_SPRITES; i++)
+    {
+        if (gSprites[i].callback == SpriteCallback_Portal
+         && gSprites[i].data[2] == id)
+        {
+            return;
+        }
+    }
+
+    portal = &gSaveBlock1Ptr->portals[id];
+
+    if ((tileNum = GetSpriteTileStartByTag(TAG_PORTAL)) == 0xFFFF)
+        tileNum = LoadSpriteSheet(&sSpriteSheet_Portal);
+    paletteNum = LoadSpritePalette(&sSpritePalette_Portal);
+
+    spriteId = CreateSprite(&sSpriteTemplate_Portal, 0, 0, 255);
+    sprite = &gSprites[spriteId];
+    sprite->coordOffsetEnabled = TRUE;
+    SetSpritePosToMapCoords(portal->x, portal->y, &sprite->x, &sprite->y);
+    SetSubspriteTables(sprite, &sSubspriteTable_Portal);
+    sprite->data[0] = portal->x;
+    sprite->data[1] = portal->y;
+    sprite->data[2] = id;
+}
+
+void CreatePortalSprites(void)
+{
+    s32 i;
+    s32 left =   gSaveBlock1Ptr->pos.x - 2;
+    s32 right =  gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2;
+    s32 top =    gSaveBlock1Ptr->pos.y;
+    s32 bottom = gSaveBlock1Ptr->pos.y + MAP_OFFSET_H + 2;
+
+    // XXX: Connections.
+    for (i = 0; i < PORTAL_COUNT; i++)
+    {
+        const struct Portal *portal = &gSaveBlock1Ptr->portals[i];
+        if (portal->active
+         && portal->x >= left
+         && portal->x <= right
+         && portal->y >= top
+         && portal->y <= bottom
+         && portal->mapGroup == gSaveBlock1Ptr->location.mapGroup
+         && portal->mapNum == gSaveBlock1Ptr->location.mapNum)
+        {
+            CreatePortalSprite(i);
+        }
+    }
+}
+
+void DoCreatePortal(const struct MapPosition *position, u8 direction, u32 id)
+{
+    s32 i, x, y, dx, dy;
+    struct Portal *portal = &gSaveBlock1Ptr->portals[id];
+    const struct MapConnection *connection;
+
+    x = position->x;
+    y = position->y;
+    switch (direction)
+    {
+    case DIR_NORTH: dx =  0; dy = -1; break;
+    case DIR_EAST:  dx =  1; dy =  0; break;
+    case DIR_SOUTH: dx =  0; dy =  1; break;
+    case DIR_WEST:  dx = -1; dy =  0; break;
+    }
+
+    portal->active = FALSE;
+    for (i = 0; i < 7; i++)
+    {
+        x += dx;
+        y += dy;
+        if (MapGridIsImpassableAt(x, y))
+        {
+            portal->active = TRUE;
+            portal->direction = direction;
+            if ((connection = GetConnectionAtCoords(x, y)))
+            {
+                portal->mapGroup = connection->mapGroup;
+                portal->mapNum = connection->mapNum;
+                // XXX: We need to adjust x/y.
+                portal->x = x;
+                portal->y = y;
+            }
+            else
+            {
+                portal->mapGroup = gSaveBlock1Ptr->location.mapGroup;
+                portal->mapNum = gSaveBlock1Ptr->location.mapNum;
+                portal->x = x;
+                portal->y = y;
+            }
+            break;
+        }
+    }
+
+    if (portal->active)
+    {
+        for (i = 0; i < ARRAY_COUNT(gSaveBlock1Ptr->portals); i++)
+        {
+            if (i != id
+             && gSaveBlock1Ptr->portals[i].active
+             && portal->mapGroup == gSaveBlock1Ptr->portals[i].mapGroup
+             && portal->mapNum == gSaveBlock1Ptr->portals[i].mapNum
+             && portal->x == gSaveBlock1Ptr->portals[i].x
+             && portal->y == gSaveBlock1Ptr->portals[i].y)
+            {
+                portal->active = FALSE;
+                break;
+            }
+        }
+
+        CreatePortalSprite(id);
+    }
+
+    // TODO: Animate.
+    EnableBothScriptContexts();
+}
+
+static void Task_ExitPortal(u8 taskId)
+{
+    s32 i;
+    u8 objEventId;
+    struct Task *task = &gTasks[taskId];
+
+    switch (task->tState)
+    {
+    case 0:
+        objEventId = GetObjectEventIdByLocalIdAndMap(OBJ_EVENT_ID_PLAYER, 0, 0);
+        gObjectEvents[objEventId].fixedPriority = TRUE;
+        gSprites[gObjectEvents[objEventId].spriteId].oam.priority = 1;
+        gSprites[gObjectEvents[objEventId].spriteId].subspriteTableNum = 0;
+        SetPlayerVisibility(TRUE);
+        FreezeObjectEvents();
+        PlayerGetDestCoords(&task->data[1], &task->data[2]);
+        for (i = 0; i < ARRAY_COUNT(gSaveBlock1Ptr->portals); i++)
+        {
+            if (gSaveBlock1Ptr->portals[i].active
+             && gSaveBlock1Ptr->portals[i].mapGroup == gSaveBlock1Ptr->location.mapGroup
+             && gSaveBlock1Ptr->portals[i].mapNum == gSaveBlock1Ptr->location.mapNum
+             && gSaveBlock1Ptr->portals[i].x == task->data[1]
+             && gSaveBlock1Ptr->portals[i].y == task->data[2])
+            {
+                task->data[3] = GetOppositeDirection(gSaveBlock1Ptr->portals[i].direction);
+                break;
+            }
+        }
+        PlayerFaceDirection(task->data[3]);
+        task->tState = 1;
+        break;
+    case 1:
+        if (WaitForWeatherFadeIn())
+        {
+            objEventId = GetObjectEventIdByLocalIdAndMap(OBJ_EVENT_ID_PLAYER, 0, 0);
+            ObjectEventClearHeldMovementIfActive(&gObjectEvents[objEventId]);
+            ObjectEventSetHeldMovement(&gObjectEvents[objEventId], GetWalkNormalMovementAction(task->data[3]));
+            task->tState = 2;
+        }
+        break;
+    case 2:
+        if (IsPlayerStandingStill())
+        {
+            objEventId = GetObjectEventIdByLocalIdAndMap(OBJ_EVENT_ID_PLAYER, 0, 0);
+            gObjectEvents[objEventId].fixedPriority = FALSE;
+            SetObjectSubpriorityByElevation(gObjectEvents[objEventId].previousElevation, &gSprites[gObjectEvents[objEventId].spriteId], 1);
+            UnfreezeObjectEvents();
+            task->tState = 3;
+        }
+        break;
+    case 3:
+        ScriptContext2_Disable();
+        DestroyTask(taskId);
+        break;
+    }
+}
+
+static void FieldCB_PortalWarpExit(void)
+{
+    Overworld_PlaySpecialMapMusic();
+    FadeInFromWhite();
+    CreateTask(Task_ExitPortal, 10);
+    ScriptContext2_Enable();
+}
+
+static void Task_DoPortalWarp(u8 taskId)
+{
+    struct Task *task = &gTasks[taskId];
+    const struct Portal *from = &gSaveBlock1Ptr->portals[task->data[1]];
+    const struct Portal *to = &gSaveBlock1Ptr->portals[task->data[2]];
+    u8 objEventId;
+    switch (task->tState)
+    {
+    case 0:
+        FreezeObjectEvents();
+        objEventId = GetObjectEventIdByLocalIdAndMap(OBJ_EVENT_ID_PLAYER, 0, 0);
+        gObjectEvents[objEventId].fixedPriority = TRUE;
+        gSprites[gObjectEvents[objEventId].spriteId].oam.priority = 1;
+        gSprites[gObjectEvents[objEventId].spriteId].subspriteTableNum = 0;
+        ObjectEventClearHeldMovementIfActive(&gObjectEvents[objEventId]);
+        ObjectEventSetHeldMovement(&gObjectEvents[objEventId], GetWalkNormalMovementAction(from->direction));
+        task->data[3] = 16;
+        task->tState = 1;
+    case 1:
+        if (--task->data[3] == 0)
+        {
+            UnfreezeObjectEvents();
+            task->tState = 2;
+        }
+        break;
+    case 2:
+        // TODO: Different warp if in range.
+        SetDynamicWarpWithCoords(WARP_ID_DYNAMIC, to->mapGroup, to->mapNum, WARP_ID_NONE, to->x - MAP_OFFSET, to->y - MAP_OFFSET);
+        SetWarpDestinationToDynamicWarp(WARP_ID_DYNAMIC);
+        TryFadeOutOldMapMusic();
+        FadeScreen(FADE_TO_WHITE, 8);
+        PlayRainStoppingSoundEffect();
+        gFieldCallback = FieldCB_PortalWarpExit;
+        task->func = Task_WarpAndLoadMap;
+        break;
+    }
+}
+
+void DoPortalWarp(u32 from, u32 to)
+{
+    u8 taskId;
+
+    taskId = CreateTask(Task_DoPortalWarp, 10);
+    gTasks[taskId].data[1] = from;
+    gTasks[taskId].data[2] = to;
+}

@@ -41,5 +41,8 @@ void DoOrbEffect(void);
 void FadeOutOrbEffect(void);
 void WriteFlashScanlineEffectBuffer(u8 flashLevel);
 bool8 IsPlayerStandingStill(void);
+void DoCreatePortal(const struct MapPosition *, u8, u32);
+void DoPortalWarp(u32, u32);
+void CreatePortalSprites(void);
 
 #endif // GUARD_FIELD_SCREEN_EFFECT_H

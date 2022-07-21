@@ -59,6 +59,7 @@ static bool8 IsArrowWarpMetatileBehavior(u16, u8);
 static s8 GetWarpEventAtMapPosition(struct MapHeader *, struct MapPosition *);
 static void SetupWarp(struct MapHeader *, s8, struct MapPosition *);
 static bool8 TryDoorWarp(struct MapPosition *, u16, u8);
+static bool8 TryPortalWarp(const struct MapPosition *, u8);
 static s8 GetWarpEventAtPosition(struct MapHeader *, u16, u16, u8);
 static u8 *GetCoordEventScriptAtPosition(struct MapHeader *, u16, u16, u8);
 static struct BgEvent *GetBackgroundEventAtPosition(struct MapHeader *, u16, u16, u8);
@@ -161,6 +162,18 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     }
     if (input->checkStandardWildEncounter && CheckStandardWildEncounter(metatileBehavior) == TRUE)
         return TRUE;
+
+    if (JOY_NEW(L_BUTTON))
+    {
+        DoCreatePortal(&position, playerDirection, PORTAL_ORANGE);
+        return TRUE;
+    }
+    else if (JOY_NEW(R_BUTTON))
+    {
+        DoCreatePortal(&position, playerDirection, PORTAL_BLUE);
+        return TRUE;
+    }
+
     if (input->heldDirection && input->dpadDirection == playerDirection)
     {
         if (TryArrowWarp(&position, metatileBehavior, playerDirection) == TRUE)
@@ -174,6 +187,9 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
 
     if (input->heldDirection2 && input->dpadDirection == playerDirection)
     {
+        if (TryPortalWarp(&position, playerDirection) == TRUE)
+            return TRUE;
+
         if (TryDoorWarp(&position, metatileBehavior, playerDirection) == TRUE)
             return TRUE;
     }
@@ -853,6 +869,31 @@ static bool8 TryDoorWarp(struct MapPosition *position, u16 metatileBehavior, u8 
                 DoDoorWarp();
                 return TRUE;
             }
+        }
+    }
+    return FALSE;
+}
+
+static bool8 TryPortalWarp(const struct MapPosition *position, u8 direction)
+{
+    const struct Portal *orange = &gSaveBlock1Ptr->portals[PORTAL_ORANGE];
+    const struct Portal *blue = &gSaveBlock1Ptr->portals[PORTAL_BLUE];
+    if (orange->active && blue->active)
+    {
+        if (position->x == orange->x
+         && position->y == orange->y
+         && direction == orange->direction)
+        {
+            DoPortalWarp(PORTAL_ORANGE, PORTAL_BLUE);
+            return TRUE;
+        }
+
+        if (position->x == blue->x
+         && position->y == blue->y
+         && direction == blue->direction)
+        {
+            DoPortalWarp(PORTAL_BLUE, PORTAL_ORANGE);
+            return TRUE;
         }
     }
     return FALSE;

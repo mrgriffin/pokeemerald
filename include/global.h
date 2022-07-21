@@ -927,6 +927,23 @@ struct ExternalEventFlags
 
 } __attribute__((packed));/*size = 0x15*/
 
+enum
+{
+    PORTAL_ORANGE,
+    PORTAL_BLUE,
+    PORTAL_COUNT
+};
+
+struct Portal
+{
+    bool8 active;
+    u8 direction;
+    s8 mapGroup;
+    s8 mapNum;
+    s16 x;
+    s16 y;
+};
+
 struct SaveBlock1
 {
     /*0x00*/ struct Coords16 pos;
@@ -1016,6 +1033,7 @@ struct SaveBlock1
     /*0x3D5A*/ u8 unused_3D5A[10];
     /*0x3D64*/ struct TrainerHillSave trainerHill;
     /*0x3D70*/ struct WaldaPhrase waldaPhrase;
+    struct Portal portals[2];
     // sizeof: 0x3D88
 };
 
