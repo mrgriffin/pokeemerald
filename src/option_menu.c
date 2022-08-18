@@ -13,31 +13,9 @@
 #include "text_window.h"
 #include "international_string_util.h"
 #include "strings.h"
+#include "layout.h"
 #include "gba/m4a_internal.h"
 #include "constants/rgb.h"
-
-#define sizeofmember(type, member) sizeof(((type *)NULL)->member)
-
-#define LoadPalette_Checked(palette, member) do { \
-        STATIC_ASSERT(sizeof(palette) <= sizeofmember(struct PaletteLayout, member), sizeOf ## palette); \
-        LoadPalette(palette, offsetof(struct PaletteLayout, member) / sizeof(u16), sizeof(palette)); \
-    } while (0)
-#define LoadPalette_Unchecked(palette, member) do { \
-        LoadPalette(palette, offsetof(struct PaletteLayout, member) / sizeof(u16), sizeofmember(struct PaletteLayout, member)); \
-    } while (0)
-
-#define LoadBgTiles_Unchecked(bg, tiles, member) do { \
-        LoadBgTiles(bg, tiles, sizeofmember(struct VramLayout, member) * TILE_SIZE_4BPP, offsetof(struct VramLayout, member)); \
-    } while (0)
-
-struct Palette { u16 _[16]; };
-
-#define WINDOW(id, width, height) u8 id[height][width]
-#define WINDOW_WIDTH(id) sizeof(((struct VramLayout *)NULL)->id[0])
-#define WINDOW_HEIGHT(id) (sizeof(((struct VramLayout *)NULL)->id) / sizeof(((struct VramLayout *)NULL)->id[0]))
-#define WINDOW_BASE_BLOCK(id) offsetof(struct VramLayout, id)
-
-#define PALETTE_NUM(id) (offsetof(struct PaletteLayout, id) / sizeof(struct Palette))
 
 struct PaletteLayout
 {
