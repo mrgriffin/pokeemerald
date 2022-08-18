@@ -16,6 +16,65 @@
 #include "gba/m4a_internal.h"
 #include "constants/rgb.h"
 
+#define sizeofmember(type, member) sizeof(((type *)NULL)->member)
+
+#define LoadPalette_Checked(palette, member) do { \
+        STATIC_ASSERT(sizeof(palette) <= sizeofmember(struct PaletteLayout, member), sizeOf ## palette); \
+        LoadPalette(palette, offsetof(struct PaletteLayout, member) / sizeof(u16), sizeof(palette)); \
+    } while (0)
+#define LoadPalette_Unchecked(palette, member) do { \
+        LoadPalette(palette, offsetof(struct PaletteLayout, member) / sizeof(u16), sizeofmember(struct PaletteLayout, member)); \
+    } while (0)
+
+#define LoadBgTiles_Unchecked(bg, tiles, member) do { \
+        LoadBgTiles(bg, tiles, sizeofmember(struct VramLayout, member) * TILE_SIZE_4BPP, offsetof(struct VramLayout, member)); \
+    } while (0)
+
+struct Palette { u16 _[16]; };
+
+#define WINDOW(id, width, height) u8 id[height][width]
+#define WINDOW_WIDTH(id) sizeof(((struct VramLayout *)NULL)->id[0])
+#define WINDOW_HEIGHT(id) (sizeof(((struct VramLayout *)NULL)->id) / sizeof(((struct VramLayout *)NULL)->id[0]))
+#define WINDOW_BASE_BLOCK(id) offsetof(struct VramLayout, id)
+
+#define PALETTE_NUM(id) (offsetof(struct PaletteLayout, id) / sizeof(struct Palette))
+
+struct PaletteLayout
+{
+    struct Palette background;
+    struct Palette text;
+    struct Palette unused_2;
+    struct Palette unused_3;
+    struct Palette unused_4;
+    struct Palette unused_5;
+    struct Palette unused_6;
+    struct Palette windowFrame;
+    struct Palette unused_8;
+    struct Palette unused_9;
+    struct Palette unused_A;
+    struct Palette unused_B;
+    struct Palette unused_C;
+    struct Palette unused_D;
+    struct Palette unused_E;
+    struct Palette unused_F;
+    /* TODO: Sprite palettes. */
+};
+
+STATIC_ASSERT(sizeof(struct PaletteLayout) <= 512, PaletteLayout);
+
+// XXX: Misnomer, this is the layout of charblocks 1 & 2.
+// TODO: Should this contain struct Tiles for consistency with PaletteLayout?
+struct VramLayout
+{
+    u8 transparent[1];
+    u8 unused_001[1];
+    WINDOW(WIN_TEXT_OPTION, 26, 2);
+    WINDOW(WIN_OPTIONS, 26, 14);
+    u8 windowFrame[9];
+};
+
+STATIC_ASSERT(sizeof(struct VramLayout) <= 1024, VramLayout);
+
 // Task data
 enum
 {
@@ -96,23 +155,23 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
 
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
 {
-    {
+    [WIN_TEXT_OPTION] = {
         .bg = 1,
         .tilemapLeft = 2,
         .tilemapTop = 1,
-        .width = 26,
-        .height = 2,
-        .paletteNum = 1,
-        .baseBlock = 2
+        .width = WINDOW_WIDTH(WIN_TEXT_OPTION),
+        .height = WINDOW_HEIGHT(WIN_TEXT_OPTION),
+        .paletteNum = PALETTE_NUM(text),
+        .baseBlock = WINDOW_BASE_BLOCK(WIN_TEXT_OPTION),
     },
-    {
+    [WIN_OPTIONS] = {
         .bg = 0,
         .tilemapLeft = 2,
         .tilemapTop = 5,
-        .width = 26,
-        .height = 14,
-        .paletteNum = 1,
-        .baseBlock = 0x36
+        .width = WINDOW_WIDTH(WIN_OPTIONS),
+        .height = WINDOW_HEIGHT(WIN_OPTIONS),
+        .paletteNum = PALETTE_NUM(text),
+        .baseBlock = WINDOW_BASE_BLOCK(WIN_OPTIONS),
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -203,16 +262,16 @@ void CB2_InitOptionMenu(void)
         gMain.state++;
         break;
     case 3:
-        LoadBgTiles(1, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, 0x120, 0x1A2);
+        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, windowFrame);
         gMain.state++;
         break;
     case 4:
-        LoadPalette(sOptionMenuBg_Pal, 0, sizeof(sOptionMenuBg_Pal));
-        LoadPalette(GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->pal, 0x70, 0x20);
+        LoadPalette_Checked(sOptionMenuBg_Pal, background);
+        LoadPalette_Unchecked(GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->pal, windowFrame);
         gMain.state++;
         break;
     case 5:
-        LoadPalette(sOptionMenuText_Pal, 16, sizeof(sOptionMenuText_Pal));
+        LoadPalette_Checked(sOptionMenuText_Pal, text);
         gMain.state++;
         break;
     case 6:
@@ -528,8 +587,8 @@ static u8 FrameType_ProcessInput(u8 selection)
         else
             selection = 0;
 
-        LoadBgTiles(1, GetWindowFrameTilesPal(selection)->tiles, 0x120, 0x1A2);
-        LoadPalette(GetWindowFrameTilesPal(selection)->pal, 0x70, 0x20);
+        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(selection)->tiles, windowFrame);
+        LoadPalette_Unchecked(GetWindowFrameTilesPal(selection)->pal, windowFrame);
         sArrowPressed = TRUE;
     }
     if (JOY_NEW(DPAD_LEFT))
@@ -539,8 +598,8 @@ static u8 FrameType_ProcessInput(u8 selection)
         else
             selection = WINDOW_FRAMES_COUNT - 1;
 
-        LoadBgTiles(1, GetWindowFrameTilesPal(selection)->tiles, 0x120, 0x1A2);
-        LoadPalette(GetWindowFrameTilesPal(selection)->pal, 0x70, 0x20);
+        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(selection)->tiles, windowFrame);
+        LoadPalette_Unchecked(GetWindowFrameTilesPal(selection)->pal, windowFrame);
         sArrowPressed = TRUE;
     }
     return selection;
