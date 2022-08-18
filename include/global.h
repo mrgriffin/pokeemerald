@@ -137,7 +137,7 @@
 
 // This produces an error at compile-time if expr is zero.
 // It looks like file.c:line: size of array `id' is negative
-#define STATIC_ASSERT(expr, id) typedef char id[(expr) ? 1 : -1];
+#define STATIC_ASSERT(expr, id) typedef char id[(expr) ? 1 : -1]
 
 struct Coords8
 {

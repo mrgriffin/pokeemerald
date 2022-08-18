@@ -699,37 +699,37 @@ static void DrawOptionMenuTexts(void)
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 
-#define TILE_TOP_CORNER_L 0x1A2
-#define TILE_TOP_EDGE     0x1A3
-#define TILE_TOP_CORNER_R 0x1A4
-#define TILE_LEFT_EDGE    0x1A5
-#define TILE_RIGHT_EDGE   0x1A7
-#define TILE_BOT_CORNER_L 0x1A8
-#define TILE_BOT_EDGE     0x1A9
-#define TILE_BOT_CORNER_R 0x1AA
+#define TILE_TOP_CORNER_L offsetof(struct VramLayout, windowFrame[0])
+#define TILE_TOP_EDGE     offsetof(struct VramLayout, windowFrame[1])
+#define TILE_TOP_CORNER_R offsetof(struct VramLayout, windowFrame[2])
+#define TILE_LEFT_EDGE    offsetof(struct VramLayout, windowFrame[3])
+#define TILE_RIGHT_EDGE   offsetof(struct VramLayout, windowFrame[5])
+#define TILE_BOT_CORNER_L offsetof(struct VramLayout, windowFrame[6])
+#define TILE_BOT_EDGE     offsetof(struct VramLayout, windowFrame[7])
+#define TILE_BOT_CORNER_R offsetof(struct VramLayout, windowFrame[8])
 
 static void DrawBgWindowFrames(void)
 {
     //                     bg, tile,              x, y, width, height, palNum
     // Draw title window frame
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  0,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  0, 27,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  0,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  1,  1,  2,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  1,  1,  2,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1,  3,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2,  3, 27,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28,  3,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  0,  1,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  0, 27,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  0,  1,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  1,  1,  2,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  1,  1,  2,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1,  3,  1,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2,  3, 27,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28,  3,  1,  1,  PALETTE_NUM(windowFrame));
 
     // Draw options list window frame
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 26,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  4,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, 18,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1, 18,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 19,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 19, 26,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 26,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  4,  1,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, 18,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1, 18,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 19,  1,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 19, 26,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  PALETTE_NUM(windowFrame));
 
     CopyBgTilemapBufferToVram(1);
 }
