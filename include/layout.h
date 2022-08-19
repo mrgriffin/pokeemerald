@@ -7,32 +7,36 @@
 
 #define NOOP(...)
 
-#define MK_PALETTE_LAYOUT_STRUCT__PALETTE(id, count) u8 id[(count)];
+#define MK_PALETTE_LAYOUT_STRUCT__STATIC_PALETTE(id, data, count) u8 id[(count)];
+#define MK_PALETTE_LAYOUT_STRUCT__DYNAMIC_PALETTE(id, count) u8 id[(count)];
 #define MK_PALETTE_LAYOUT_STRUCT__UNUSED(count) u8 CAT(unused_, __COUNTER__)[(count)];
 #define MK_PALETTE_LAYOUT_STRUCT \
     struct PaletteLayout \
     { \
-        PALETTE_LAYOUT(MK_PALETTE_LAYOUT_STRUCT__PALETTE, MK_PALETTE_LAYOUT_STRUCT__UNUSED) \
+        PALETTE_LAYOUT(MK_PALETTE_LAYOUT_STRUCT__STATIC_PALETTE, MK_PALETTE_LAYOUT_STRUCT__DYNAMIC_PALETTE, MK_PALETTE_LAYOUT_STRUCT__UNUSED) \
     }; \
     STATIC_ASSERT(sizeof(struct PaletteLayout) <= 16, PaletteLayoutSize)
 
-#define MK_PALETTE_ENUMS__PALETTE(id, count) \
+#define MK_PALETTE_ENUMS__STATIC_PALETTE(id, data, count) \
     CAT(id, _NUM) = offsetof(struct PaletteLayout, id), \
-    CAT(id, _INDICES) = (count),
+    CAT(id, _COUNT) = (count),
+#define MK_PALETTE_ENUMS__DYNAMIC_PALETTE(id, count) \
+    CAT(id, _NUM) = offsetof(struct PaletteLayout, id), \
+    CAT(id, _COUNT) = (count),
 #define MK_PALETTE_ENUMS \
     enum \
     { \
-        PALETTE_LAYOUT(MK_PALETTE_ENUMS__PALETTE, NOOP) \
+        PALETTE_LAYOUT(MK_PALETTE_ENUMS__STATIC_PALETTE, MK_PALETTE_ENUMS__DYNAMIC_PALETTE, NOOP) \
     }
 
-// TODO: Define for 32.
+// TODO: Define for 32 (PALETTE_SIZE_4BPP?).
 #define LoadPalette_Checked(palette, id) do { \
-        STATIC_ASSERT(sizeof(palette) <= CAT(id, _INDICES) * 32, palette ## _Overflows_ ## id); \
+        STATIC_ASSERT(sizeof(palette) <= CAT(id, _COUNT) * 32, palette ## _Overflows_ ## id); \
         LoadPalette(palette, CAT(id, _NUM) * 16, sizeof(palette)); \
     } while (0)
 
 #define LoadPalette_Unchecked(palette, id) do { \
-        LoadPalette(palette, CAT(id, _NUM) * 16, CAT(id, _INDICES) * 32); \
+        LoadPalette(palette, CAT(id, _NUM) * 16, CAT(id, _COUNT) * 32); \
     } while (0)
 
 /*****/
@@ -51,12 +55,12 @@
 
 #define MK_TILE_WINDOW_ENUMS__TILES(id, count) \
     CAT(id, _BASE_BLOCK) = offsetof(struct TileLayout, id), \
-    CAT(id, _TILES) = (count),
+    CAT(id, _COUNT) = (count),
 #define MK_TILE_WINDOW_ENUMS__WINDOW(id, width, height) \
     CAT(id, _WIDTH) = (width), \
     CAT(id, _HEIGHT) = (height), \
     CAT(id, _BASE_BLOCK) = offsetof(struct TileLayout, id), \
-    CAT(id, _TILES) = ((width) * (height)),
+    CAT(id, _COUNT) = ((width) * (height)),
 #define MK_TILE_WINDOW_ENUMS \
     enum \
     { \
@@ -64,7 +68,7 @@
     };
 
 #define LoadBgTiles_Unchecked(bg, tiles, id) do { \
-        LoadBgTiles(bg, tiles, CAT(id, _TILES) * TILE_SIZE_4BPP, CAT(id, _BASE_BLOCK)); \
+        LoadBgTiles(bg, tiles, CAT(id, _COUNT) * TILE_SIZE_4BPP, CAT(id, _BASE_BLOCK)); \
     } while (0)
 
 #endif

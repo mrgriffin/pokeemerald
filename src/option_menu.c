@@ -17,14 +17,12 @@
 #include "gba/m4a_internal.h"
 #include "constants/rgb.h"
 
-// TODO: It would be helpful to specify where to load the palettes from?
-// STATIC_PALETTE and DYNAMIC_PALETTE?
-// The same for tiles?
-#define PALETTE_LAYOUT(PALETTE, UNUSED) \
-    PALETTE(PAL_BACKGROUND, 1) \
-    PALETTE(PAL_TEXT, 1) \
+// TODO: Avoid passing a count to STATIC_PALETTE.
+#define PALETTE_LAYOUT(STATIC_PALETTE, DYNAMIC_PALETTE, UNUSED) \
+    STATIC_PALETTE(PAL_BACKGROUND, sOptionMenuBg_Pal, 1) \
+    STATIC_PALETTE(PAL_TEXT, sOptionMenuText_Pal, 1) \
     UNUSED(5) \
-    PALETTE(PAL_WINDOW_FRAME, 1) \
+    DYNAMIC_PALETTE(PAL_WINDOW_FRAME, 1) \
     UNUSED(8)
 
 MK_PALETTE_LAYOUT_STRUCT;
