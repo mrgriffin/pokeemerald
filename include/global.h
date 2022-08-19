@@ -139,7 +139,8 @@
 // It looks like file.c:line: size of array `id' is negative
 #define STATIC_ASSERT(expr, id) typedef char id[(expr) ? 1 : -1]
 
-#define SIZEOF_MEMBER(type, member) sizeof(((type *)NULL)->member)
+#define CAT(a, b) XCAT(a, b)
+#define XCAT(a, b) a ## b
 
 struct Coords8
 {

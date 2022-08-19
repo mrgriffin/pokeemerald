@@ -17,41 +17,29 @@
 #include "gba/m4a_internal.h"
 #include "constants/rgb.h"
 
-struct PaletteLayout
-{
-    struct Palette background;
-    struct Palette text;
-    struct Palette unused_2;
-    struct Palette unused_3;
-    struct Palette unused_4;
-    struct Palette unused_5;
-    struct Palette unused_6;
-    struct Palette windowFrame;
-    struct Palette unused_8;
-    struct Palette unused_9;
-    struct Palette unused_A;
-    struct Palette unused_B;
-    struct Palette unused_C;
-    struct Palette unused_D;
-    struct Palette unused_E;
-    struct Palette unused_F;
-    /* TODO: Sprite palettes. */
-};
+// TODO: It would be helpful to specify where to load the palettes from?
+// STATIC_PALETTE and DYNAMIC_PALETTE?
+// The same for tiles?
+#define PALETTE_LAYOUT(PALETTE, UNUSED) \
+    PALETTE(PAL_BACKGROUND, 1) \
+    PALETTE(PAL_TEXT, 1) \
+    UNUSED(5) \
+    PALETTE(PAL_WINDOW_FRAME, 1) \
+    UNUSED(8)
 
-STATIC_ASSERT(sizeof(struct PaletteLayout) <= 512, PaletteLayout);
+MK_PALETTE_LAYOUT_STRUCT;
+MK_PALETTE_ENUMS;
 
-// XXX: Misnomer, this is the layout of charblocks 1 & 2.
-// TODO: Should this contain struct Tiles for consistency with PaletteLayout?
-struct VramLayout
-{
-    u8 transparent[1];
-    u8 unused_001[1];
-    WINDOW(WIN_TEXT_OPTION, 26, 2);
-    WINDOW(WIN_OPTIONS, 26, 14);
-    u8 windowFrame[9];
-};
+#define TILE_LAYOUT(TILES, WINDOW, UNUSED) \
+    TILES(GFX_TRANSPARENT, 1) \
+    UNUSED(1) \
+    WINDOW(WIN_TEXT_OPTION, 26, 2) \
+    WINDOW(WIN_OPTIONS, 26, 14) \
+    TILES(GFX_WINDOW_FRAME, 9) \
+    UNUSED(597)
 
-STATIC_ASSERT(sizeof(struct VramLayout) <= 1024, VramLayout);
+MK_TILE_LAYOUT_STRUCT;
+MK_TILE_WINDOW_ENUMS;
 
 // Task data
 enum
@@ -137,19 +125,19 @@ static const struct WindowTemplate sOptionMenuWinTemplates[] =
         .bg = 1,
         .tilemapLeft = 2,
         .tilemapTop = 1,
-        .width = WINDOW_WIDTH(WIN_TEXT_OPTION),
-        .height = WINDOW_HEIGHT(WIN_TEXT_OPTION),
-        .paletteNum = PALETTE_NUM(text),
-        .baseBlock = WINDOW_BASE_BLOCK(WIN_TEXT_OPTION),
+        .width = WIN_TEXT_OPTION_WIDTH,
+        .height = WIN_TEXT_OPTION_HEIGHT,
+        .paletteNum = PAL_TEXT_NUM,
+        .baseBlock = WIN_TEXT_OPTION_BASE_BLOCK,
     },
     [WIN_OPTIONS] = {
         .bg = 0,
         .tilemapLeft = 2,
         .tilemapTop = 5,
-        .width = WINDOW_WIDTH(WIN_OPTIONS),
-        .height = WINDOW_HEIGHT(WIN_OPTIONS),
-        .paletteNum = PALETTE_NUM(text),
-        .baseBlock = WINDOW_BASE_BLOCK(WIN_OPTIONS),
+        .width = WIN_OPTIONS_WIDTH,
+        .height = WIN_OPTIONS_HEIGHT,
+        .paletteNum = PAL_TEXT_NUM,
+        .baseBlock = WIN_OPTIONS_BASE_BLOCK,
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -240,16 +228,16 @@ void CB2_InitOptionMenu(void)
         gMain.state++;
         break;
     case 3:
-        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, windowFrame);
+        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, GFX_WINDOW_FRAME);
         gMain.state++;
         break;
     case 4:
-        LoadPalette_Checked(sOptionMenuBg_Pal, background);
-        LoadPalette_Unchecked(GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->pal, windowFrame);
+        LoadPalette_Checked(sOptionMenuBg_Pal, PAL_BACKGROUND);
+        LoadPalette_Unchecked(GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->pal, PAL_WINDOW_FRAME);
         gMain.state++;
         break;
     case 5:
-        LoadPalette_Checked(sOptionMenuText_Pal, text);
+        LoadPalette_Checked(sOptionMenuText_Pal, PAL_TEXT);
         gMain.state++;
         break;
     case 6:
@@ -565,8 +553,8 @@ static u8 FrameType_ProcessInput(u8 selection)
         else
             selection = 0;
 
-        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(selection)->tiles, windowFrame);
-        LoadPalette_Unchecked(GetWindowFrameTilesPal(selection)->pal, windowFrame);
+        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(selection)->tiles, GFX_WINDOW_FRAME);
+        LoadPalette_Unchecked(GetWindowFrameTilesPal(selection)->pal, PAL_WINDOW_FRAME);
         sArrowPressed = TRUE;
     }
     if (JOY_NEW(DPAD_LEFT))
@@ -576,8 +564,8 @@ static u8 FrameType_ProcessInput(u8 selection)
         else
             selection = WINDOW_FRAMES_COUNT - 1;
 
-        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(selection)->tiles, windowFrame);
-        LoadPalette_Unchecked(GetWindowFrameTilesPal(selection)->pal, windowFrame);
+        LoadBgTiles_Unchecked(1, GetWindowFrameTilesPal(selection)->tiles, GFX_WINDOW_FRAME);
+        LoadPalette_Unchecked(GetWindowFrameTilesPal(selection)->pal, PAL_WINDOW_FRAME);
         sArrowPressed = TRUE;
     }
     return selection;
@@ -677,37 +665,38 @@ static void DrawOptionMenuTexts(void)
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 
-#define TILE_TOP_CORNER_L offsetof(struct VramLayout, windowFrame[0])
-#define TILE_TOP_EDGE     offsetof(struct VramLayout, windowFrame[1])
-#define TILE_TOP_CORNER_R offsetof(struct VramLayout, windowFrame[2])
-#define TILE_LEFT_EDGE    offsetof(struct VramLayout, windowFrame[3])
-#define TILE_RIGHT_EDGE   offsetof(struct VramLayout, windowFrame[5])
-#define TILE_BOT_CORNER_L offsetof(struct VramLayout, windowFrame[6])
-#define TILE_BOT_EDGE     offsetof(struct VramLayout, windowFrame[7])
-#define TILE_BOT_CORNER_R offsetof(struct VramLayout, windowFrame[8])
+// XXX: These are user frame tiles.
+#define TILE_TOP_CORNER_L (GFX_WINDOW_FRAME_BASE_BLOCK + 0)
+#define TILE_TOP_EDGE     (GFX_WINDOW_FRAME_BASE_BLOCK + 1)
+#define TILE_TOP_CORNER_R (GFX_WINDOW_FRAME_BASE_BLOCK + 2)
+#define TILE_LEFT_EDGE    (GFX_WINDOW_FRAME_BASE_BLOCK + 3)
+#define TILE_RIGHT_EDGE   (GFX_WINDOW_FRAME_BASE_BLOCK + 5)
+#define TILE_BOT_CORNER_L (GFX_WINDOW_FRAME_BASE_BLOCK + 6)
+#define TILE_BOT_EDGE     (GFX_WINDOW_FRAME_BASE_BLOCK + 7)
+#define TILE_BOT_CORNER_R (GFX_WINDOW_FRAME_BASE_BLOCK + 8)
 
 static void DrawBgWindowFrames(void)
 {
     //                     bg, tile,              x, y, width, height, palNum
     // Draw title window frame
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  0,  1,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  0, 27,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  0,  1,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  1,  1,  2,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  1,  1,  2,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1,  3,  1,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2,  3, 27,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28,  3,  1,  1,  PALETTE_NUM(windowFrame));
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  0,  1,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  0, 27,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  0,  1,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  1,  1,  2,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  1,  1,  2,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1,  3,  1,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2,  3, 27,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28,  3,  1,  1,  PAL_WINDOW_FRAME_NUM);
 
-    // Draw options list window frame
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 26,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  4,  1,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, 18,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1, 18,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 19,  1,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 19, 26,  1,  PALETTE_NUM(windowFrame));
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  PALETTE_NUM(windowFrame));
+    // Draw options list window frame                                              _NUM
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 26,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  4,  1,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, 18,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1, 18,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 19,  1,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 19, 26,  1,  PAL_WINDOW_FRAME_NUM);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  PAL_WINDOW_FRAME_NUM);
 
     CopyBgTilemapBufferToVram(1);
 }

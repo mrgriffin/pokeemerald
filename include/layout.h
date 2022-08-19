@@ -3,26 +3,68 @@
 
 /* TODO: Comment explaining how these work. */
 
-#define LoadPalette_Checked(palette, member) do { \
-        STATIC_ASSERT(sizeof(palette) <= SIZEOF_MEMBER(struct PaletteLayout, member), sizeOf ## palette); \
-        LoadPalette(palette, offsetof(struct PaletteLayout, member) / sizeof(u16), sizeof(palette)); \
+#define SIZEOF_MEMBER(type, member) sizeof(((type *)NULL)->member)
+
+#define NOOP(...)
+
+#define MK_PALETTE_LAYOUT_STRUCT__PALETTE(id, count) u8 id[(count)];
+#define MK_PALETTE_LAYOUT_STRUCT__UNUSED(count) u8 CAT(unused_, __COUNTER__)[(count)];
+#define MK_PALETTE_LAYOUT_STRUCT \
+    struct PaletteLayout \
+    { \
+        PALETTE_LAYOUT(MK_PALETTE_LAYOUT_STRUCT__PALETTE, MK_PALETTE_LAYOUT_STRUCT__UNUSED) \
+    }; \
+    STATIC_ASSERT(sizeof(struct PaletteLayout) <= 16, PaletteLayoutSize)
+
+#define MK_PALETTE_ENUMS__PALETTE(id, count) \
+    CAT(id, _NUM) = offsetof(struct PaletteLayout, id), \
+    CAT(id, _INDICES) = (count),
+#define MK_PALETTE_ENUMS \
+    enum \
+    { \
+        PALETTE_LAYOUT(MK_PALETTE_ENUMS__PALETTE, NOOP) \
+    }
+
+// TODO: Define for 32.
+#define LoadPalette_Checked(palette, id) do { \
+        STATIC_ASSERT(sizeof(palette) <= CAT(id, _INDICES) * 32, palette ## _Overflows_ ## id); \
+        LoadPalette(palette, CAT(id, _NUM) * 16, sizeof(palette)); \
     } while (0)
-#define LoadPalette_Unchecked(palette, member) do { \
-        LoadPalette(palette, offsetof(struct PaletteLayout, member) / sizeof(u16), SIZEOF_MEMBER(struct PaletteLayout, member)); \
+
+#define LoadPalette_Unchecked(palette, id) do { \
+        LoadPalette(palette, CAT(id, _NUM) * 16, CAT(id, _INDICES) * 32); \
     } while (0)
 
-#define LoadBgTiles_Unchecked(bg, tiles, member) do { \
-        LoadBgTiles(bg, tiles, SIZEOF_MEMBER(struct VramLayout, member) * TILE_SIZE_4BPP, offsetof(struct VramLayout, member)); \
+/*****/
+
+// TODO: How do we handle a group of windows?
+#define MK_TILE_LAYOUT_STRUCT__TILES(id, count) u8 id[(count)];
+#define MK_TILE_LAYOUT_STRUCT__WINDOW(id, width, height) u8 id[(width) * (height)];
+#define MK_TILE_LAYOUT_STRUCT__UNUSED(count) u8 CAT(unused_, __COUNTER__)[(count)];
+// XXX: Misnomer, this is the layout of one/two charblocks.
+#define MK_TILE_LAYOUT_STRUCT \
+    struct TileLayout \
+    { \
+        TILE_LAYOUT(MK_TILE_LAYOUT_STRUCT__TILES, MK_TILE_LAYOUT_STRUCT__WINDOW, MK_TILE_LAYOUT_STRUCT__UNUSED) \
+    }; \
+    STATIC_ASSERT(sizeof(struct TileLayout) <= 1024, TileLayoutSize)
+
+#define MK_TILE_WINDOW_ENUMS__TILES(id, count) \
+    CAT(id, _BASE_BLOCK) = offsetof(struct TileLayout, id), \
+    CAT(id, _TILES) = (count),
+#define MK_TILE_WINDOW_ENUMS__WINDOW(id, width, height) \
+    CAT(id, _WIDTH) = (width), \
+    CAT(id, _HEIGHT) = (height), \
+    CAT(id, _BASE_BLOCK) = offsetof(struct TileLayout, id), \
+    CAT(id, _TILES) = ((width) * (height)),
+#define MK_TILE_WINDOW_ENUMS \
+    enum \
+    { \
+        TILE_LAYOUT(MK_TILE_WINDOW_ENUMS__TILES, MK_TILE_WINDOW_ENUMS__WINDOW, NOOP) \
+    };
+
+#define LoadBgTiles_Unchecked(bg, tiles, id) do { \
+        LoadBgTiles(bg, tiles, CAT(id, _TILES) * TILE_SIZE_4BPP, CAT(id, _BASE_BLOCK)); \
     } while (0)
-
-struct Palette { u16 _[16]; };
-
-#define TILES(id, count) u8 id[count];
-#define WINDOW(id, width, height) u8 id[height][width]
-#define WINDOW_WIDTH(id) sizeof(((struct VramLayout *)NULL)->id[0])
-#define WINDOW_HEIGHT(id) (sizeof(((struct VramLayout *)NULL)->id) / sizeof(((struct VramLayout *)NULL)->id[0]))
-#define WINDOW_BASE_BLOCK(id) offsetof(struct VramLayout, id)
-
-#define PALETTE_NUM(id) (offsetof(struct PaletteLayout, id) / sizeof(struct Palette))
 
 #endif
