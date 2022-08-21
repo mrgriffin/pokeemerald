@@ -12,9 +12,54 @@
 #include "task.h"
 #include "text.h"
 #include "text_window.h"
+#include "ui.h"
 #include "window.h"
 #include "gba/m4a_internal.h"
 #include "constants/rgb.h"
+
+static const u16 sOptionMenuBg_Pal[1];
+static const u16 sOptionMenuText_Pal[16];
+
+#define BG_PALETTE_LAYOUT(PALETTE, AT, UNUSED) \
+    PALETTE(PAL_BACKGROUND, sizeof(sOptionMenuBg_Pal)) \
+    PALETTE(PAL_TEXT, sizeof(sOptionMenuText_Pal)) \
+    AT(7) PALETTE(PAL_WINDOW_FRAME, 1 * PLTT_SIZE_4BPP)
+
+#define BG_VRAM_LAYOUT(TILES, WINDOW, BACKGROUND, AT, UNUSED) \
+    AT(BG_CHAR(1)) TILES(GFX_TRANSPARENT, 1 * TILE_SIZE_4BPP) \
+    UNUSED(1) \
+    WINDOW(WIN_HEADER, BG_FRAME, \
+        TILEMAP_LEFT = 2, \
+        TILEMAP_TOP = 1, \
+        WIDTH = 26, \
+        HEIGHT = 2, \
+        PALETTE_NUM = PAL_TEXT, \
+    ) \
+    WINDOW(WIN_OPTIONS, BG_OPTIONS, \
+        TILEMAP_LEFT = 2, \
+        TILEMAP_TOP = 5, \
+        WIDTH = 26, \
+        HEIGHT = 14, \
+        PALETTE_NUM = PAL_TEXT, \
+    ) \
+    TILES(GFX_WINDOW_FRAME, 9 * TILE_SIZE_4BPP) \
+    AT(BG_SCREEN(30)) BACKGROUND(BG_FRAME, 1, \
+        CHAR_BASE_INDEX = 1, \
+        SCREEN_SIZE = 0, \
+        PALETTE_MODE = 0, \
+        PRIORITY = 0, \
+        BASE_TILE = 0, \
+    ) \
+    BACKGROUND(BG_OPTIONS, 0, \
+        CHAR_BASE_INDEX = 1, \
+        SCREEN_SIZE = 0, \
+        PALETTE_MODE = 0, \
+        PRIORITY = 1, \
+        BASE_TILE = 0, \
+    )
+
+MK_BG_PALETTE_LAYOUT(BG_PALETTE_LAYOUT);
+MK_BG_VRAM_LAYOUT(BG_VRAM_LAYOUT);
 
 #define tMenuSelection data[0]
 #define tTextSpeed data[1]
@@ -72,7 +117,7 @@ static void DrawBgWindowFrames(void);
 
 EWRAM_DATA static bool8 sArrowPressed = FALSE;
 
-static const u16 sOptionMenuText_Pal[] = INCBIN_U16("graphics/interface/option_menu_text.gbapal");
+static const u16 sOptionMenuText_Pal[16] = INCBIN_U16("graphics/interface/option_menu_text.gbapal");
 // note: this is only used in the Japanese release
 static const u8 sEqualSignGfx[] = INCBIN_U8("graphics/interface/option_menu_equals_sign.4bpp");
 
@@ -89,50 +134,18 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
 
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
 {
-    [WIN_HEADER] = {
-        .bg = 1,
-        .tilemapLeft = 2,
-        .tilemapTop = 1,
-        .width = 26,
-        .height = 2,
-        .paletteNum = 1,
-        .baseBlock = 2
-    },
-    [WIN_OPTIONS] = {
-        .bg = 0,
-        .tilemapLeft = 2,
-        .tilemapTop = 5,
-        .width = 26,
-        .height = 14,
-        .paletteNum = 1,
-        .baseBlock = 0x36
-    },
+    [WIN_HEADER] = WINDOW_TEMPLATE_INITIALIZER(WIN_HEADER),
+    [WIN_OPTIONS] = WINDOW_TEMPLATE_INITIALIZER(WIN_OPTIONS),
     DUMMY_WIN_TEMPLATE
 };
 
 static const struct BgTemplate sOptionMenuBgTemplates[] =
 {
-    {
-        .bg = 1,
-        .charBaseIndex = 1,
-        .mapBaseIndex = 30,
-        .screenSize = 0,
-        .paletteMode = 0,
-        .priority = 0,
-        .baseTile = 0
-    },
-    {
-        .bg = 0,
-        .charBaseIndex = 1,
-        .mapBaseIndex = 31,
-        .screenSize = 0,
-        .paletteMode = 0,
-        .priority = 1,
-        .baseTile = 0
-    }
+    BG_TEMPLATE_INITIALIZER(BG_FRAME),
+    BG_TEMPLATE_INITIALIZER(BG_OPTIONS),
 };
 
-static const u16 sOptionMenuBg_Pal[] = {RGB(17, 18, 31)};
+static const u16 sOptionMenuBg_Pal[1] = {RGB(17, 18, 31)};
 
 static void MainCB2(void)
 {
@@ -165,10 +178,10 @@ void CB2_InitOptionMenu(void)
         SetGpuReg(REG_OFFSET_DISPCNT, 0);
         ResetBgsAndClearDma3BusyFlags(0);
         InitBgsFromTemplates(0, sOptionMenuBgTemplates, ARRAY_COUNT(sOptionMenuBgTemplates));
-        ChangeBgX(0, 0, BG_COORD_SET);
-        ChangeBgY(0, 0, BG_COORD_SET);
-        ChangeBgX(1, 0, BG_COORD_SET);
-        ChangeBgY(1, 0, BG_COORD_SET);
+        ChangeBgX(BG_OPTIONS, 0, BG_COORD_SET);
+        ChangeBgY(BG_OPTIONS, 0, BG_COORD_SET);
+        ChangeBgX(BG_FRAME, 0, BG_COORD_SET);
+        ChangeBgY(BG_FRAME, 0, BG_COORD_SET);
         ChangeBgX(2, 0, BG_COORD_SET);
         ChangeBgY(2, 0, BG_COORD_SET);
         ChangeBgX(3, 0, BG_COORD_SET);
@@ -183,8 +196,8 @@ void CB2_InitOptionMenu(void)
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
         SetGpuReg(REG_OFFSET_BLDY, 4);
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON | DISPCNT_OBJ_ON | DISPCNT_OBJ_1D_MAP);
-        ShowBg(0);
-        ShowBg(1);
+        ShowBg(BG_OPTIONS);
+        ShowBg(BG_FRAME);
         gMain.state++;
         break;
     case 2:
@@ -195,16 +208,16 @@ void CB2_InitOptionMenu(void)
         gMain.state++;
         break;
     case 3:
-        LoadBgTiles(1, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, 0x120, 0x1A2);
+        LoadBgTiles(BG_FRAME, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, GFX_WINDOW_FRAME_SIZE, GFX_WINDOW_FRAME_OFFSET - BG_FRAME_OFFSET);
         gMain.state++;
         break;
     case 4:
-        LoadPalette(sOptionMenuBg_Pal, BG_PLTT_ID(0), sizeof(sOptionMenuBg_Pal));
-        LoadPalette(GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->pal, BG_PLTT_ID(7), PLTT_SIZE_4BPP);
+        LoadPalette(sOptionMenuBg_Pal, BG_PLTT_ID(PAL_BACKGROUND), sizeof(sOptionMenuBg_Pal));
+        LoadPalette(GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->pal, BG_PLTT_ID(PAL_WINDOW_FRAME), PAL_WINDOW_FRAME_SIZE);
         gMain.state++;
         break;
     case 5:
-        LoadPalette(sOptionMenuText_Pal, BG_PLTT_ID(1), sizeof(sOptionMenuText_Pal));
+        LoadPalette(sOptionMenuText_Pal, BG_PLTT_ID(PAL_TEXT), sizeof(sOptionMenuText_Pal));
         gMain.state++;
         break;
     case 6:
@@ -520,8 +533,8 @@ static u8 FrameType_ProcessInput(u8 selection)
         else
             selection = 0;
 
-        LoadBgTiles(1, GetWindowFrameTilesPal(selection)->tiles, 0x120, 0x1A2);
-        LoadPalette(GetWindowFrameTilesPal(selection)->pal, BG_PLTT_ID(7), PLTT_SIZE_4BPP);
+        LoadBgTiles(BG_FRAME, GetWindowFrameTilesPal(selection)->tiles, GFX_WINDOW_FRAME_SIZE, GFX_WINDOW_FRAME_OFFSET - BG_FRAME_OFFSET);
+        LoadPalette(GetWindowFrameTilesPal(selection)->pal, BG_PLTT_ID(PAL_WINDOW_FRAME), PAL_WINDOW_FRAME_SIZE);
         sArrowPressed = TRUE;
     }
     if (JOY_NEW(DPAD_LEFT))
@@ -531,8 +544,8 @@ static u8 FrameType_ProcessInput(u8 selection)
         else
             selection = WINDOW_FRAMES_COUNT - 1;
 
-        LoadBgTiles(1, GetWindowFrameTilesPal(selection)->tiles, 0x120, 0x1A2);
-        LoadPalette(GetWindowFrameTilesPal(selection)->pal, BG_PLTT_ID(7), PLTT_SIZE_4BPP);
+        LoadBgTiles(BG_FRAME, GetWindowFrameTilesPal(selection)->tiles, GFX_WINDOW_FRAME_SIZE, GFX_WINDOW_FRAME_OFFSET - BG_FRAME_OFFSET);
+        LoadPalette(GetWindowFrameTilesPal(selection)->pal, BG_PLTT_ID(PAL_WINDOW_FRAME), PAL_WINDOW_FRAME_SIZE);
         sArrowPressed = TRUE;
     }
     return selection;
@@ -632,37 +645,29 @@ static void DrawOptionMenuTexts(void)
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 
-#define TILE_TOP_CORNER_L 0x1A2
-#define TILE_TOP_EDGE     0x1A3
-#define TILE_TOP_CORNER_R 0x1A4
-#define TILE_LEFT_EDGE    0x1A5
-#define TILE_RIGHT_EDGE   0x1A7
-#define TILE_BOT_CORNER_L 0x1A8
-#define TILE_BOT_EDGE     0x1A9
-#define TILE_BOT_CORNER_R 0x1AA
+#define FRAME_OFFSET (GFX_WINDOW_FRAME_OFFSET - BG_FRAME_OFFSET)
 
 static void DrawBgWindowFrames(void)
 {
-    //                     bg, tile,              x, y, width, height, palNum
     // Draw title window frame
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  0,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  0, 27,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  0,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  1,  1,  2,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  1,  1,  2,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1,  3,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2,  3, 27,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28,  3,  1,  1,  7);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 0, 1,  0,  1, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 1, 2,  0, 27, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 2, 28, 0,  1, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 3, 1,  1,  1, 2, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 5, 28, 1,  1, 2, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 6, 1,  3,  1, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 7, 2,  3, 27, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 8, 28, 3,  1, 1, PAL_WINDOW_FRAME);
 
     // Draw options list window frame
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 26,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  4,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, 18,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1, 18,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 19,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 19, 26,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  7);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 0, 1,   4,  1, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 1, 2,   4, 26, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 2, 28,  4,  1, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 3, 1,   5, 1, 18, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 5, 28,  5, 1, 18, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 6, 1,  19,  1, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 7, 2,  19, 26, 1, PAL_WINDOW_FRAME);
+    FillBgTilemapBufferRect(BG_FRAME, FRAME_OFFSET + 8, 28, 19,  1, 1, PAL_WINDOW_FRAME);
 
-    CopyBgTilemapBufferToVram(1);
+    CopyBgTilemapBufferToVram(BG_FRAME);
 }

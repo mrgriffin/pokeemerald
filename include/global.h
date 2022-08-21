@@ -137,7 +137,13 @@
 
 // This produces an error at compile-time if expr is zero.
 // It looks like file.c:line: size of array `id' is negative
-#define STATIC_ASSERT(expr, id) typedef char id[(expr) ? 1 : -1];
+#define STATIC_ASSERT(expr, id) typedef char id[(expr) ? 1 : -1]
+
+#define CAT(a, b) XCAT(a, b)
+#define XCAT(a, b) a ## b
+
+#define ARGCOUNT(...) XARGCOUNT(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+#define XARGCOUNT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, n, ...) n
 
 struct Coords8
 {
