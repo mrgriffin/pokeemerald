@@ -4822,6 +4822,7 @@ static void TurnValuesCleanUp(bool8 var0)
             gProtectStructs[gActiveBattler].kingsShielded = FALSE;
             gProtectStructs[gActiveBattler].banefulBunkered = FALSE;
             gProtectStructs[gActiveBattler].quash = FALSE;
+            gProtectStructs[gActiveBattler].shellTrap = 0;
         }
         else
         {
@@ -4935,6 +4936,7 @@ static void CheckChosenMoveForEffectsBeforeTurnStarts(void)
                 }
             }
         }
+        gBattleStruct->focusPunchBattlerId = 0;
     }
 
     gBattleMainFunc = CheckQuickClaw_CustapBerryActivation;

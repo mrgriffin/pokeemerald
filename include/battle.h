@@ -147,6 +147,7 @@ struct ProtectStruct
     u16 quickDraw:1;
     u16 beakBlastCharge:1;
     u16 quash:1;
+    u16 shellTrap:2; // 0 = none, 1 = waiting, 2 = activated.
     u32 physicalDmg;
     u32 specialDmg;
     u8 physicalBattlerId;

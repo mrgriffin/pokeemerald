@@ -247,6 +247,8 @@
 #define VARIOUS_GET_BATTLER_SIDE                    156
 #define VARIOUS_CHECK_PARENTAL_BOND_COUNTER         157
 #define VARIOUS_SWAP_STATS                          158
+#define VARIOUS_SET_SHELL_TRAP                      159
+#define VARIOUS_TRY_CLEAR_SHELL_TRAP                160
 
 // Cmd_manipulatedamage
 #define DMG_CHANGE_SIGN            0
@@ -321,8 +323,9 @@
 #define MOVEEND_EMERGENCY_EXIT                    32
 #define MOVEEND_WEATHER_FORM                      33
 #define MOVEEND_SYMBIOSIS                         34
-#define MOVEEND_CLEAR_BITS                        35
-#define MOVEEND_COUNT                             36
+#define MOVEEND_SHELL_TRAP                        35
+#define MOVEEND_CLEAR_BITS                        36
+#define MOVEEND_COUNT                             37
 
 // switch cases
 #define B_SWITCH_NORMAL     0

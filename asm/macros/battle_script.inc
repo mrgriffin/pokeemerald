@@ -2162,3 +2162,12 @@
 	.macro trysymbiosis
 	various BS_ATTACKER, VARIOUS_TRY_SYMBIOSIS
 	.endm
+
+	.macro setshelltrap, battler:req
+	various \battler, VARIOUS_SET_SHELL_TRAP
+	.endm
+
+	.macro tryclearshelltrap battler:req, ptr:req
+	various \battler, VARIOUS_TRY_CLEAR_SHELL_TRAP
+	.4byte \ptr
+	.endm

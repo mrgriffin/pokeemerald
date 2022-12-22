@@ -5974,6 +5974,31 @@ static void Cmd_moveend(void)
             }
             gBattleScripting.moveendState++;
             break;
+        case MOVEEND_SHELL_TRAP:
+            while (gBattleStruct->focusPunchBattlerId < gBattlersCount)
+            {
+                i = gBattleStruct->focusPunchBattlerId++;
+                if (gProtectStructs[i].shellTrap == 1
+                 && IsBattlerAlive(gBattlerAttacker)
+                 && IsBattlerAlive(i)
+                 && gSpecialStatuses[gBattlerAttacker].damagedMons & gBitTable[i]
+                 && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
+                 && GetBattlerSide(gBattlerAttacker) != GetBattlerSide(i)
+                 && !DoesSubstituteBlockMove(gBattlerAttacker, i, gCurrentMove)
+                 && !TestSheerForceFlag(gBattlerAttacker, gCurrentMove)
+                 && IS_MOVE_PHYSICAL(gCurrentMove))
+                {
+                    gBattlerTarget = i;
+                    gProtectStructs[i].shellTrap = 2;
+                    gCurrentMove = MOVE_SHELL_TRAP;
+                    BattleScriptPushCursor();
+                    gBattlescriptCurrInstr = BattleScript_ShellTrapActivates;
+                    return;
+                }
+            }
+            gBattleStruct->focusPunchBattlerId = 0;
+            gBattleScripting.moveendState++;
+            break;
         case MOVEEND_CLEAR_BITS: // Clear/Set bits for things like using a move for all targets and all hits.
             if (gSpecialStatuses[gBattlerAttacker].instructedChosenTarget)
                 *(gBattleStruct->moveTarget + gBattlerAttacker) = gSpecialStatuses[gBattlerAttacker].instructedChosenTarget & 0x3;
@@ -10114,6 +10139,20 @@ static void Cmd_various(void)
             PREPARE_STAT_BUFFER(gBattleTextBuff1, statId);
         }
         break;
+    case VARIOUS_SET_SHELL_TRAP:
+        gProtectStructs[gActiveBattler].shellTrap = 1;
+        break;
+    case VARIOUS_TRY_CLEAR_SHELL_TRAP:
+        if (gProtectStructs[gActiveBattler].shellTrap == 1)
+        {
+            gProtectStructs[gActiveBattler].shellTrap = 0;
+            gBattlescriptCurrInstr = T1_READ_PTR(gBattlescriptCurrInstr + 3);
+        }
+        else
+        {
+            gBattlescriptCurrInstr += 7;
+        }
+        return;
     } // End of switch (gBattlescriptCurrInstr[2])
 
     gBattlescriptCurrInstr += 3;

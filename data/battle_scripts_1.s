@@ -434,21 +434,34 @@ BattleScript_EffectDireClaw::
 	goto BattleScript_EffectHit
 
 BattleScript_EffectShellTrap:
-	jumpifnodamage BattleScript_EffectShellTrap_Failed
-	goto BattleScript_EffectHit
+	tryclearshelltrap BS_ATTACKER, BattleScript_ShellTrapFailed
+	goto BattleScript_MoveEnd
 
-BattleScript_EffectShellTrap_Failed:
+BattleScript_ShellTrapFailed:
 	printstring STRINGID_ATTACKERSHELLTRAPDIDNTWORK
 	waitmessage B_WAIT_TIME_LONG
 	goto BattleScript_MoveEnd
 
 BattleScript_ShellTrapSetUp::
+	setshelltrap BS_ATTACKER
 	printstring STRINGID_EMPTYSTRING3
 	waitmessage 1
 	playanimation BS_ATTACKER, B_ANIM_SHELL_TRAP_SETUP, NULL
 	printstring STRINGID_ATTACKERSETASHELLTRAP
 	waitmessage B_WAIT_TIME_LONG
 	end2
+
+BattleScript_ShellTrapActivates::
+	swapattackerwithtarget
+	bicword gHitMarker, HITMARKER_ATTACKSTRING_PRINTED
+	jumpifword CMP_COMMON_BITS, gHitMarker, HITMARKER_NO_ATTACKSTRING, BattleScript_ShellTrapActivates_NoAttackString
+	goto BattleScript_EffectHit
+
+BattleScript_ShellTrapActivates_NoAttackString:
+	bicword gHitMarker, HITMARKER_NO_ATTACKSTRING
+	call BattleScript_EffectHit_Ret
+	orword gHitMarker, HITMARKER_NO_ATTACKSTRING
+	end
 
 BattleScript_EffectCeaselessEdge::
 	call BattleScript_EffectHit_Ret
