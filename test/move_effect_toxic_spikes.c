@@ -117,9 +117,9 @@ SINGLE_BATTLE_TEST("Toxic Spikes are removed by grounded Poison-types")
 // A Pokémon that gets passed magnet rise should still remove the Toxic
 // Spikes even though it is airborne.
 // The test currently fails, because we don't incorporate this bug.
-/*
 SINGLE_BATTLE_TEST("Toxic Spikes are removed by Poison-types affected by Magnet Rise")
 {
+    KNOWN_FAILING;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
@@ -134,4 +134,3 @@ SINGLE_BATTLE_TEST("Toxic Spikes are removed by Poison-types affected by Magnet 
         EXPECT_EQ(gSideTimers[B_SIDE_OPPONENT].toxicSpikesAmount, 0);
     }
 }
-*/

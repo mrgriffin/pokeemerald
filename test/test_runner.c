@@ -50,6 +50,7 @@ static void PrintTestNameAndResult(void)
 {
     const char *name;
     const u8 *index;
+    const char *color;
     const char *result;
 
     name = gTestRunnerState.test->name;
@@ -59,21 +60,28 @@ static void PrintTestNameAndResult(void)
     else
         index = NULL;
 
+    if (gTestRunnerState.result == gTestRunnerState.expectedResult)
+        color = "\e[32m";
+    else if (gTestRunnerState.result != TEST_RESULT_SKIP || gTestRunnerSkipIsFail)
+        color = "\e[31m";
+    else
+        color = "";
+
     switch (gTestRunnerState.result)
     {
-    case TEST_RESULT_FAIL: result = "\e[31mFAIL"; break;
-    case TEST_RESULT_PASS: result = "\e[32mPASS"; break;
-    case TEST_RESULT_SKIP: result = gTestRunnerSkipIsFail ? "\e[31mSKIP" : "SKIP"; break;
-    case TEST_RESULT_INVALID: result = "\e[31mINVALID"; break;
-    case TEST_RESULT_ERROR: result = "\e[31mERROR"; break;
-    case TEST_RESULT_TIMEOUT: result = "\e[31mTIMEOUT"; break;
+    case TEST_RESULT_FAIL: result = "FAIL"; break;
+    case TEST_RESULT_PASS: result = "PASS"; break;
+    case TEST_RESULT_SKIP: result = "SKIP"; break;
+    case TEST_RESULT_INVALID: result = "INVALID"; break;
+    case TEST_RESULT_ERROR: result = "ERROR"; break;
+    case TEST_RESULT_TIMEOUT: result = "TIMEOUT"; break;
     default: result = "UNKNOWN"; break;
     }
 
     if (index)
-        MgbaPrintf_("%s (%d): %s\e[0m", name, *index + 1, result);
+        MgbaPrintf_("%s (%d): %s%s\e[0m", name, *index + 1, color, result);
     else
-        MgbaPrintf_("%s: %s\e[0m", name, result);
+        MgbaPrintf_("%s: %s%s\e[0m", name, color, result);
 }
 
 void CB2_TestRunner(void)
@@ -120,6 +128,7 @@ void CB2_TestRunner(void)
 
         gTestRunnerState.state = STATE_REPORT_RESULT;
         gTestRunnerState.result = TEST_RESULT_PASS;
+        gTestRunnerState.expectedResult = TEST_RESULT_PASS;
         if (gTestRunnerHeadless)
             gTestRunnerState.timeoutSeconds = TIMEOUT_SECONDS;
         else
@@ -164,14 +173,17 @@ void CB2_TestRunner(void)
         else
         {
             gTestRunnerState.tests++;
+
+            if (gTestRunnerState.result == gTestRunnerState.expectedResult)
+                gTestRunnerState.passes++;
+            else
+                gTestRunnerState.exitCode = 1;
+
             if (gTestRunnerState.result == TEST_RESULT_PASS)
             {
                 PrintTestNameAndResult();
-                gTestRunnerState.passes++;
-            }
-            else
-            {
-                gTestRunnerState.exitCode = 1;
+                if (gTestRunnerState.result != gTestRunnerState.expectedResult)
+                    MgbaPuts_("Please remove KNOWN_FAILING if this test intentionally PASSes");
             }
         }
 
@@ -181,6 +193,11 @@ void CB2_TestRunner(void)
         MgbaExit_(gTestRunnerState.exitCode);
         break;
     }
+}
+
+void Test_ExpectedResult(enum TestResult result)
+{
+    gTestRunnerState.expectedResult = result;
 }
 
 static void Assumptions_Run(void *data)
@@ -249,8 +266,11 @@ void Test_ExitWithResult(enum TestResult result, const char *fmt, ...)
         if (!gTestRunnerState.test->runner->handleExitWithResult(gTestRunnerState.test->data, result))
         {
             PrintTestNameAndResult();
-            va_start(va, fmt);
-            MgbaVPrintf_(fmt, va);
+            if (gTestRunnerState.result != gTestRunnerState.expectedResult)
+            {
+                va_start(va, fmt);
+                MgbaVPrintf_(fmt, va);
+            }
         }
     }
     JumpToAgbMainLoop();

@@ -32,6 +32,7 @@ struct TestRunnerState
     const struct Test *test;
 
     u8 result;
+    u8 expectedResult;
     u32 timeoutSeconds;
 };
 
@@ -39,6 +40,8 @@ extern const struct TestRunner gAssumptionsRunner;
 extern struct TestRunnerState gTestRunnerState;
 
 void CB2_TestRunner(void);
+
+void Test_ExpectedResult(enum TestResult);
 
 #define ASSUMPTIONS \
     static void Assumptions(void); \
@@ -80,5 +83,8 @@ void CB2_TestRunner(void);
         if (_a == _b) \
             Test_ExitWithResult(TEST_RESULT_FAIL, "%s:%d: EXPECT_NE(%d, %d) failed", gTestRunnerState.test->filename, __LINE__, _a, _b); \
     } while (0)
+
+#define KNOWN_FAILING \
+    Test_ExpectedResult(TEST_RESULT_FAIL)
 
 #endif
