@@ -1491,6 +1491,9 @@ static void RecordedOpponentHandleStatusIconUpdate(void)
         battlerId = gActiveBattler;
         gBattleSpritesDataPtr->healthBoxesData[battlerId].statusAnimActive = 0;
         gBattlerControllerFuncs[gActiveBattler] = CompleteOnFinishedStatusAnimation;
+
+        if (gTestRunnerEnabled)
+            TestRunner_Battle_RecordStatus1(battlerId, GetMonData(&gEnemyParty[gBattlerPartyIndexes[battlerId]], MON_DATA_STATUS));
     }
 }
 

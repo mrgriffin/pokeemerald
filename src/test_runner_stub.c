@@ -31,6 +31,11 @@ void TestRunner_Battle_RecordMessage(const u8 *string)
 }
 
 __attribute__((weak))
+void TestRunner_Battle_RecordStatus1(u32 battlerId, u32 status1)
+{
+}
+
+__attribute__((weak))
 void TestRunner_Battle_AfterLastTurn(void)
 {
 }

@@ -42,6 +42,7 @@ enum
     QUEUED_ANIMATION_EVENT,
     QUEUED_HP_EVENT,
     QUEUED_MESSAGE_EVENT,
+    QUEUED_STATUS_EVENT,
 };
 
 struct QueuedAbilityEvent
@@ -72,6 +73,13 @@ struct QueuedMessageEvent
     const u8 *pattern;
 };
 
+struct QueuedStatusEvent
+{
+    u32 battlerId:3;
+    u32 mask:8;
+    u32 unused_01:21;
+};
+
 struct QueuedEvent
 {
     u8 type;
@@ -84,6 +92,7 @@ struct QueuedEvent
         struct QueuedAnimationEvent animation;
         struct QueuedHPEvent hp;
         struct QueuedMessageEvent message;
+        struct QueuedStatusEvent status;
     } as;
 };
 
@@ -313,6 +322,7 @@ void SendOut(u32 sourceLine, struct BattlePokemon *, u32 partyIndex);
 #define ANIMATION(type, id, ...) QueueAnimation(__LINE__, type, id, (struct AnimationEventContext) { __VA_ARGS__ })
 #define HP_BAR(battler, ...) QueueHP(__LINE__, battler, (struct HPEventContext) { __VA_ARGS__ })
 #define MESSAGE(pattern) QueueMessage(__LINE__, (const u8 []) _(pattern))
+#define STATUS_ICON(battler, ...) QueueStatus(__LINE__, battler, (struct StatusEventContext) { __VA_ARGS__ })
 
 enum QueueGroupType
 {
@@ -339,6 +349,16 @@ struct HPEventContext
     s16 *damage;
 };
 
+struct StatusEventContext
+{
+    bool8 none:1;
+    bool8 sleep:1;
+    bool8 poison:1;
+    bool8 burn:1;
+    bool8 freeze:1;
+    bool8 paralysis:1;
+};
+
 void OpenQueueGroup(u32 sourceLine, enum QueueGroupType);
 void CloseQueueGroup(u32 sourceLine);
 
@@ -346,6 +366,7 @@ void QueueAbility(u32 sourceLine, struct BattlePokemon *battler, struct AbilityE
 void QueueAnimation(u32 sourceLine, u32 type, u32 id, struct AnimationEventContext);
 void QueueHP(u32 sourceLine, struct BattlePokemon *battler, struct HPEventContext);
 void QueueMessage(u32 sourceLine, const u8 *pattern);
+void QueueStatus(u32 sourceLine, struct BattlePokemon *battler, struct StatusEventContext);
 
 /* Then */
 

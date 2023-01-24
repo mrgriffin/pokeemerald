@@ -547,12 +547,78 @@ void TestRunner_Battle_RecordMessage(const u8 *string)
     }
 }
 
+static s32 TryStatus(s32 i, s32 n, u32 battlerId, u32 status1)
+{
+    struct QueuedStatusEvent *event;
+    s32 iMax = i + n;
+    for (; i < iMax; i++)
+    {
+        if (DATA.queuedEvents[i].type != QUEUED_STATUS_EVENT)
+            continue;
+
+        event = &DATA.queuedEvents[i].as.status;
+
+        if (event->battlerId == battlerId)
+        {
+            if (event->mask == 0 && status1 == STATUS1_NONE)
+                return i;
+            else if (event->mask & status1)
+                return i;
+        }
+    }
+    return -1;
+}
+
+void TestRunner_Battle_RecordStatus1(u32 battlerId, u32 status1)
+{
+    s32 queuedEvent;
+    s32 match;
+    struct QueuedEvent *event;
+
+    if (DATA.queuedEvent == DATA.queuedEventsCount)
+        return;
+
+    event = &DATA.queuedEvents[DATA.queuedEvent];
+    switch (event->groupType)
+    {
+    case QUEUE_GROUP_NONE:
+    case QUEUE_GROUP_ONE_OF:
+        if (TryStatus(DATA.queuedEvent, event->groupSize, battlerId, status1) != -1)
+            DATA.queuedEvent += event->groupSize;
+        break;
+    case QUEUE_GROUP_NONE_OF:
+        queuedEvent = DATA.queuedEvent;
+        do
+        {
+            if ((match = TryStatus(queuedEvent, event->groupSize, battlerId, status1)) != -1)
+            {
+                const char *filename = gTestRunnerState.test->filename;
+                u32 line = SourceLine(DATA.queuedEvents[match].sourceLineOffset);
+                Test_ExitWithResult(TEST_RESULT_FAIL, "%s:%d: Matched STATUS_ICON", filename, line);
+            }
+
+            queuedEvent += event->groupSize;
+            if (queuedEvent == DATA.queuedEventsCount)
+                break;
+
+            event = &DATA.queuedEvents[queuedEvent];
+            if (event->groupType == QUEUE_GROUP_NONE_OF)
+                continue;
+
+            if (TryStatus(queuedEvent, event->groupSize, battlerId, status1) != -1)
+                DATA.queuedEvent = queuedEvent + event->groupSize;
+        } while (FALSE);
+        break;
+    }
+}
+
 static const char *const sEventTypeMacros[] =
 {
     [QUEUED_ABILITY_POPUP_EVENT] = "ABILITY_POPUP",
     [QUEUED_ANIMATION_EVENT] = "ANIMATION",
     [QUEUED_HP_EVENT] = "HP_BAR",
     [QUEUED_MESSAGE_EVENT] = "MESSAGE",
+    [QUEUED_STATUS_EVENT] = "STATUS_ICON",
 };
 
 void TestRunner_Battle_AfterLastTurn(void)
@@ -1318,6 +1384,42 @@ void QueueMessage(u32 sourceLine, const u8 *pattern)
         .groupSize = 1,
         .as = { .message = {
             .pattern = pattern,
+        }},
+    };
+}
+
+
+void QueueStatus(u32 sourceLine, struct BattlePokemon *battler, struct StatusEventContext ctx)
+{
+    s32 battlerId = battler - gBattleMons;
+    u32 mask;
+
+    if (DATA.queuedEventsCount == MAX_QUEUED_EVENTS)
+        Test_ExitWithResult(TEST_RESULT_ERROR, "%s:%d: STATUS_ICON exceeds MAX_QUEUED_EVENTS", gTestRunnerState.test->filename, sourceLine);
+
+    if (ctx.none)
+        mask = 0;
+    else if (ctx.sleep)
+        mask = STATUS1_SLEEP;
+    else if (ctx.poison)
+        mask = STATUS1_PSN_ANY;
+    else if (ctx.burn)
+        mask = STATUS1_BURN;
+    else if (ctx.freeze)
+        mask = STATUS1_FREEZE;
+    else if (ctx.paralysis)
+        mask = STATUS1_PARALYSIS;
+    else
+        Test_ExitWithResult(TEST_RESULT_INVALID, "%s:%d: STATUS_ICON without status", gTestRunnerState.test->filename, sourceLine);
+
+    DATA.queuedEvents[DATA.queuedEventsCount++] = (struct QueuedEvent) {
+        .type = QUEUED_STATUS_EVENT,
+        .sourceLineOffset = SourceLineOffset(sourceLine),
+        .groupType = QUEUE_GROUP_NONE,
+        .groupSize = 1,
+        .as = { .status = {
+            .battlerId = battlerId,
+            .mask = mask,
         }},
     };
 }
