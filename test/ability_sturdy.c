@@ -20,7 +20,7 @@ SINGLE_BATTLE_TEST("Sturdy prevents OHKO moves")
 
 SINGLE_BATTLE_TEST("Sturdy prevents OHKOs")
 {
-    u16 hp, remainingHP;
+    u16 hp;
     bool32 endures;
     PARAMETRIZE { hp = 99; endures = FALSE; }
     PARAMETRIZE { hp = 100; endures = TRUE; }
