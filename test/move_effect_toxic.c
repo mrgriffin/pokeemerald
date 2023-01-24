@@ -13,8 +13,12 @@ SINGLE_BATTLE_TEST("Toxic inflicts bad poison")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_TOXIC); }
+        TURN {}
     } SCENE {
+        u32 maxHP = GetMonData(&OPPONENT_PARTY[0], MON_DATA_MAX_HP);
         STATUS_ICON(opponent, poison: TRUE);
+        HP_BAR(opponent, damage: maxHP / 16 * 1);
+        HP_BAR(opponent, damage: maxHP / 16 * 2);
     }
 }
 

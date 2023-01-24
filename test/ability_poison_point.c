@@ -13,10 +13,15 @@ SINGLE_BATTLE_TEST("Poison Point inflicts poison on contact")
         OPPONENT(SPECIES_NIDORAN_M) { Ability(ABILITY_POISON_POINT); }
     } WHEN {
         TURN { MOVE(player, move); }
+        TURN {}
     } THEN {
-        if (gBattleMoves[move].flags & FLAG_MAKES_CONTACT)
+        u32 maxHP = GetMonData(&PLAYER_PARTY[0], MON_DATA_MAX_HP);
+        if (gBattleMoves[move].flags & FLAG_MAKES_CONTACT) {
             STATUS_ICON(player, poison: TRUE);
-        else
+            HP_BAR(player, hp: maxHP / 8);
+            HP_BAR(player, hp: maxHP / 8);
+        } else {
             NONE_OF { STATUS_ICON(player, poison: TRUE); }
+        }
     }
 }

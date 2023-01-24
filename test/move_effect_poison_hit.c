@@ -13,8 +13,12 @@ SINGLE_BATTLE_TEST("Poison Sting inflicts poison")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_POISON_STING); }
+        TURN {}
     } SCENE {
+        u32 maxHP = GetMonData(&OPPONENT_PARTY[0], MON_DATA_MAX_HP);
         STATUS_ICON(opponent, poison: TRUE);
+        HP_BAR(opponent, damage: maxHP / 8);
+        HP_BAR(opponent, damage: maxHP / 8);
     }
 }
 

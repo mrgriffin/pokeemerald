@@ -6,24 +6,64 @@ ASSUMPTIONS
     ASSUME(gBattleMoves[MOVE_TOXIC_SPIKES].effect == EFFECT_TOXIC_SPIKES);
 }
 
-SINGLE_BATTLE_TEST("Toxic Spikes inflicts poison/bad poison")
+SINGLE_BATTLE_TEST("Toxic Spikes inflicts poison on switch in")
 {
-    u32 layers;
-    u32 status1;
-    PARAMETRIZE {layers = 1; status1 = STATUS1_POISON; }
-    PARAMETRIZE {layers = 2; status1 = STATUS1_TOXIC_POISON; }
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WYNAUT);
+    } WHEN {
+        TURN { MOVE(player, MOVE_TOXIC_SPIKES); }
+        TURN { SWITCH(opponent, 1); }
+        TURN {}
+    } SCENE {
+        u32 maxHP = GetMonData(&OPPONENT_PARTY[1], MON_DATA_MAX_HP);
+        STATUS_ICON(opponent, poison: TRUE);
+        HP_BAR(opponent, damage: maxHP / 8);
+        HP_BAR(opponent, damage: maxHP / 8);
+    }
+}
+
+SINGLE_BATTLE_TEST("Toxic Spikes inflicts bad poison on switch in")
+{
+    u32 layers;
+    PARAMETRIZE { layers = 2; }
+    PARAMETRIZE { layers = 3; }
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WYNAUT);
     } WHEN {
         u32 count;
-        for (count = 0; count < layers; ++count)
+        for (count = 0; count < layers; count++)
             TURN { MOVE(player, MOVE_TOXIC_SPIKES); }
         TURN { SWITCH(opponent, 1); }
-    } THEN {
-        EXPECT_EQ(gSideTimers[B_SIDE_OPPONENT].toxicSpikesAmount, layers);
-        EXPECT(opponent->status1 & status1);
+        TURN {}
+    } SCENE {
+        u32 maxHP = GetMonData(&OPPONENT_PARTY[1], MON_DATA_MAX_HP);
+        STATUS_ICON(opponent, poison: TRUE);
+        HP_BAR(opponent, damage: maxHP / 16 * 1);
+        HP_BAR(opponent, damage: maxHP / 16 * 2);
+    }
+}
+
+SINGLE_BATTLE_TEST("Toxic Spikes inflicts poison on subsequent switch ins")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WYNAUT);
+    } WHEN {
+        TURN { MOVE(player, MOVE_TOXIC_SPIKES); }
+        TURN { SWITCH(opponent, 1); }
+        TURN { SWITCH(opponent, 0); }
+        TURN {}
+    } SCENE {
+        u32 maxHP = GetMonData(&OPPONENT_PARTY[0], MON_DATA_MAX_HP);
+        MESSAGE("2 sent out Wynaut!");
+        STATUS_ICON(opponent, poison: TRUE);
+        HP_BAR(opponent, damage: maxHP / 8);
+        HP_BAR(opponent, damage: maxHP / 8);
     }
 }
 
@@ -65,8 +105,11 @@ SINGLE_BATTLE_TEST("Toxic Spikes do not poison airborne Pokemon")
         TURN { MOVE(player, MOVE_TOXIC_SPIKES); MOVE(opponent, move1); }
         TURN { MOVE(opponent, move2); }
         TURN { MOVE(opponent, MOVE_BATON_PASS); SEND_OUT(opponent, 1); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, airborne ? STATUS1_NONE : STATUS1_POISON);
+    } SCENE {
+        if (airborne)
+            NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
+        else
+            STATUS_ICON(opponent, poison: TRUE);
     }
 }
 
@@ -80,9 +123,7 @@ SINGLE_BATTLE_TEST("Toxic Spikes do not affect Steel-types")
         TURN { MOVE(player, MOVE_TOXIC_SPIKES); }
         TURN { SWITCH(opponent, 1); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }
 
@@ -104,12 +145,17 @@ SINGLE_BATTLE_TEST("Toxic Spikes are removed by grounded Poison-types")
     } WHEN {
         TURN { MOVE(player, MOVE_TOXIC_SPIKES); MOVE(opponent, move); }
         TURN { MOVE(opponent, MOVE_BATON_PASS); SEND_OUT(opponent, 1); }
+        TURN { SWITCH(opponent, 0); }
     } SCENE {
-        if (grounded)
+        if (grounded) {
+            NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
             MESSAGE("The poison spikes disappeared from around the opposing team's feet!");
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
-        EXPECT_EQ(gSideTimers[B_SIDE_OPPONENT].toxicSpikesAmount, grounded ? 0 : 1);
+            NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
+        } else {
+            NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
+            ANIMATION(ANIM_TYPE_MOVE, MOVE_BATON_PASS, opponent);
+            STATUS_ICON(opponent, poison: TRUE);
+        }
     }
 }
 
@@ -127,10 +173,10 @@ SINGLE_BATTLE_TEST("Toxic Spikes are removed by Poison-types affected by Magnet 
     } WHEN {
         TURN { MOVE(opponent, MOVE_MAGNET_RISE); }
         TURN { MOVE(player, MOVE_TOXIC_SPIKES); MOVE(opponent, MOVE_BATON_PASS); SEND_OUT(opponent, 1); }
+        TURN { SWITCH(opponent, 0); }
     } SCENE {
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
         MESSAGE("The poison spikes disappeared from around the opposing team's feet!");
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
-        EXPECT_EQ(gSideTimers[B_SIDE_OPPONENT].toxicSpikesAmount, 0);
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }

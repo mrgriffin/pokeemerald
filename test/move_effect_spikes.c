@@ -10,14 +10,14 @@ SINGLE_BATTLE_TEST("Spikes damage on switch in")
 {
     u32 layers;
     u32 divisor;
-    s16 damage;
     PARAMETRIZE { layers = 1; divisor = 8; }
     PARAMETRIZE { layers = 2; divisor = 6; }
     PARAMETRIZE { layers = 3; divisor = 4; }
+    PARAMETRIZE { layers = 4; divisor = 4; }
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WYNAUT);
     } WHEN {
         u32 count;
         for (count = 0; count < layers; ++count) {
@@ -27,8 +27,24 @@ SINGLE_BATTLE_TEST("Spikes damage on switch in")
     } SCENE {
         u32 maxHP = GetMonData(&OPPONENT_PARTY[1], MON_DATA_MAX_HP);
         HP_BAR(opponent, damage: maxHP / divisor);
-    } THEN {
-        EXPECT_EQ(gSideTimers[B_SIDE_OPPONENT].spikesAmount, layers);
+    }
+}
+
+SINGLE_BATTLE_TEST("Spikes damage on subsequent switch ins")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WYNAUT);
+    } WHEN {
+        TURN { MOVE(player, MOVE_SPIKES); }
+        TURN { SWITCH(opponent, 1); }
+        TURN { SWITCH(opponent, 0); }
+    } SCENE {
+        u32 maxHP0 = GetMonData(&OPPONENT_PARTY[0], MON_DATA_MAX_HP);
+        u32 maxHP1 = GetMonData(&OPPONENT_PARTY[1], MON_DATA_MAX_HP);
+        HP_BAR(opponent, damage: maxHP1 / 8);
+        HP_BAR(opponent, damage: maxHP0 / 8);
     }
 }
 
@@ -70,10 +86,11 @@ SINGLE_BATTLE_TEST("Spikes do not damage airborne Pokemon")
         TURN { MOVE(player, MOVE_SPIKES); MOVE(opponent, move1); }
         TURN { MOVE(opponent, move2); }
         TURN { MOVE(opponent, MOVE_BATON_PASS); SEND_OUT(opponent, 1); }
-    } THEN {
+    } SCENE {
+        u32 maxHP = GetMonData(&OPPONENT_PARTY[1], MON_DATA_MAX_HP);
         if (airborne)
-            EXPECT_EQ(opponent->hp, opponent->maxHP);
+            NONE_OF { HP_BAR(opponent, damage: maxHP / 8); }
         else
-            EXPECT_NE(opponent->hp, opponent->maxHP);
+            HP_BAR(opponent, damage: maxHP / 8);
     }
 }
