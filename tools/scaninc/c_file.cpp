@@ -192,7 +192,7 @@ void CFile::CheckInclude()
 
     ConsumeHorizontalWhitespace();
 
-    std::string path = ReadPath();
+    std::string path = ReadPath(false);
 
     if (!path.empty()) {
         m_includes.emplace(path);
@@ -248,7 +248,7 @@ void CFile::CheckIncbin()
     {
         SkipWhitespace();
 
-        std::string path = ReadPath();
+        std::string path = ReadPath(true);
 
         SkipWhitespace();
 
@@ -267,7 +267,7 @@ void CFile::CheckIncbin()
 
 }
 
-std::string CFile::ReadPath()
+std::string CFile::ReadPath(bool concatAdjacent)
 {
     if (m_buffer[m_pos] != '"')
     {
@@ -280,28 +280,42 @@ std::string CFile::ReadPath()
 
     m_pos++;
 
-    int startPos = m_pos;
+    std::string path;
 
-    while (m_buffer[m_pos] != '"')
+    while (true)
     {
-        if (m_buffer[m_pos] == 0)
+        int startPos = m_pos;
+
+        while (m_buffer[m_pos] != '"')
         {
-            if (m_pos >= m_size)
-                FATAL_INPUT_ERROR("unexpected EOF in path string");
-            else
-                FATAL_INPUT_ERROR("unexpected null character in path string");
+            if (m_buffer[m_pos] == 0)
+            {
+                if (m_pos >= m_size)
+                    FATAL_INPUT_ERROR("unexpected EOF in path string");
+                else
+                    FATAL_INPUT_ERROR("unexpected null character in path string");
+            }
+
+            if (m_buffer[m_pos] == '\r' || m_buffer[m_pos] == '\n')
+                FATAL_INPUT_ERROR("unexpected end of line character in path string");
+
+            if (m_buffer[m_pos] == '\\')
+                FATAL_INPUT_ERROR("unexpected escape in path string");
+
+            m_pos++;
         }
 
-        if (m_buffer[m_pos] == '\r' || m_buffer[m_pos] == '\n')
-            FATAL_INPUT_ERROR("unexpected end of line character in path string");
+        path.append(&m_buffer[startPos], m_pos - startPos);
 
-        if (m_buffer[m_pos] == '\\')
-            FATAL_INPUT_ERROR("unexpected escape in path string");
+        m_pos++;
+
+        SkipWhitespace();
+
+        if (!concatAdjacent || m_buffer[m_pos] != '"')
+            break;
 
         m_pos++;
     }
 
-    m_pos++;
-
-    return std::string(m_buffer + startPos, m_pos - 1 - startPos);
+    return path;
 }

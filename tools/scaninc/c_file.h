@@ -51,7 +51,7 @@ private:
     bool CheckIdentifier(const std::string& ident);
     void CheckInclude();
     void CheckIncbin();
-    std::string ReadPath();
+    std::string ReadPath(bool concatAdjacent);
 };
 
 #endif // C_FILE_H

@@ -366,30 +366,42 @@ void CFile::TryConvertIncbin()
 
         m_pos++;
 
-        int startPos = m_pos;
+        std::string path;
 
-        while (m_buffer[m_pos] != '"')
+        while (true)
         {
-            if (m_buffer[m_pos] == 0)
+            int startPos = m_pos;
+
+            while (m_buffer[m_pos] != '"')
             {
-                if (m_pos >= m_size)
-                    RaiseError("unexpected EOF in path string");
-                else
-                    RaiseError("unexpected null character in path string");
+                if (m_buffer[m_pos] == 0)
+                {
+                    if (m_pos >= m_size)
+                        RaiseError("unexpected EOF in path string");
+                    else
+                        RaiseError("unexpected null character in path string");
+                }
+
+                if (m_buffer[m_pos] == '\r' || m_buffer[m_pos] == '\n')
+                    RaiseError("unexpected end of line character in path string");
+
+                if (m_buffer[m_pos] == '\\')
+                    RaiseError("unexpected escape in path string");
+
+                m_pos++;
             }
 
-            if (m_buffer[m_pos] == '\r' || m_buffer[m_pos] == '\n')
-                RaiseError("unexpected end of line character in path string");
+            path.append(&m_buffer[startPos], m_pos - startPos);
 
-            if (m_buffer[m_pos] == '\\')
-                RaiseError("unexpected escape in path string");
+            m_pos++;
+
+            SkipWhitespace();
+
+            if (m_buffer[m_pos] != '"')
+                break;
 
             m_pos++;
         }
-
-        std::string path(&m_buffer[startPos], m_pos - startPos);
-
-        m_pos++;
 
         int fileSize;
         std::unique_ptr<unsigned char[]> buffer = ReadWholeFile(path, fileSize);
@@ -410,8 +422,6 @@ void CFile::TryConvertIncbin()
             else
                 std::printf("%uu,", data);
         }
-
-        SkipWhitespace();
 
         if (m_buffer[m_pos] != ',')
             break;
