@@ -226,9 +226,9 @@ extern struct BattleTestRunnerState *gBattleTestRunnerState;
 
 /* Randomly */
 
-#define PASSES_RANDOMLY(passes, trials) for (; gBattleTestRunnerState->runRandomly; gBattleTestRunnerState->runRandomly = FALSE) Randomly(passes, trials)
+#define PASSES_RANDOMLY(passes, trials) for (; gBattleTestRunnerState->runRandomly; gBattleTestRunnerState->runRandomly = FALSE) Randomly(__LINE__, passes, trials)
 
-void Randomly(u32 passes, u32 trials);
+void Randomly(u32 sourceLine, u32 passes, u32 trials);
 
 /* Given */
 

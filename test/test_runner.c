@@ -250,6 +250,7 @@ static void Intr_Timer2(void)
         else
         {
             gTestRunnerState.result = TEST_RESULT_TIMEOUT;
+            PrintTestNameAndResult();
             ReinitCallbacks();
             IRQ_LR = ((uintptr_t)JumpToAgbMainLoop & ~1) + 4;
         }

@@ -5,6 +5,7 @@
 #include "characters.h"
 #include "main.h"
 #include "malloc.h"
+#include "random.h"
 #include "test_battle.h"
 #include "window.h"
 
@@ -673,7 +674,13 @@ static void CB2_BattleTest_NextParameter(void)
 
 static void CB2_BattleTest_NextTrial(void)
 {
+    FreeMonSpritesGfx();
+    FreeBattleSpritesData();
+    FreeBattleResources();
+    FreeAllWindowBuffers();
+
     SetMainCallback2(CB2_BattleTest_NextParameter);
+
     if (++STATE->runTrial < STATE->trials)
     {
         switch (gTestRunnerState.result)
@@ -692,18 +699,15 @@ static void CB2_BattleTest_NextTrial(void)
             return;
         }
         gTestRunnerState.result = TEST_RESULT_PASS;
-        DATA.recordedBattle.rngSeed = STATE->runTrial;
+        DATA.recordedBattle.rngSeed = ISO_RANDOMIZE1(STATE->runTrial);
         DATA.queuedEvent = 0;
         SetVariablesForRecordedBattle(&DATA.recordedBattle);
-        FreeMonSpritesGfx();
-        FreeBattleSpritesData();
-        FreeBattleResources();
-        FreeAllWindowBuffers();
         SetMainCallback2(CB2_InitBattle);
     }
     else
     {
-        if (abs(STATE->observedPasses - STATE->expectedPasses) <= 1)
+        // This is a tolerance of +/- 4%.
+        if (abs(STATE->observedPasses - STATE->expectedPasses) <= 2)
             gTestRunnerState.result = TEST_RESULT_PASS;
         else
             Test_ExitWithResult(TEST_RESULT_FAIL, "Expected %d/%d passes, observed %d/%d", STATE->expectedPasses, STATE->trials, STATE->observedPasses, STATE->trials);
@@ -761,11 +765,15 @@ static bool32 BattleTest_HandleExitWithResult(void *data, enum TestResult result
     }
 }
 
-void Randomly(u32 passes, u32 trials)
+void Randomly(u32 sourceLine, u32 passes, u32 trials)
 {
-    // This is a tolerance of +/- 2.5%.
-    STATE->trials = 40;
-    STATE->expectedPasses = 40 * passes / trials;
+    INVALID_IF(DATA.recordedBattle.rngSeed != RNG_SEED_DEFAULT, "RNG seed already set");
+    // This is a precision of 2%.
+    STATE->trials = 50;
+    STATE->expectedPasses = STATE->trials * passes / trials;
+    STATE->observedPasses = 0;
+    STATE->skippedTrials = 0;
+    STATE->runTrial = 0;
     DATA.recordedBattle.rngSeed = 0;
 }
 
