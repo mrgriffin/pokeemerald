@@ -13,8 +13,8 @@ SINGLE_BATTLE_TEST("Toxic inflicts bad poison")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_TOXIC); }
-    } THEN {
-        EXPECT(opponent->status1 & STATUS1_TOXIC_POISON);
+    } SCENE {
+        STATUS_ICON(opponent, poison: TRUE);
     }
 }
 
@@ -35,6 +35,6 @@ SINGLE_BATTLE_TEST("Toxic cannot miss if used by a Poison-type")
         if (hit)
             ANIMATION(ANIM_TYPE_MOVE, MOVE_TOXIC, player);
         else
-            MESSAGE("Wobbuffet's attack missed!");
+            NONE_OF { ANIMATION(ANIM_TYPE_MOVE, MOVE_TOXIC, player); }
     }
 }

@@ -13,8 +13,8 @@ SINGLE_BATTLE_TEST("Ember inflicts burn")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_EMBER); }
-    } THEN {
-        EXPECT(opponent->status1 & STATUS1_BURN);
+    } SCENE {
+        STATUS_ICON(opponent, burn: TRUE);
     }
 }
 
@@ -26,7 +26,7 @@ SINGLE_BATTLE_TEST("Ember cannot burn a Fire-type")
         OPPONENT(SPECIES_CHARMANDER);
     } WHEN {
         TURN { MOVE(player, MOVE_EMBER); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+    } SCENE {
+        NONE_OF { STATUS_ICON(opponent, burn: TRUE); }
     }
 }

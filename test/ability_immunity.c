@@ -10,9 +10,7 @@ SINGLE_BATTLE_TEST("Immunity prevents Poison Sting poison")
     } WHEN {
         TURN { MOVE(player, MOVE_POISON_STING); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }
 
@@ -25,9 +23,7 @@ SINGLE_BATTLE_TEST("Immunity prevents Toxic bad poison")
     } WHEN {
         TURN { MOVE(player, MOVE_TOXIC); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }
 
@@ -42,8 +38,6 @@ SINGLE_BATTLE_TEST("Immunity prevents Toxic Spikes poison")
         TURN { MOVE(player, MOVE_TOXIC_SPIKES); }
         TURN { SWITCH(opponent, 1); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }

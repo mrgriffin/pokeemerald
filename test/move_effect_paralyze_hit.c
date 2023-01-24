@@ -13,8 +13,8 @@ SINGLE_BATTLE_TEST("Thunder Shock inflicts paralysis")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_THUNDER_SHOCK); }
-    } THEN {
-        EXPECT(opponent->status1 & STATUS1_PARALYSIS);
+    } SCENE {
+        STATUS_ICON(opponent, paralysis: TRUE);
     }
 }
 
@@ -27,7 +27,7 @@ SINGLE_BATTLE_TEST("Thunder Shock cannot paralyze an Electric-type")
         OPPONENT(SPECIES_PIKACHU);
     } WHEN {
         TURN { MOVE(player, MOVE_THUNDER_SHOCK); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+    } SCENE {
+        NONE_OF { STATUS_ICON(opponent, paralysis: TRUE); }
     }
 }

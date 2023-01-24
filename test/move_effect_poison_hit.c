@@ -13,8 +13,8 @@ SINGLE_BATTLE_TEST("Poison Sting inflicts poison")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_POISON_STING); }
-    } THEN {
-        EXPECT(opponent->status1 & STATUS1_POISON);
+    } SCENE {
+        STATUS_ICON(opponent, poison: TRUE);
     }
 }
 
@@ -30,7 +30,7 @@ SINGLE_BATTLE_TEST("Poison Sting cannot poison Poison- or Steel-types")
         OPPONENT(species);
     } WHEN {
         TURN { MOVE(player, MOVE_POISON_STING); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+    } SCENE {
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }

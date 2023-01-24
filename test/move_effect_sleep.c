@@ -13,7 +13,7 @@ SINGLE_BATTLE_TEST("Hypnosis inflicts sleep")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_HYPNOSIS); }
-    } THEN {
-        EXPECT(opponent->status1 & STATUS1_SLEEP);
+    } SCENE {
+        STATUS_ICON(opponent, sleep: TRUE);
     }
 }

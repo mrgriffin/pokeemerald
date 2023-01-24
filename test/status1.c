@@ -78,8 +78,8 @@ SINGLE_BATTLE_TEST("Freeze has a 20% chance of being thawed")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_CELEBRATE); }
-    } THEN {
-        EXPECT_EQ(player->status1, STATUS1_NONE);
+    } SCENE {
+        STATUS_ICON(player, none: TRUE);
     }
 }
 
@@ -95,8 +95,7 @@ SINGLE_BATTLE_TEST("Freeze is thawed by opponent's Fire-type attacks")
         MESSAGE("Wobbuffet is frozen solid!");
         MESSAGE("Foe Wobbuffet used Ember!");
         MESSAGE("Wobbuffet was defrosted!");
-    } THEN {
-        EXPECT_EQ(player->status1, STATUS1_NONE);
+        STATUS_ICON(player, none: TRUE);
     }
 }
 
@@ -110,9 +109,8 @@ SINGLE_BATTLE_TEST("Freeze is thawed by user's Flame Wheel")
         TURN { MOVE(player, MOVE_FLAME_WHEEL); }
     } SCENE {
         MESSAGE("Wobbuffet was defrosted by Flame Wheel!");
+        STATUS_ICON(player, none: TRUE);
         MESSAGE("Wobbuffet used Flame Wheel!");
-    } THEN {
-        EXPECT_EQ(player->status1, STATUS1_NONE);
     }
 }
 

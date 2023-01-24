@@ -10,9 +10,7 @@ SINGLE_BATTLE_TEST("Pastel Veil prevents Poison Sting poison")
     } WHEN {
         TURN { MOVE(player, MOVE_POISON_STING); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }
 
@@ -27,9 +25,7 @@ DOUBLE_BATTLE_TEST("Pastel Veil prevents Poison Sting poison on partner")
     } WHEN {
         TURN { MOVE(playerLeft, MOVE_POISON_STING, target: opponentRight); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponentRight); }
-    } THEN {
-        EXPECT_EQ(opponentRight->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponentRight, poison: TRUE); }
     }
 }
 
@@ -42,9 +38,8 @@ SINGLE_BATTLE_TEST("Pastel Veil immediately cures Mold Breaker poison")
     } WHEN {
         TURN { MOVE(player, MOVE_TOXIC); }
     } SCENE {
-        ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent);
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+        STATUS_ICON(opponent, poison: TRUE);
+        STATUS_ICON(opponent, none: TRUE);
     }
 }
 
@@ -58,8 +53,9 @@ DOUBLE_BATTLE_TEST("Pastel Veil does not cure Mold Breaker poison on partner")
         OPPONENT(SPECIES_WYNAUT);
     } WHEN {
         TURN { MOVE(playerLeft, MOVE_TOXIC, target: opponentRight); }
-    } THEN {
-        EXPECT(opponentRight->status1 & STATUS1_TOXIC_POISON);
+    } SCENE {
+        STATUS_ICON(opponentRight, poison: TRUE);
+        NONE_OF { STATUS_ICON(opponentRight, none: TRUE); }
     }
 }
 
@@ -72,9 +68,7 @@ SINGLE_BATTLE_TEST("Pastel Veil prevents Toxic bad poison")
     } WHEN {
         TURN { MOVE(player, MOVE_TOXIC); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }
 
@@ -89,9 +83,7 @@ DOUBLE_BATTLE_TEST("Pastel Veil prevents Toxic bad poison on partner")
     } WHEN {
         TURN { MOVE(playerLeft, MOVE_TOXIC, target: opponentRight); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponentRight); }
-    } THEN {
-        EXPECT_EQ(opponentRight->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponentRight, poison: TRUE); }
     }
 }
 
@@ -106,9 +98,7 @@ SINGLE_BATTLE_TEST("Pastel Veil prevents Toxic Spikes poison")
         TURN { MOVE(player, MOVE_TOXIC_SPIKES); }
         TURN { SWITCH(opponent, 1); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponent, poison: TRUE); }
     }
 }
 
@@ -125,8 +115,6 @@ DOUBLE_BATTLE_TEST("Pastel Veil prevents Toxic Spikes poison on partner")
         TURN { MOVE(playerLeft, MOVE_TOXIC_SPIKES); }
         TURN { SWITCH(opponentRight, 2); }
     } SCENE {
-        NONE_OF { ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponentRight); }
-    } THEN {
-        EXPECT_EQ(opponentRight->status1, STATUS1_NONE);
+        NONE_OF { STATUS_ICON(opponentRight, poison: TRUE); }
     }
 }

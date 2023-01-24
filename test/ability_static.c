@@ -15,8 +15,8 @@ SINGLE_BATTLE_TEST("Static inflicts paralysis on contact")
         TURN { MOVE(player, move); }
     } THEN {
         if (gBattleMoves[move].flags & FLAG_MAKES_CONTACT)
-            EXPECT_EQ(player->status1, STATUS1_PARALYSIS);
+            STATUS_ICON(player, paralysis: TRUE);
         else
-            EXPECT_EQ(player->status1, STATUS1_NONE);
+            NONE_OF { STATUS_ICON(player, paralysis: TRUE); }
     }
 }

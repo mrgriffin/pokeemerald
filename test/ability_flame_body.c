@@ -13,10 +13,10 @@ SINGLE_BATTLE_TEST("Flame Body inflicts burn on contact")
         OPPONENT(SPECIES_MAGMAR) { Ability(ABILITY_FLAME_BODY); }
     } WHEN {
         TURN { MOVE(player, move); }
-    } THEN {
+    } SCENE {
         if (gBattleMoves[move].flags & FLAG_MAKES_CONTACT)
-            EXPECT_EQ(player->status1, STATUS1_BURN);
+            STATUS_ICON(player, burn: TRUE);
         else
-            EXPECT_EQ(player->status1, STATUS1_NONE);
+            NONE_OF { STATUS_ICON(player, burn: TRUE); }
     }
 }

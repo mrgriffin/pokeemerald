@@ -13,8 +13,8 @@ SINGLE_BATTLE_TEST("Powder Snow inflicts freeze")
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
         TURN { MOVE(player, MOVE_POWDER_SNOW); }
-    } THEN {
-        EXPECT(opponent->status1 & STATUS1_FREEZE);
+    } SCENE {
+        STATUS_ICON(opponent, freeze: TRUE);
     }
 }
 
@@ -26,7 +26,7 @@ SINGLE_BATTLE_TEST("Powder Snow cannot freeze an Ice-type")
         OPPONENT(SPECIES_SNORUNT);
     } WHEN {
         TURN { MOVE(player, MOVE_POWDER_SNOW); }
-    } THEN {
-        EXPECT_EQ(opponent->status1, STATUS1_NONE);
+    } SCENE {
+        NONE_OF { STATUS_ICON(opponent, freeze: TRUE); }
     }
 }
