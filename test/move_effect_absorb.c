@@ -16,8 +16,8 @@ SINGLE_BATTLE_TEST("Absorb recovers 50% of the damage dealt")
     } WHEN {
         TURN { MOVE(player, MOVE_ABSORB); }
     } SCENE {
-        HP_BAR(opponent, damage: &damage);
-        HP_BAR(player, damage: &healed);
+        HP_BAR(opponent, captureDamage: &damage);
+        HP_BAR(player, captureDamage: &healed);
     } THEN {
         EXPECT_MUL_EQ(damage, Q_4_12(-0.5), healed);
     }

@@ -17,8 +17,8 @@ SINGLE_BATTLE_TEST("Toxic Spikes inflicts poison/bad poison")
         OPPONENT(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
-        u32 cnt;
-        for (cnt = 0; cnt < layers; ++cnt)
+        u32 count;
+        for (count = 0; count < layers; ++count)
             TURN { MOVE(player, MOVE_TOXIC_SPIKES); }
         TURN { SWITCH(opponent, 1); }
     } THEN {

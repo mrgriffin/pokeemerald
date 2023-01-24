@@ -15,7 +15,7 @@ SINGLE_BATTLE_TEST("Jump Kick has 50% recoil on miss")
     } WHEN {
         TURN { MOVE(player, MOVE_JUMP_KICK, hit: FALSE); }
     } SCENE {
-        HP_BAR(player, damage: &recoil);
+        HP_BAR(player, captureDamage: &recoil);
     } THEN {
         EXPECT_MUL_EQ(player->maxHP, Q_4_12(0.5), recoil);
     }
@@ -31,7 +31,7 @@ SINGLE_BATTLE_TEST("Jump Kick has 50% recoil on protect")
     } WHEN {
         TURN { MOVE(opponent, MOVE_PROTECT); MOVE(player, MOVE_JUMP_KICK, hit: FALSE); }
     } SCENE {
-        HP_BAR(player, damage: &recoil);
+        HP_BAR(player, captureDamage: &recoil);
     } THEN {
         EXPECT_MUL_EQ(player->maxHP, Q_4_12(0.5), recoil);
     }

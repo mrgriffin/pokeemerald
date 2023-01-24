@@ -17,46 +17,39 @@ SINGLE_BATTLE_TEST("Sleep prevents the battler from using a move")
         for (i = 0; i < turns - 1; i++)
             MESSAGE("Wobbuffet is fast asleep.");
         MESSAGE("Wobbuffet woke up!");
+        STATUS_ICON(player, none: TRUE);
         MESSAGE("Wobbuffet used Celebrate!");
-    } THEN {
-        EXPECT_EQ(player->status1, STATUS1_NONE);
     }
 }
 
 SINGLE_BATTLE_TEST("Poison deals 1/8th damage per turn")
 {
-    s16 damages[4];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Status1(STATUS1_POISON); }
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
+        for (i = 0; i < 4; i++)
             TURN {}
     } SCENE {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
-            HP_BAR(player, damage: &damages[i]);
-    } THEN {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
-          EXPECT_MUL_EQ(player->maxHP, Q_4_12(1.0/8.0), damages[i]);
+        u32 maxHP = GetMonData(&PLAYER_PARTY[0], MON_DATA_MAX_HP);
+        for (i = 0; i < 4; i++)
+            HP_BAR(player, damage: maxHP / 8);
     }
 }
 
 SINGLE_BATTLE_TEST("Burn deals 1/16th damage per turn")
 {
-    s16 damages[4];
     GIVEN {
         ASSUME(B_BURN_DAMAGE >= GEN_LATEST);
         PLAYER(SPECIES_WOBBUFFET) { Status1(STATUS1_BURN); }
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
+        for (i = 0; i < 4; i++)
             TURN {}
     } SCENE {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
-            HP_BAR(player, damage: &damages[i]);
-    } THEN {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
-          EXPECT_MUL_EQ(player->maxHP, Q_4_12(1.0/16.0), damages[i]);
+        u32 maxHP = GetMonData(&PLAYER_PARTY[0], MON_DATA_MAX_HP);
+        for (i = 0; i < 4; i++)
+            HP_BAR(player, damage: maxHP / 16);
     }
 }
 
@@ -71,7 +64,7 @@ SINGLE_BATTLE_TEST("Burn reduces attack by 50%", s16 damage)
     } WHEN {
         TURN { MOVE(player, MOVE_TACKLE); }
     } SCENE {
-        HP_BAR(opponent, damage: &results[i].damage);
+        HP_BAR(opponent, captureDamage: &results[i].damage);
     } FINALLY {
         EXPECT_MUL_EQ(results[0].damage, Q_4_12(0.5), results[1].damage);
     }
@@ -167,25 +160,21 @@ SINGLE_BATTLE_TEST("Paralysis has a 25% chance of skipping the turn")
 
 SINGLE_BATTLE_TEST("Bad poison deals 1/16th cumulative damage per turn")
 {
-    s16 damages[4];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Status1(STATUS1_TOXIC_POISON); }
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
+        for (i = 0; i < 4; i++)
             TURN {}
     } SCENE {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
-            HP_BAR(player, damage: &damages[i]);
-    } THEN {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
-            EXPECT_EQ(player->maxHP / 16 * (i + 1), damages[i]);
+        u32 maxHP = GetMonData(&PLAYER_PARTY[0], MON_DATA_MAX_HP);
+        for (i = 0; i < 4; i++)
+            HP_BAR(player, damage: maxHP / 16 * (i + 1));
     }
 }
 
 SINGLE_BATTLE_TEST("Bad poison cumulative damage resets on switch")
 {
-    s16 damages[4];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Status1(STATUS1_TOXIC_POISON); }
         PLAYER(SPECIES_WYNAUT);
@@ -198,10 +187,10 @@ SINGLE_BATTLE_TEST("Bad poison cumulative damage resets on switch")
         TURN {}
         TURN {}
     } SCENE {
-        for (i = 0; i < ARRAY_COUNT(damages); i++)
-            HP_BAR(player, damage: &damages[i]);
-    } THEN {
-        EXPECT_EQ(damages[0], damages[2]);
-        EXPECT_EQ(damages[1], damages[3]);
+        u32 maxHP = GetMonData(&PLAYER_PARTY[0], MON_DATA_MAX_HP);
+        for (i = 0; i < 2; i++)
+            HP_BAR(player, damage: maxHP / 16 * (i + 1));
+        for (i = 0; i < 2; i++)
+            HP_BAR(player, damage: maxHP / 16 * (i + 1));
     }
 }

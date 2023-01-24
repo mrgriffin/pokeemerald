@@ -275,6 +275,9 @@ void Moves_(u32 sourceLine, const u16 moves[MAX_MON_MOVES]);
 void Friendship_(u32 sourceLine, u32 friendship);
 void Status1_(u32 sourceLine, u32 status1);
 
+#define PLAYER_PARTY (gBattleTestRunnerState->data.recordedBattle.playerParty)
+#define OPPONENT_PARTY (gBattleTestRunnerState->data.recordedBattle.opponentParty)
+
 /* When */
 
 #define WHEN for (; gBattleTestRunnerState->runWhen; gBattleTestRunnerState->runWhen = FALSE)
@@ -320,7 +323,7 @@ void SendOut(u32 sourceLine, struct BattlePokemon *, u32 partyIndex);
 
 #define ABILITY_POPUP(battler, ...) QueueAbility(__LINE__, battler, (struct AbilityEventContext) { __VA_ARGS__ })
 #define ANIMATION(type, id, ...) QueueAnimation(__LINE__, type, id, (struct AnimationEventContext) { __VA_ARGS__ })
-#define HP_BAR(battler, ...) QueueHP(__LINE__, battler, (struct HPEventContext) { __VA_ARGS__ })
+#define HP_BAR(battler, ...) QueueHP(__LINE__, battler, (struct HPEventContext) { APPEND_TRUE(__VA_ARGS__) })
 #define MESSAGE(pattern) QueueMessage(__LINE__, (const u8 []) _(pattern))
 #define STATUS_ICON(battler, ...) QueueStatus(__LINE__, battler, (struct StatusEventContext) { __VA_ARGS__ })
 
@@ -345,8 +348,14 @@ struct AnimationEventContext
 struct HPEventContext
 {
     u8 _;
-    u16 *hp;
-    s16 *damage;
+    u16 hp;
+    bool8 explicitHP;
+    s16 damage;
+    bool8 explicitDamage;
+    u16 *captureHP;
+    bool8 explicitCaptureHP;
+    s16 *captureDamage;
+    bool8 explicitCaptureDamage;
 };
 
 struct StatusEventContext

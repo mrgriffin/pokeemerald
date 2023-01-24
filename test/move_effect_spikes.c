@@ -11,7 +11,6 @@ SINGLE_BATTLE_TEST("Spikes damage on switch in")
     u32 layers;
     u32 divisor;
     s16 damage;
-
     PARAMETRIZE { layers = 1; divisor = 8; }
     PARAMETRIZE { layers = 2; divisor = 6; }
     PARAMETRIZE { layers = 3; divisor = 4; }
@@ -26,9 +25,9 @@ SINGLE_BATTLE_TEST("Spikes damage on switch in")
         }
         TURN { SWITCH(opponent, 1); }
     } SCENE {
-        HP_BAR(opponent, damage: &damage);
+        u32 maxHP = GetMonData(&OPPONENT_PARTY[1], MON_DATA_MAX_HP);
+        HP_BAR(opponent, damage: maxHP / divisor);
     } THEN {
-        EXPECT_EQ(damage, opponent->maxHP / divisor);
         EXPECT_EQ(gSideTimers[B_SIDE_OPPONENT].spikesAmount, layers);
     }
 }

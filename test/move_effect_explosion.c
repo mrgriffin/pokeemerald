@@ -15,9 +15,7 @@ SINGLE_BATTLE_TEST("Explosion causes the user to faint")
     } WHEN {
         TURN { MOVE(player, MOVE_EXPLOSION); }
     } SCENE {
-        HP_BAR(player, hp: &remainingHP);
-    } THEN {
-        EXPECT_EQ(remainingHP, 0);
+        HP_BAR(player, hp: 0);
     }
 }
 
@@ -30,9 +28,7 @@ SINGLE_BATTLE_TEST("Explosion causes the user to faint even if it misses")
     } WHEN {
         TURN { MOVE(player, MOVE_EXPLOSION, hit: FALSE); }
     } SCENE {
-        HP_BAR(player, hp: &remainingHP);
-    } THEN {
-        EXPECT_EQ(remainingHP, 0);
+        HP_BAR(player, hp: 0);
     }
 }
 
@@ -47,9 +43,7 @@ SINGLE_BATTLE_TEST("Explosion causes the user to faint even if it has no effect"
     } WHEN {
         TURN { MOVE(player, MOVE_EXPLOSION); }
     } SCENE {
-        HP_BAR(player, hp: &remainingHP);
+        HP_BAR(player, hp: 0);
         MESSAGE("It doesn't affect Foe Gastly…");
-    } THEN {
-        EXPECT_EQ(remainingHP, 0);
     }
 }

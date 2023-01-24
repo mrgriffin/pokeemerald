@@ -390,7 +390,21 @@ static s32 TryHP(s32 i, s32 n, u32 battlerId, u32 oldHP, u32 newHP)
 
         if (event->battlerId == battlerId)
         {
-            if (event->address)
+            if (event->address <= 0xFFFF)
+            {
+                switch (event->type)
+                {
+                case HP_EVENT_NEW_HP:
+                    if (event->address == newHP)
+                        return i;
+                    break;
+                case HP_EVENT_DELTA_HP:
+                    if ((s16)event->address == oldHP - newHP)
+                        return i;
+                    break;
+                }
+            }
+            else
             {
                 switch (event->type)
                 {
@@ -401,8 +415,8 @@ static s32 TryHP(s32 i, s32 n, u32 battlerId, u32 oldHP, u32 newHP)
                     *(s16 *)event->address = oldHP - newHP;
                     break;
                 }
+                return i;
             }
-            return i;
         }
     }
     return -1;
@@ -1344,20 +1358,32 @@ void QueueHP(u32 sourceLine, struct BattlePokemon *battler, struct HPEventContex
     if (DATA.queuedEventsCount == MAX_QUEUED_EVENTS)
         Test_ExitWithResult(TEST_RESULT_ERROR, "%s:%d: HP_BAR exceeds MAX_QUEUED_EVENTS", gTestRunnerState.test->filename, sourceLine);
 
-    if (ctx.hp)
+    if (ctx.explicitHP)
     {
         type = HP_EVENT_NEW_HP;
-        address = (uintptr_t)ctx.hp;
+        address = (u16)ctx.hp;
     }
-    else if (ctx.damage)
+    else if (ctx.explicitDamage)
     {
         type = HP_EVENT_DELTA_HP;
-        *ctx.damage = 0;
-        address = (uintptr_t)ctx.damage;
+        address = (u16)ctx.damage;
+    }
+    else if (ctx.explicitCaptureHP)
+    {
+        INVALID_IF(ctx.captureHP == NULL, "captureHP is NULL");
+        type = HP_EVENT_NEW_HP;
+        address = (uintptr_t)ctx.captureHP;
+    }
+    else if (ctx.explicitCaptureDamage)
+    {
+        INVALID_IF(ctx.captureDamage == NULL, "captureDamage is NULL");
+        type = HP_EVENT_DELTA_HP;
+        *ctx.captureDamage = 0;
+        address = (uintptr_t)ctx.captureDamage;
     }
     else
     {
-        address = 0;
+        Test_ExitWithResult(TEST_RESULT_INVALID, "%s:%d: HP_BAR without hp, damage, captureHP, or captureDamage", gTestRunnerState.test->filename, sourceLine);
     }
 
     DATA.queuedEvents[DATA.queuedEventsCount++] = (struct QueuedEvent) {

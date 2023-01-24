@@ -30,15 +30,12 @@ SINGLE_BATTLE_TEST("Sturdy prevents OHKOs")
     } WHEN {
         TURN { MOVE(opponent, MOVE_SEISMIC_TOSS); }
     } SCENE {
-        HP_BAR(player, hp: &remainingHP);
         if (endures) {
+            HP_BAR(player, hp: 1);
             ABILITY_POPUP(player);
             MESSAGE("Geodude Endured the hit using Sturdy!");
+        } else {
+            HP_BAR(player, hp: 0);
         }
-    } THEN {
-        if (endures)
-            EXPECT_EQ(remainingHP, 1);
-        else
-            EXPECT_EQ(remainingHP, 0);
     }
 }

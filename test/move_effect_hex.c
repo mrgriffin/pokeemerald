@@ -23,7 +23,7 @@ SINGLE_BATTLE_TEST("Hex deals double damage to foes with a status", s16 damage)
         TURN { MOVE(player, MOVE_HEX); }
     } SCENE {
         MESSAGE("Wobbuffet used Hex!");
-        HP_BAR(opponent, damage: &results[i].damage);
+        HP_BAR(opponent, captureDamage: &results[i].damage);
     } THEN {
         if (i > 0)
             EXPECT_MUL_EQ(results[0].damage, Q_4_12(2.0), results[i].damage);

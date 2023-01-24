@@ -13,7 +13,7 @@ SINGLE_BATTLE_TEST("Blaze boosts Fire-type moves in a pinch", s16 damage)
     } WHEN {
         TURN { MOVE(player, MOVE_EMBER); }
     } SCENE {
-        HP_BAR(opponent, damage: &results[i].damage);
+        HP_BAR(opponent, captureDamage: &results[i].damage);
     } FINALLY {
         EXPECT(results[1].damage > results[0].damage);
     }

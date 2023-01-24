@@ -17,7 +17,7 @@ SINGLE_BATTLE_TEST("Reflect reduces physical damage", s16 damage)
     } WHEN {
         TURN { MOVE(player, move); MOVE(opponent, MOVE_TACKLE); }
     } SCENE {
-        HP_BAR(player, damage: &results[i].damage);
+        HP_BAR(player, captureDamage: &results[i].damage);
     } FINALLY {
         EXPECT(results[1].damage < results[0].damage);
     }
@@ -37,12 +37,12 @@ SINGLE_BATTLE_TEST("Reflect applies for 5 turns")
         TURN { MOVE(opponent, MOVE_TACKLE); }
         TURN { MOVE(opponent, MOVE_TACKLE); }
     } SCENE {
-        HP_BAR(player, damage: &damage[0]);
-        HP_BAR(player, damage: &damage[1]);
-        HP_BAR(player, damage: &damage[2]);
-        HP_BAR(player, damage: &damage[3]);
-        HP_BAR(player, damage: &damage[4]);
-        HP_BAR(player, damage: &damage[5]);
+        HP_BAR(player, captureDamage: &damage[0]);
+        HP_BAR(player, captureDamage: &damage[1]);
+        HP_BAR(player, captureDamage: &damage[2]);
+        HP_BAR(player, captureDamage: &damage[3]);
+        HP_BAR(player, captureDamage: &damage[4]);
+        HP_BAR(player, captureDamage: &damage[5]);
     } THEN {
         EXPECT_MUL_EQ(damage[0], Q_4_12(1.0), damage[1]);
         EXPECT_MUL_EQ(damage[0], Q_4_12(1.0), damage[2]);
