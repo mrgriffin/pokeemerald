@@ -64,6 +64,6 @@ jobs:
       - name: Test
         run: |
           make -j${nproc} -O pokeemerald-test.elf
-          make -j${nproc} test
+          make -j${nproc} check
         env:
           ROMTEST: mgba/test/mgba-rom-test
