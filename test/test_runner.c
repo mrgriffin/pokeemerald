@@ -12,7 +12,7 @@
 void CB2_TestRunner(void);
 
 const bool8 gTestRunnerEnabled = TRUE;
-ALIGNED(2) const char gTestRunnerArgv[256] = {'\0'};
+const char gTestRunnerArgv[256] = {'\0'};
 
 EWRAM_DATA struct TestRunnerState gTestRunnerState;
 
