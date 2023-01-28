@@ -10,7 +10,6 @@ u32 gRng2Value;
 
 u16 Random(void)
 {
-    u32 oldValue = gRngValue;
     gRngValue = ISO_RANDOMIZE1(gRngValue);
     sRandCount++;
     return gRngValue >> 16;
