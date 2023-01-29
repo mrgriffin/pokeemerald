@@ -136,11 +136,11 @@ FIX := tools/gbafix/gbafix$(EXE)
 MAPJSON := tools/mapjson/mapjson$(EXE)
 JSONPROC := tools/jsonproc/jsonproc$(EXE)
 PATCHELF := tools/patchelf/patchelf$(EXE)
-ROMTEST ?= $(shell { command -v mgba-rom-test; } 2>/dev/null)
+ROMTEST ?= $(shell { command -v tools/mgba/mgba-rom-test$(EXE); } 2>/dev/null)
 
 PERL := perl
 
-TOOLDIRS := $(filter-out tools/agbcc tools/binutils,$(wildcard tools/*))
+TOOLDIRS := $(filter-out tools/mgba tools/agbcc tools/binutils,$(wildcard tools/*))
 TOOLBASE = $(TOOLDIRS:tools/%=%)
 TOOLS = $(foreach tool,$(TOOLBASE),tools/$(tool)/$(tool)$(EXE))
 
