@@ -53,6 +53,7 @@ extern const u8 gTestRunnerN;
 extern const u8 gTestRunnerI;
 extern const char gTestRunnerArgv[256];
 
+extern const struct TestRunner gTestRunner;
 extern const struct TestRunner gAssumptionsRunner;
 extern struct TestRunnerState gTestRunnerState;
 
@@ -62,6 +63,17 @@ void Test_ExpectedResult(enum TestResult);
 void Test_ExitWithResult(enum TestResult, const char *fmt, ...);
 
 s32 MgbaPrintf_(const char *fmt, ...);
+
+#define TEST(_name) \
+    static void CAT(Test, __LINE__)(void); \
+    __attribute__((section(".tests"))) static const struct Test CAT(sTest, __LINE__) = \
+    { \
+        .name = _name, \
+        .filename = __FILE__, \
+        .runner = &gTestRunner, \
+        .data = (void *)CAT(Test, __LINE__), \
+    }; \
+    static void CAT(Test, __LINE__)(void)
 
 #define ASSUMPTIONS \
     static void Assumptions(void); \

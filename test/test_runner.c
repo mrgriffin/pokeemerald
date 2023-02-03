@@ -212,6 +212,17 @@ void Test_ExpectedResult(enum TestResult result)
     gTestRunnerState.expectedResult = result;
 }
 
+static void Test_Run(void *data)
+{
+    void (*function)(void) = data;
+    function();
+}
+
+const struct TestRunner gTestRunner =
+{
+    .run = Test_Run,
+};
+
 static void Assumptions_Run(void *data)
 {
     void (*function)(void) = data;
@@ -270,11 +281,12 @@ static void Intr_Timer2(void)
 
 void Test_ExitWithResult(enum TestResult result, const char *fmt, ...)
 {
+    bool32 handled = FALSE;
     gTestRunnerState.result = result;
     ReinitCallbacks();
-    if (gTestRunnerState.test->runner->handleExitWithResult
-     && !gTestRunnerState.test->runner->handleExitWithResult(gTestRunnerState.test->data, result)
-     && gTestRunnerState.result != gTestRunnerState.expectedResult)
+    if (gTestRunnerState.test->runner->handleExitWithResult)
+        handled = gTestRunnerState.test->runner->handleExitWithResult(gTestRunnerState.test->data, result);
+    if (!handled && gTestRunnerState.result != gTestRunnerState.expectedResult)
     {
         va_list va;
         va_start(va, fmt);
