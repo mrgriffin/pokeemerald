@@ -82,7 +82,8 @@ void CB2_TestRunner(void)
             return;
         }
 
-        if (!PrefixMatch(gTestRunnerArgv, gTestRunnerState.test->name))
+        if (!PrefixMatch(gTestRunnerArgv, gTestRunnerState.test->name)
+         && strcmp(gTestRunnerArgv, gTestRunnerState.test->filename))
             return;
 
         // Greedily assign tests to processes based on estimated cost.
