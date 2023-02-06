@@ -15,8 +15,9 @@ SECTIONS {
         . = 0x1C000;
 
         INCLUDE "sym_ewram.ld"
-        src/*.o(.ewram_data);
-        gflib/*.o(.ewram_data);
+        src/*.o(ewram_data);
+        gflib/*.o(ewram_data);
+        asm/*.o(ewram_data);
 
         *libc.a:impure.o(.data);
         *libc.a:locale.o(.data);
@@ -33,6 +34,7 @@ SECTIONS {
         INCLUDE "sym_bss.ld"
         src/*.o(.bss);
         gflib/*.o(.bss);
+        asm/*.o(.bss);
         data/*.o(.bss);
 
         /* .bss.code starts at 0x3001AA8 */
@@ -1318,8 +1320,10 @@ SECTIONS {
     {
         src/*.o(.text);
         gflib/*.o(.text);
+        asm/*.o(.text);
         src/*.o(.rodata);
         gflib/*.o(.rodata);
+        asm/*.o(.rodata);
         data/*.o(.rodata);
     } = 0
 

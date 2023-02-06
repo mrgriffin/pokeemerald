@@ -16,6 +16,7 @@ SECTIONS {
 
         src/*.o(ewram_data);
         gflib/*.o(ewram_data);
+        asm/*.o(ewram_data);
 
         . = 0x40000;
     }
@@ -29,6 +30,7 @@ SECTIONS {
         src/*.o(.bss);
         gflib/*.o(.bss);
         data/*.o(.bss);
+        asm/*.o(.bss);
         *libc.a:*.o(.bss*);
         *libnosys.a:*.o(.bss*);
 
@@ -90,6 +92,7 @@ SECTIONS {
     {
         src/*.o(.rodata*);
         gflib/*.o(.rodata*);
+        asm/*.o(.rodata*);
         data/*.o(.rodata*);
     } =0
 
