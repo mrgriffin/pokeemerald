@@ -1885,7 +1885,7 @@ static void Cmd_accuracycheck(void)
             gBattlescriptCurrInstr = cmd->nextInstr;
         else if (gStatuses3[gBattlerTarget] & (STATUS3_SEMI_INVULNERABLE))
             gBattlescriptCurrInstr = cmd->failInstr;
-        else if (!JumpIfMoveAffectedByProtect(0))
+        else if (!JumpIfMoveAffectedByProtect(MOVE_NONE))
             gBattlescriptCurrInstr = cmd->nextInstr;
     }
     else if (gSpecialStatuses[gBattlerAttacker].parentalBondState == PARENTAL_BOND_2ND_HIT
@@ -9905,31 +9905,31 @@ static void Cmd_various(void)
         return;
     }
     case VARIOUS_PSYCHO_SHIFT:
+    {
+        VARIOUS_ARGS(const u8 *failInstr);
+        // Psycho shift works
+        if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_POISON) && CanBePoisoned(gBattlerAttacker, gBattlerTarget))
+            gBattleCommunication[MULTISTRING_CHOOSER] = 0;
+        else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_TOXIC_POISON) && CanBePoisoned(gBattlerAttacker, gBattlerTarget))
+            gBattleCommunication[MULTISTRING_CHOOSER] = 1;
+        else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_BURN) && CanBeBurned(gBattlerTarget))
+            gBattleCommunication[MULTISTRING_CHOOSER] = 2;
+        else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_PARALYSIS) && CanBeParalyzed(gBattlerTarget))
+            gBattleCommunication[MULTISTRING_CHOOSER] = 3;
+        else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP) && CanSleep(gBattlerTarget))
+            gBattleCommunication[MULTISTRING_CHOOSER] = 4;
+        else
         {
-            VARIOUS_ARGS(const u8 *failInstr);
-            // Psycho shift works
-            if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_POISON) && CanBePoisoned(gBattlerAttacker, gBattlerTarget))
-                gBattleCommunication[MULTISTRING_CHOOSER] = 0;
-            else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_TOXIC_POISON) && CanBePoisoned(gBattlerAttacker, gBattlerTarget))
-                gBattleCommunication[MULTISTRING_CHOOSER] = 1;
-            else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_BURN) && CanBeBurned(gBattlerTarget))
-                gBattleCommunication[MULTISTRING_CHOOSER] = 2;
-            else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_PARALYSIS) && CanBeParalyzed(gBattlerTarget))
-                gBattleCommunication[MULTISTRING_CHOOSER] = 3;
-            else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP) && CanSleep(gBattlerTarget))
-                gBattleCommunication[MULTISTRING_CHOOSER] = 4;
-            else
-            {
-                gBattlescriptCurrInstr = cmd->failInstr;
-                return;
-            }
-            gBattleMons[gBattlerTarget].status1 = gBattleMons[gBattlerAttacker].status1 & STATUS1_ANY;
-            gActiveBattler = gBattlerTarget;
-            BtlController_EmitSetMonData(BUFFER_A, REQUEST_STATUS_BATTLE, 0, sizeof(gBattleMons[gActiveBattler].status1), &gBattleMons[gActiveBattler].status1);
-            MarkBattlerForControllerExec(gActiveBattler);
-            gBattlescriptCurrInstr = cmd->nextInstr;
+            gBattlescriptCurrInstr = cmd->failInstr;
             return;
         }
+        gBattleMons[gBattlerTarget].status1 = gBattleMons[gBattlerAttacker].status1 & STATUS1_ANY;
+        gActiveBattler = gBattlerTarget;
+        BtlController_EmitSetMonData(BUFFER_A, REQUEST_STATUS_BATTLE, 0, sizeof(gBattleMons[gActiveBattler].status1), &gBattleMons[gActiveBattler].status1);
+        MarkBattlerForControllerExec(gActiveBattler);
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
     case VARIOUS_CURE_STATUS:
     {
         VARIOUS_ARGS();
@@ -10211,15 +10211,15 @@ static void Cmd_various(void)
         break;
     }
     case VARIOUS_JUMP_IF_TERRAIN_AFFECTED:
-        {
-            VARIOUS_ARGS(u32 flags, const u8 *jumpInstr);
-            u32 flags = cmd->flags;
-            if (IsBattlerTerrainAffected(gActiveBattler, flags))
-                gBattlescriptCurrInstr = cmd->jumpInstr;
-            else
-                gBattlescriptCurrInstr = cmd->nextInstr;
-            return;
-        }
+    {
+        VARIOUS_ARGS(u32 flags, const u8 *jumpInstr);
+        u32 flags = cmd->flags;
+        if (IsBattlerTerrainAffected(gActiveBattler, flags))
+            gBattlescriptCurrInstr = cmd->jumpInstr;
+        else
+            gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
     case VARIOUS_EERIE_SPELL_PP_REDUCE:
     {
         VARIOUS_ARGS(const u8 *failInstr);
@@ -10549,15 +10549,15 @@ static void Cmd_various(void)
         return;
     }
     case VARIOUS_JUMP_IF_WEATHER_AFFECTED:
-        {
-            VARIOUS_ARGS(u32 flags, const u8 *jumpInstr);
-            u32 flags = cmd->flags;
-            if (IsBattlerWeatherAffected(gActiveBattler, flags))
-                gBattlescriptCurrInstr = cmd->jumpInstr;
-            else
-                gBattlescriptCurrInstr = cmd->nextInstr;
-            return;
-        }
+    {
+        VARIOUS_ARGS(u32 flags, const u8 *jumpInstr);
+        u32 flags = cmd->flags;
+        if (IsBattlerWeatherAffected(gActiveBattler, flags))
+            gBattlescriptCurrInstr = cmd->jumpInstr;
+        else
+            gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
     case VARIOUS_APPLY_PLASMA_FISTS:
     {
         VARIOUS_ARGS();
@@ -10644,31 +10644,31 @@ static void Cmd_various(void)
         break;
     }
     case VARIOUS_CUT_1_3_HP_RAISE_STATS:
+    {
+        VARIOUS_ARGS(const u8 *failInstr);
+
+        bool8 atLeastOneStatBoosted = FALSE;
+        u16 hpFraction = max(1, gBattleMons[gBattlerAttacker].maxHP / 3);
+
+        for (i = 1; i < NUM_STATS; i++)
         {
-            VARIOUS_ARGS(const u8 *failInstr);
-
-            bool8 atLeastOneStatBoosted = FALSE;
-            u16 hpFraction = max(1, gBattleMons[gBattlerAttacker].maxHP / 3);
-
-            for (i = 1; i < NUM_STATS; i++)
+            if (CompareStat(gBattlerAttacker, i, MAX_STAT_STAGE, CMP_LESS_THAN))
             {
-                if (CompareStat(gBattlerAttacker, i, MAX_STAT_STAGE, CMP_LESS_THAN))
-                {
-                    atLeastOneStatBoosted = TRUE;
-                    break;
-                }
+                atLeastOneStatBoosted = TRUE;
+                break;
             }
-            if (atLeastOneStatBoosted && gBattleMons[gBattlerAttacker].hp > hpFraction)
-            {
-                gBattleMoveDamage = hpFraction;
-                gBattlescriptCurrInstr = cmd->nextInstr;
-            }
-            else
-            {
-                gBattlescriptCurrInstr = cmd->failInstr;
-            }
-            return;
         }
+        if (atLeastOneStatBoosted && gBattleMons[gBattlerAttacker].hp > hpFraction)
+        {
+            gBattleMoveDamage = hpFraction;
+            gBattlescriptCurrInstr = cmd->nextInstr;
+        }
+        else
+        {
+            gBattlescriptCurrInstr = cmd->failInstr;
+        }
+        return;
+    }
     case VARIOUS_SET_OCTOLOCK:
     {
         VARIOUS_ARGS(const u8 *failInstr);
@@ -10886,49 +10886,49 @@ static void Cmd_various(void)
         break;
     }
     case VARIOUS_CHECK_PARENTAL_BOND_COUNTER:
-        {
-            VARIOUS_ARGS(u8 counter, const u8 *jumpInstr);
-            // Some effects should only happen on the first or second strike of Parental Bond,
-            // so a way to check this in battle scripts is useful
-            u8 counter = cmd->counter;
-            if (gSpecialStatuses[gBattlerAttacker].parentalBondState == counter && gBattleMons[gBattlerTarget].hp != 0)
-                gBattlescriptCurrInstr = cmd->jumpInstr;
-            else
-                gBattlescriptCurrInstr = cmd->nextInstr;
-            return;
-        }
-    case VARIOUS_SWAP_STATS:
-        {
-            VARIOUS_ARGS(u8 stat);
-
-            u8 stat = cmd->stat;
-            u16 temp;
-
-            switch (stat)
-            {
-            case STAT_HP:
-                SWAP(gBattleMons[gBattlerAttacker].hp, gBattleMons[gBattlerTarget].hp, temp);
-                break;
-            case STAT_ATK:
-                SWAP(gBattleMons[gBattlerAttacker].attack, gBattleMons[gBattlerTarget].attack, temp);
-                break;
-            case STAT_DEF:
-                SWAP(gBattleMons[gBattlerAttacker].defense, gBattleMons[gBattlerTarget].defense, temp);
-                break;
-            case STAT_SPEED:
-                SWAP(gBattleMons[gBattlerAttacker].speed, gBattleMons[gBattlerTarget].speed, temp);
-                break;
-            case STAT_SPATK:
-                SWAP(gBattleMons[gBattlerAttacker].spAttack, gBattleMons[gBattlerTarget].spAttack, temp);
-                break;
-            case STAT_SPDEF:
-                SWAP(gBattleMons[gBattlerAttacker].spDefense, gBattleMons[gBattlerTarget].spDefense, temp);
-                break;
-            }
-            PREPARE_STAT_BUFFER(gBattleTextBuff1, stat);
+    {
+        VARIOUS_ARGS(u8 counter, const u8 *jumpInstr);
+        // Some effects should only happen on the first or second strike of Parental Bond,
+        // so a way to check this in battle scripts is useful
+        u8 counter = cmd->counter;
+        if (gSpecialStatuses[gBattlerAttacker].parentalBondState == counter && gBattleMons[gBattlerTarget].hp != 0)
+            gBattlescriptCurrInstr = cmd->jumpInstr;
+        else
             gBattlescriptCurrInstr = cmd->nextInstr;
-            return;
+        return;
+    }
+    case VARIOUS_SWAP_STATS:
+    {
+        VARIOUS_ARGS(u8 stat);
+
+        u8 stat = cmd->stat;
+        u16 temp;
+
+        switch (stat)
+        {
+        case STAT_HP:
+            SWAP(gBattleMons[gBattlerAttacker].hp, gBattleMons[gBattlerTarget].hp, temp);
+            break;
+        case STAT_ATK:
+            SWAP(gBattleMons[gBattlerAttacker].attack, gBattleMons[gBattlerTarget].attack, temp);
+            break;
+        case STAT_DEF:
+            SWAP(gBattleMons[gBattlerAttacker].defense, gBattleMons[gBattlerTarget].defense, temp);
+            break;
+        case STAT_SPEED:
+            SWAP(gBattleMons[gBattlerAttacker].speed, gBattleMons[gBattlerTarget].speed, temp);
+            break;
+        case STAT_SPATK:
+            SWAP(gBattleMons[gBattlerAttacker].spAttack, gBattleMons[gBattlerTarget].spAttack, temp);
+            break;
+        case STAT_SPDEF:
+            SWAP(gBattleMons[gBattlerAttacker].spDefense, gBattleMons[gBattlerTarget].spDefense, temp);
+            break;
         }
+        PREPARE_STAT_BUFFER(gBattleTextBuff1, stat);
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
     case VARIOUS_TEATIME_TARGETS:
     {
         VARIOUS_ARGS(const u8 *jumpInstr);
@@ -10982,23 +10982,23 @@ static void Cmd_various(void)
         return;
     }
     case VARIOUS_TRY_WIND_RIDER_POWER:
+    {
+        VARIOUS_ARGS(const u8 *failInstr);
+        u16 ability = GetBattlerAbility(gActiveBattler);
+        if (GetBattlerSide(gActiveBattler) == GetBattlerSide(gBattlerAttacker)
+         && (ability == ABILITY_WIND_RIDER || ability == ABILITY_WIND_POWER))
         {
-            VARIOUS_ARGS(const u8 *failInstr);
-            u16 ability = GetBattlerAbility(gActiveBattler);
-            if (GetBattlerSide(gActiveBattler) == GetBattlerSide(gBattlerAttacker)
-             && (ability == ABILITY_WIND_RIDER || ability == ABILITY_WIND_POWER))
-            {
-                gLastUsedAbility = ability;
-                RecordAbilityBattle(gActiveBattler, gLastUsedAbility);
-                gBattlerAbility = gBattleScripting.battler = gActiveBattler;
-                gBattlescriptCurrInstr = cmd->nextInstr;
-            }
-            else
-            {
-                gBattlescriptCurrInstr = cmd->failInstr;
-            }
-            return;
+            gLastUsedAbility = ability;
+            RecordAbilityBattle(gActiveBattler, gLastUsedAbility);
+            gBattlerAbility = gBattleScripting.battler = gActiveBattler;
+            gBattlescriptCurrInstr = cmd->nextInstr;
         }
+        else
+        {
+            gBattlescriptCurrInstr = cmd->failInstr;
+        }
+        return;
+    }
     case VARIOUS_ACTIVATE_WEATHER_CHANGE_ABILITIES:
     {
         VARIOUS_ARGS();
@@ -11014,21 +11014,21 @@ static void Cmd_various(void)
         return;
     }
     case VARIOUS_JUMP_IF_NO_VALID_TARGETS:
-        {
-            VARIOUS_ARGS(const u8 *jumpInstr);
-            u32 count = 0;
+    {
+        VARIOUS_ARGS(const u8 *jumpInstr);
+        u32 count = 0;
 
-            for (i = 0; i < gBattlersCount; i++)
-            {
-                if (GetBattlerSide(i) != GetBattlerSide(gBattlerAttacker) && IsBattlerAlive(i))
-                    count++;
-            }
-            if (count == 0)
-                gBattlescriptCurrInstr = cmd->jumpInstr;
-            else
-                gBattlescriptCurrInstr = cmd->nextInstr;
-            return;
+        for (i = 0; i < gBattlersCount; i++)
+        {
+            if (GetBattlerSide(i) != GetBattlerSide(gBattlerAttacker) && IsBattlerAlive(i))
+                count++;
         }
+        if (count == 0)
+            gBattlescriptCurrInstr = cmd->jumpInstr;
+        else
+            gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
     case VARIOUS_JUMP_IF_EMERGENCY_EXITED:
     {
         VARIOUS_ARGS(const u8 *jumpInstr);
@@ -11739,7 +11739,7 @@ static u32 ChangeStatBuffs(s8 statValue, u32 statId, u32 flags, const u8 *BS_ptr
             return STAT_CHANGE_DIDNT_WORK;
         }
         else if (gCurrentMove != MOVE_CURSE
-                 && notProtectAffected != TRUE && JumpIfMoveAffectedByProtect(0))
+                 && notProtectAffected != TRUE && JumpIfMoveAffectedByProtect(MOVE_NONE))
         {
             gBattlescriptCurrInstr = BattleScript_ButItFailed;
             return STAT_CHANGE_DIDNT_WORK;
