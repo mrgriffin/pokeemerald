@@ -428,15 +428,6 @@ void CFile::TryConvertIncbin()
     std::printf("}");
 }
 
-struct DSL {
-    const char *identifier;
-    void (CFile::*convert)(long start, long end);
-};
-
-static const struct DSL sDSLs[] =
-{
-};
-
 void CFile::TryConvertDSL()
 {
     long oldPos = m_pos;
@@ -458,13 +449,11 @@ void CFile::TryConvertDSL()
 
     identifierLength = m_pos - identifierStart;
 
-    while (m_pos < m_size) {
+    while (m_pos < m_size)
+    {
         if (m_buffer[m_pos] == '\n')
             m_lineNum++;
-        if (m_buffer[m_pos] != '\t'
-         && m_buffer[m_pos] != ' '
-         && m_buffer[m_pos] != '\r'
-         && m_buffer[m_pos] != '\n')
+        if (!IsWhitespace(m_buffer[m_pos]))
             break;
         m_pos++;
     }
@@ -475,8 +464,10 @@ void CFile::TryConvertDSL()
 
     blockStart = m_pos;
 
-    while (true) {
-        while (true) {
+    while (true)
+    {
+        while (true)
+        {
             if (m_pos >= m_size)
                 RaiseError("expected '|)'");
             if (m_buffer[m_pos] == '|')
@@ -493,8 +484,10 @@ void CFile::TryConvertDSL()
     }
 
     blockEnd = m_pos - 2;
+    m_pos++;
 
-    for (auto& dsl : sDSLs) {
+    for (auto& dsl : dsls)
+    {
         if (std::strncmp(dsl.identifier, &m_buffer[identifierStart], identifierLength) == 0
          && std::strlen(dsl.identifier) == identifierLength)
         {
@@ -508,6 +501,383 @@ void CFile::TryConvertDSL()
 noMatch:
     m_pos = oldPos;
     m_lineNum = oldLineNum;
+}
+
+struct Match
+{
+    Match() : m_start(0), m_end(0) {}
+    Match(long start, long end) : m_start(start), m_end(end) {}
+
+    long m_start;
+    long m_end;
+
+    int Size() const
+    {
+        return m_end - m_start;
+    }
+
+    operator bool() const
+    {
+        return m_start < m_end;
+    }
+};
+
+// Whitespace-insensitive parser.
+class TrimParser
+{
+public:
+    TrimParser(const char *buffer, long start, long end) : m_buffer(buffer), m_pos(start), m_end(end) { SkipWhitespace(); }
+
+    TrimParser ParseLine()
+    {
+        long start = m_pos;
+        while (m_pos < m_end && m_buffer[m_pos] != '\n')
+            m_pos++;
+        long end = m_pos++;
+        return TrimParser(m_buffer, start, end);
+    }
+
+    TrimParser ParseBlock()
+    {
+        long start = m_pos;
+        while (m_pos < m_end)
+        {
+            if (m_buffer[m_pos] == '\n')
+            {
+                if (m_pos + 1 < m_end && m_buffer[m_pos + 1] == '\n')
+                {
+                    m_pos += 1;
+                    break;
+                }
+                if (m_pos + 2 < m_end && m_buffer[m_pos + 1] == '\r' && m_buffer[m_pos + 2] == '\n')
+                {
+                    m_pos += 2;
+                    break;
+                }
+            }
+            m_pos++;
+        }
+        long end = m_pos++;
+        return TrimParser(m_buffer, start, end);
+    }
+
+    void SkipWhitespace()
+    {
+        while (m_pos < m_end && IsWhitespace(m_buffer[m_pos]))
+            m_pos++;
+    }
+
+    Match MatchLiteral(const char *string)
+    {
+        SkipWhitespace();
+        long start = m_pos, pos = m_pos;
+        for (; pos < m_end; pos++, string++)
+        {
+            if (*string != m_buffer[pos])
+                break;
+        }
+
+        if (*string == '\0')
+        {
+            m_pos = pos;
+            return Match(start, m_pos);
+        }
+        else
+        {
+            return Match();
+        }
+    }
+
+    Match MatchUntil(const char *terminators)
+    {
+        long start = m_pos;
+        while (m_pos < m_end && !std::strchr(terminators, m_buffer[m_pos]))
+            m_pos++;
+        long end = m_pos;
+
+        while (start < end && IsWhitespace(m_buffer[start]))
+            start++;
+        while (end > start && IsWhitespace(m_buffer[end - 1]))
+            end--;
+
+        return Match(start, end);
+    }
+
+    Match MatchBetween(char first, char last)
+    {
+        SkipWhitespace();
+        long start = m_pos;
+        long pos = m_pos;
+        if (pos < m_end && m_buffer[pos] == first)
+        {
+            while (pos < m_end)
+            {
+                if (m_buffer[pos] == last)
+                {
+                    m_pos = pos + 1;
+                    return Match(start + 1, pos);
+                }
+                pos++;
+            }
+        }
+        return Match();
+    }
+
+    operator bool() const
+    {
+        return m_pos < m_end;
+    }
+
+private:
+    const char *m_buffer;
+    long m_pos;
+    long m_end;
+};
+
+void PrintConstant(const char *prefix, const char *suffix, const char *buffer, Match match)
+{
+    std::printf("%s", prefix);
+    const char *constant = &buffer[match.m_start];
+    for (int i = 0; i < match.Size(); i++)
+    {
+        if (('A' <= constant[i] && constant[i] <= 'Z')
+         || ('0' <= constant[i] && constant[i] <= '9'))
+        {
+            std::putchar(constant[i]);
+        }
+        else if ('a' <= constant[i] && constant[i] <= 'z')
+        {
+            std::putchar(constant[i] - 'a' + 'A');
+        }
+        else
+        {
+            std::putchar('_');
+        }
+    }
+    std::printf("%s", suffix);
+}
+
+void PrintNumberDefault(const char *buffer, Match match, int default_)
+{
+    if (match)
+        std::printf("%.*s", match.Size(), &buffer[match.m_start]);
+    else
+        std::printf("%d", default_);
+}
+
+void CFile::ConvertCustomizedParty(long start, long end)
+{
+    std::printf("{");
+
+    auto p = TrimParser{m_buffer, start, end};
+
+    while (true)
+    {
+        bool firstMove = true;
+
+        auto b = p.ParseBlock();
+        if (!b)
+            break;
+
+        std::printf("{");
+
+        auto l = b.ParseLine();
+
+        // Species
+        // Species @ Item
+        // Species (Gender) @ Item
+        // Nickname (Species)
+        // Nickname (Species) @ Item
+        // Nickname (Species) (Gender) @ Item
+        Match nickname, species, gender, item;
+
+        auto first = l.MatchUntil("(@");
+        auto second = l.MatchBetween('(', ')');
+        auto third = l.MatchBetween('(', ')');
+
+        if (first && second && third)
+        {
+            nickname = first;
+            species = second;
+            gender = third;
+        }
+        else if (first && second)
+        {
+            if (second.Size() == 1)
+            {
+                species = first;
+                gender = second;
+            }
+            else
+            {
+                nickname = first;
+                species = second;
+            }
+        }
+        else // first.
+        {
+            species = first;
+        }
+
+        if (l.MatchLiteral("@"))
+            item = l.MatchUntil("\n");
+
+        //if (nickname)
+        //    std::printf(".nickname = COMPOUND_STRING(\"%.*s\"),", nickname.Size(), &m_buffer[nickname.m_start]);
+
+        // TODO: Smogon format uses, e.g. Meowth-Alola, but our
+        // constants are SPECIES_MEOWTH_ALOLAN.
+        PrintConstant(".species = SPECIES_", ",", m_buffer, species);
+
+        if (gender)
+        {
+            switch (m_buffer[gender.m_start])
+            {
+            case 'M':
+                std::printf(".gender = TRAINER_MON_MALE,");
+                break;
+
+            case 'F':
+                std::printf(".gender = TRAINER_MON_FEMALE,");
+                break;
+
+            default:
+                RaiseError("unknown gender '%.*s'", gender.Size(), &m_buffer[gender.m_start]);
+            }
+        }
+
+        if (item)
+            PrintConstant(".heldItem = ITEM_", ",", m_buffer, item);
+
+        // Attribute: Value
+        // Value Nature
+        while ((l = b.ParseLine()))
+        {
+            Match isEVs, isIVs;
+
+            if (l.MatchLiteral("-"))
+                goto parseMove;
+
+            if (l.MatchLiteral("Ability:"))
+            {
+                auto ability = l.MatchUntil("\n");
+                PrintConstant(".ability = ABILITY_", ",", m_buffer, ability);
+            }
+            else if (l.MatchLiteral("Ball:"))
+            {
+                auto ball = l.MatchUntil("\n");
+                PrintConstant(".ball = ITEM_", ",", m_buffer, ball);
+            }
+            else if ((isEVs = l.MatchLiteral("EVs:"))
+                  || (isIVs = l.MatchLiteral("IVs:")))
+            {
+                Match hp, atk, def, spa, spd, spe;
+                while (true)
+                {
+                    l.SkipWhitespace();
+                    if (!l)
+                        RaiseError("missing stats");
+                    auto number = l.MatchUntil(" ");
+                    if (l.MatchLiteral("HP"))
+                    {
+                        hp = number;
+                    }
+                    else if (l.MatchLiteral("Atk"))
+                    {
+                        atk = number;
+                    }
+                    else if (l.MatchLiteral("Def"))
+                    {
+                        def = number;
+                    }
+                    else if (l.MatchLiteral("SpA"))
+                    {
+                        spa = number;
+                    }
+                    else if (l.MatchLiteral("SpD"))
+                    {
+                        spd = number;
+                    }
+                    else if (l.MatchLiteral("Spe"))
+                    {
+                        spe = number;
+                    }
+                    else
+                    {
+                        auto name = l.MatchUntil("/\n");
+                        RaiseError("unknown stat '%.*s'", name.Size(), &m_buffer[name.m_start]);
+                    }
+                    if (!l.MatchLiteral("/"))
+                        break;
+                }
+                if (isEVs)
+                    std::printf(".ev = TRAINER_PARTY_EVS(");
+                else
+                    std::printf(".iv = TRAINER_PARTY_IVS(");
+                PrintNumberDefault(m_buffer, hp, 0); std::putchar(',');
+                PrintNumberDefault(m_buffer, atk, 0); std::putchar(',');
+                PrintNumberDefault(m_buffer, def, 0); std::putchar(',');
+                PrintNumberDefault(m_buffer, spe, 0); std::putchar(',');
+                PrintNumberDefault(m_buffer, spa, 0); std::putchar(',');
+                PrintNumberDefault(m_buffer, spd, 0);
+                std::printf("),");
+            }
+            else if (l.MatchLiteral("Happiness:"))
+            {
+                auto happiness = l.MatchUntil("\n");
+                PrintConstant(".friendship = ", ",", m_buffer, happiness);
+            }
+            else if (l.MatchLiteral("Level:"))
+            {
+                auto level = l.MatchUntil("\n");
+                PrintConstant(".lvl = ", ",", m_buffer, level);
+            }
+            else if (l.MatchLiteral("Shiny:"))
+            {
+                if (l.MatchLiteral("Yes"))
+                {
+                    std::printf(".isShiny = TRUE,");
+                }
+                else if (l.MatchLiteral("No"))
+                {
+                    std::printf(".isShiny = FALSE,");
+                }
+                else
+                {
+                    auto shininess = l.MatchUntil("\n");
+                    RaiseError("unexpected shininess: '%.*s'", shininess.Size(), &m_buffer[shininess.m_start]);
+                }
+            }
+            else
+            {
+                auto nature = l.MatchUntil(" ");
+                if (!l.MatchLiteral("Nature"))
+                    RaiseError("expected Nature");
+                PrintConstant(".nature = TRAINER_PARTY_NATURE(NATURE_", "),", m_buffer, nature);
+            }
+        }
+
+        // - Move
+        while ((l = b.ParseLine()))
+        {
+            if (!l.MatchLiteral("-"))
+                break;
+parseMove:
+            if (firstMove)
+            {
+                std::printf(".moves = {");
+                firstMove = false;
+            }
+            auto move = l.MatchUntil("\n");
+            PrintConstant("MOVE_", ",", m_buffer, move);
+        }
+        if (!firstMove)
+            std::printf("}");
+
+        std::printf("},");
+    }
+
+    std::printf("}");
 }
 
 // Reports a diagnostic message.

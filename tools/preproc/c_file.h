@@ -55,6 +55,19 @@ private:
     void ReportDiagnostic(const char* type, const char* format, std::va_list args);
     void RaiseError(const char* format, ...);
     void RaiseWarning(const char* format, ...);
+
+    void ConvertCustomizedParty(long start, long end);
+
+    struct DSL
+    {
+        const char *identifier;
+        void (CFile::*convert)(long start, long end);
+    };
+
+    static constexpr DSL dsls[] =
+    {
+        { "CUSTOMIZED_PARTY", &CFile::ConvertCustomizedParty },
+    };
 };
 
 #define CHUNK_SIZE 4096

@@ -68,4 +68,9 @@ inline bool IsIdentifierChar(unsigned char c)
     return IsAsciiAlphanum(c) || c == '_';
 }
 
+inline bool IsWhitespace(unsigned char c)
+{
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+}
+
 #endif // CHAR_UTIL_H
