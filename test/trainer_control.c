@@ -113,11 +113,11 @@ TEST("CreateNPCTrainerPartyForTrainer generates customized Pokémon")
     EXPECT_EQ(GetMonData(&testParty[0], MON_DATA_MOVE3, 0), MOVE_SOLAR_BEAM);
     EXPECT_EQ(GetMonData(&testParty[0], MON_DATA_MOVE4, 0), MOVE_EXPLOSION);
 
-    //GetMonData(&testParty[0], MON_DATA_NICKNAME, nickBuffer);
-    //EXPECT(StringCompare(nickBuffer, (const u8[]) _("Bubbles")) == 0);
+    GetMonData(&testParty[0], MON_DATA_NICKNAME, nickBuffer);
+    EXPECT(StringCompare(nickBuffer, COMPOUND_STRING("Bubbles")) == 0);
 
-    //GetMonData(&testParty[1], MON_DATA_NICKNAME, nickBuffer);
-    //EXPECT(StringCompare(nickBuffer, (const u8[]) _("Wobbuffet")) == 0);
+    GetMonData(&testParty[1], MON_DATA_NICKNAME, nickBuffer);
+    EXPECT(StringCompare(nickBuffer, COMPOUND_STRING("Wobbuffet")) == 0);
 
     EXPECT_EQ(GetGenderFromSpeciesAndPersonality(GetMonData(&testParty[0], MON_DATA_SPECIES, 0), testParty[0].box.personality), MON_FEMALE);
 

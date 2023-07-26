@@ -634,7 +634,7 @@ private:
     long m_end;
 };
 
-void PrintConstant(const char *prefix, const char *suffix, const char *buffer, Match match)
+static void PrintConstant(const char *prefix, const char *suffix, const char *buffer, Match match)
 {
     std::printf("%s", prefix);
     const char *constant = &buffer[match.m_start];
@@ -657,7 +657,7 @@ void PrintConstant(const char *prefix, const char *suffix, const char *buffer, M
     std::printf("%s", suffix);
 }
 
-void PrintNumberDefault(const char *buffer, Match match, int default_)
+static void PrintNumberDefault(const char *buffer, Match match, int default_)
 {
     if (match)
         std::printf("%.*s", match.Size(), &buffer[match.m_start]);
@@ -722,8 +722,31 @@ void CFile::ConvertCustomizedParty(long start, long end)
         if (l.MatchLiteral("@"))
             item = l.MatchUntil("\n");
 
-        //if (nickname)
-        //    std::printf(".nickname = COMPOUND_STRING(\"%.*s\"),", nickname.Size(), &m_buffer[nickname.m_start]);
+        if (nickname)
+        {
+            std::printf(".nickname = (const u8[]) {");
+            std::vector<char> buffer;
+            buffer.push_back('\"');
+            for (int i = 0; i < nickname.Size(); i++)
+                buffer.push_back(m_buffer[nickname.m_start + i]);
+            buffer.push_back('\"');
+            StringParser sp(buffer.data(), buffer.size());
+            unsigned char encoded[kMaxStringLength];
+            int length = 0, encodedLength;
+            try
+            {
+                length = sp.ParseString(0, encoded, encodedLength);
+            }
+            catch (std::runtime_error& e)
+            {
+                RaiseError(e.what());
+            }
+            if (length != (int)buffer.size())
+                RaiseError("nickname: unconsumed characters");
+            for (int i = 0; i < encodedLength; i++)
+                std::printf("0x%02X,", encoded[i]);
+            std::printf("0xFF},");
+        }
 
         // TODO: Smogon format uses, e.g. Meowth-Alola, but our
         // constants are SPECIES_MEOWTH_ALOLAN.
