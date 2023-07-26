@@ -134,6 +134,7 @@ void CFile::Preproc()
         {
             TryConvertString();
             TryConvertIncbin();
+            TryConvertDSL();
 
             if (m_pos >= m_size)
                 break;
@@ -425,6 +426,88 @@ void CFile::TryConvertIncbin()
     m_pos++;
 
     std::printf("}");
+}
+
+struct DSL {
+    const char *identifier;
+    void (CFile::*convert)(long start, long end);
+};
+
+static const struct DSL sDSLs[] =
+{
+};
+
+void CFile::TryConvertDSL()
+{
+    long oldPos = m_pos;
+    long oldLineNum = m_lineNum;
+    long identifierStart, blockStart, blockEnd;
+    std::size_t identifierLength;
+
+    if (m_pos > 0 && IsIdentifierChar(m_buffer[m_pos - 1]))
+        goto noMatch;
+
+    if (!IsIdentifierStartingChar(m_buffer[m_pos]))
+        goto noMatch;
+
+    identifierStart = m_pos;
+
+    do
+        m_pos++;
+    while (m_pos < m_size && IsIdentifierChar(m_buffer[m_pos]));
+
+    identifierLength = m_pos - identifierStart;
+
+    while (m_pos < m_size) {
+        if (m_buffer[m_pos] == '\n')
+            m_lineNum++;
+        if (m_buffer[m_pos] != '\t'
+         && m_buffer[m_pos] != ' '
+         && m_buffer[m_pos] != '\r'
+         && m_buffer[m_pos] != '\n')
+            break;
+        m_pos++;
+    }
+
+    if (!CheckIdentifier("(|"))
+        goto noMatch;
+    m_pos += 2; // strlen("(|")
+
+    blockStart = m_pos;
+
+    while (true) {
+        while (true) {
+            if (m_pos >= m_size)
+                RaiseError("expected '|)'");
+            if (m_buffer[m_pos] == '|')
+                break;
+            if (m_buffer[m_pos] == '\n')
+                m_lineNum++;
+            m_pos++;
+        }
+        m_pos++;
+        if (m_pos >= m_size)
+            RaiseError("expected '|)'");
+        if (m_buffer[m_pos] == ')')
+            break;
+    }
+
+    blockEnd = m_pos - 2;
+
+    for (auto& dsl : sDSLs) {
+        if (std::strncmp(dsl.identifier, &m_buffer[identifierStart], identifierLength) == 0
+         && std::strlen(dsl.identifier) == identifierLength)
+        {
+            (this->*dsl.convert)(blockStart, blockEnd);
+            return;
+        }
+    }
+
+    RaiseError("unknown DSL '%.*s'", identifierLength, &m_buffer[identifierStart]);
+
+noMatch:
+    m_pos = oldPos;
+    m_lineNum = oldLineNum;
 }
 
 // Reports a diagnostic message.
