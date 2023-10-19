@@ -5,6 +5,7 @@
 #include "load_save.h"
 #include "main.h"
 #include "malloc.h"
+#include "new_game.h"
 #include "random.h"
 #include "test_runner.h"
 #include "test/test.h"
@@ -117,7 +118,7 @@ void CB2_TestRunner(void)
 
         MoveSaveBlocks_ResetHeap();
         ClearSav1();
-        ClearSav2();
+        Sav2_ClearSetDefault();
 
         gIntrTable[7] = Intr_Timer2;
 
