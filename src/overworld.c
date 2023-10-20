@@ -595,12 +595,12 @@ static bool32 IsDummyWarp(struct WarpData *warp)
         return TRUE;
 }
 
-struct MapHeader const *const Overworld_GetMapHeaderByGroupAndId(u16 mapGroup, u16 mapNum)
+const struct MapHeader *Overworld_GetMapHeaderByGroupAndId(u16 mapGroup, u16 mapNum)
 {
     return gMapGroups[mapGroup][mapNum];
 }
 
-struct MapHeader const *const GetDestinationWarpMapHeader(void)
+const struct MapHeader *GetDestinationWarpMapHeader(void)
 {
     return Overworld_GetMapHeaderByGroupAndId(sWarpDestination.mapGroup, sWarpDestination.mapNum);
 }
@@ -1457,13 +1457,13 @@ bool32 IsOverworldLinkActive(void)
 static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
 {
     struct FieldInput inputStruct;
-
     UpdatePlayerAvatarTransitionState();
     FieldClearPlayerInput(&inputStruct);
     FieldGetPlayerInput(&inputStruct, newKeys, heldKeys);
+
     if (!ArePlayerFieldControlsLocked())
     {
-        if (ProcessPlayerFieldInput(&inputStruct) == 1)
+        if (ProcessPlayerFieldInput(&inputStruct) == TRUE)
         {
             LockPlayerFieldControls();
             HideMapNamePopUpWindow();
