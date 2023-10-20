@@ -19,4 +19,5 @@
 
 	.section .rodata
 
+	.align 2
 	.include "data/maps/events.inc"
