@@ -142,7 +142,14 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
 #endif
 }
 
-int ProcessPlayerFieldInput(struct FieldInput *input)
+enum FieldInputType
+{
+    FIELD_INPUT_NONE,   // Exiting because nothing to do.
+    FIELD_INPUT_KEY,    // Doing something because a key was pressed.
+    FIELD_INPUT_SCRIPT, // Doing something but NOT because a key was pressed.
+};
+
+static enum FieldInputType ProcessPlayerFieldInput_(struct FieldInput *input)
 {
     struct MapPosition position;
     u8 playerDirection;
@@ -156,48 +163,48 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     metatileBehavior = MapGridGetMetatileBehaviorAt(position.x, position.y);
 
     if (CheckForTrainersWantingBattle() == TRUE)
-        return TRUE;
+        return FIELD_INPUT_SCRIPT;
 
     if (TryRunOnFrameMapScript() == TRUE)
-        return TRUE;
+        return FIELD_INPUT_SCRIPT;
 
     if (input->pressedBButton && TrySetupDiveEmergeScript() == TRUE)
-        return TRUE;
+        return FIELD_INPUT_KEY;
     if (input->tookStep)
     {
         IncrementGameStat(GAME_STAT_STEPS);
         IncrementBirthIslandRockStepCount();
         if (TryStartStepBasedScript(&position, metatileBehavior, playerDirection) == TRUE)
-            return TRUE;
+            return FIELD_INPUT_SCRIPT;
     }
     if (input->checkStandardWildEncounter && CheckStandardWildEncounter(metatileBehavior) == TRUE)
-        return TRUE;
+        return FIELD_INPUT_SCRIPT;
     if (input->heldDirection && input->dpadDirection == playerDirection)
     {
         if (TryArrowWarp(&position, metatileBehavior, playerDirection) == TRUE)
-            return TRUE;
+            return FIELD_INPUT_KEY;
     }
 
     GetInFrontOfPlayerPosition(&position);
     metatileBehavior = MapGridGetMetatileBehaviorAt(position.x, position.y);
     if (input->pressedAButton && TryStartInteractionScript(&position, metatileBehavior, playerDirection) == TRUE)
-        return TRUE;
+        return FIELD_INPUT_KEY;
 
     if (input->heldDirection2 && input->dpadDirection == playerDirection)
     {
         if (TryDoorWarp(&position, metatileBehavior, playerDirection) == TRUE)
-            return TRUE;
+            return FIELD_INPUT_KEY;
     }
     if (input->pressedAButton && TrySetupDiveDownScript() == TRUE)
-        return TRUE;
+        return FIELD_INPUT_KEY;
     if (input->pressedStartButton)
     {
         PlaySE(SE_WIN_OPEN);
         ShowStartMenu();
-        return TRUE;
+        return FIELD_INPUT_KEY;
     }
     if (input->pressedSelectButton && UseRegisteredKeyItemOnField() == TRUE)
-        return TRUE;
+        return FIELD_INPUT_KEY;
 
 #if DEBUG_OVERWORLD_MENU == TRUE && DEBUG_OVERWORLD_IN_MENU == FALSE
     if (input->input_field_1_2)
@@ -205,11 +212,22 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
         PlaySE(SE_WIN_OPEN);
         FreezeObjectEvents();
         Debug_ShowMainMenu();
-        return TRUE;
+        return FIELD_INPUT_KEY;
     }
 #endif
 
-    return FALSE;
+    return FIELD_INPUT_NONE;
+}
+
+bool32 ProcessPlayerFieldInput(struct FieldInput *input)
+{
+    enum FieldInputType type = ProcessPlayerFieldInput_(input);
+    if (type == FIELD_INPUT_KEY)
+    {
+        extern void AcceptKeys(void);
+        AcceptKeys();
+    }
+    return type != FIELD_INPUT_NONE;
 }
 
 static void GetPlayerPosition(struct MapPosition *position)

@@ -589,7 +589,11 @@ static u8 CheckMovementInputNotOnBike(u8 direction)
     else if (direction != GetPlayerMovementDirection() && gPlayerAvatar.runningState != MOVING)
         return gPlayerAvatar.runningState = TURN_DIRECTION;
     else
+    {
+        extern void AcceptKeys(void);
+        AcceptKeys();
         return gPlayerAvatar.runningState = MOVING;
+    }
 }
 
 static void PlayerNotOnBikeNotMoving(u8 direction, u16 heldKeys)

@@ -97,7 +97,12 @@
 #define T2_READ_PTR(ptr) (void *) T2_READ_32(ptr)
 
 // Macros for checking the joypad
+#if TESTING
+#define TEST_BUTTON(field, button) ({ u32 hasMatch = (field) & (button); if (hasMatch) { extern void AcceptKeys(void); extern void MgbaPrintf_(const char *, ...); MgbaPrintf_(__FILE__ ":" STR(__LINE__)); AcceptKeys(); } hasMatch; })
+#else
 #define TEST_BUTTON(field, button) ((field) & (button))
+#endif
+
 #define JOY_NEW(button) TEST_BUTTON(gMain.newKeys,  button)
 #define JOY_HELD(button)  TEST_BUTTON(gMain.heldKeys, button)
 #define JOY_HELD_RAW(button) TEST_BUTTON(gMain.heldKeysRaw, button)
