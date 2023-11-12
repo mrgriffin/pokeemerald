@@ -88,6 +88,10 @@ static u32 AssignCostToRunner(void)
 {
     u32 minCostProcess;
 
+    // No need to estimate costs if there is only one runner.
+    if (gTestRunnerN == 1)
+        return gTestRunnerI;
+
     if (gTestRunnerState.test->runner == &gAssumptionsRunner)
         return gTestRunnerI;
 
@@ -106,6 +110,7 @@ static u32 AssignCostToRunner(void)
 
 void CB2_TestRunner(void)
 {
+top:
     switch (gTestRunnerState.state)
     {
     case STATE_INIT:
@@ -165,14 +170,14 @@ void CB2_TestRunner(void)
         if (gTestRunnerState.test == __stop_tests)
         {
             gTestRunnerState.state = STATE_EXIT;
-            return;
+            goto top;
         }
 
         if (gTestRunnerState.test->runner != &gAssumptionsRunner
           && !PrefixMatch(gTestRunnerArgv, gTestRunnerState.test->name))
         {
             gTestRunnerState.state = STATE_NEXT_TEST;
-            return;
+            goto top;
         }
 
         MgbaPrintf_(":N%s", gTestRunnerState.test->name);
@@ -214,7 +219,7 @@ void CB2_TestRunner(void)
         if (gTestRunnerState.skipFilename == gTestRunnerState.test->filename) // Assumption fails for tests in this file.
         {
             gTestRunnerState.result = TEST_RESULT_ASSUMPTION_FAIL;
-            return;
+            goto top;
         }
         else
         {
