@@ -94,6 +94,7 @@ TESTELF = $(ROM:.gba=-test.elf)
 HEADLESSELF = $(ROM:.gba=-test-headless.elf)
 
 C_SUBDIR = src
+CXX_SUBDIR = src
 GFLIB_SUBDIR = gflib
 ASM_SUBDIR = asm
 DATA_SRC_SUBDIR = src/data
@@ -105,6 +106,7 @@ CRY_SUBDIR = sound/direct_sound_samples/cries
 TEST_SUBDIR = test
 
 C_BUILDDIR = $(OBJ_DIR)/$(C_SUBDIR)
+CXX_BUILDDIR = $(OBJ_DIR)/cxx
 GFLIB_BUILDDIR = $(OBJ_DIR)/$(GFLIB_SUBDIR)
 ASM_BUILDDIR = $(OBJ_DIR)/$(ASM_SUBDIR)
 DATA_ASM_BUILDDIR = $(OBJ_DIR)/$(DATA_ASM_SUBDIR)
@@ -123,7 +125,9 @@ LIBPATH := -L ../../tools/agbcc/lib
 LIB := $(LIBPATH) -lgcc -lc -L../../libagbsyscall -lagbsyscall
 else
 CC1              = $(shell $(PATH_MODERNCC) --print-prog-name=cc1) -quiet
+CC1PLUS          = $(shell $(PATH_MODERNCC) --print-prog-name=cc1plus) -quiet
 override CFLAGS += -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -std=gnu17 -Werror -Wall -Wno-strict-aliasing -Wno-attribute-alias -Woverride-init
+CXXFLAGS        := -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -Werror -Wall -fno-common
 ifeq ($(ANALYZE),1)
 override CFLAGS += -fanalyzer
 endif
@@ -214,6 +218,10 @@ C_SRCS_IN := $(wildcard $(C_SUBDIR)/*.c $(C_SUBDIR)/*/*.c $(C_SUBDIR)/*/*/*.c)
 C_SRCS := $(foreach src,$(C_SRCS_IN),$(if $(findstring .inc.c,$(src)),,$(src)))
 C_OBJS := $(patsubst $(C_SUBDIR)/%.c,$(C_BUILDDIR)/%.o,$(C_SRCS))
 
+CXX_SRCS_IN := $(wildcard $(CXX_SUBDIR)/*.cpp $(CXX_SUBDIR)/*/*.cpp $(CXX_SUBDIR)/*/*/*.cpp)
+CXX_SRCS := $(foreach src,$(CXX_SRCS_IN),$(if $(findstring .inc.cpp,$(src)),,$(src)))
+CXX_OBJS := $(patsubst $(CXX_SUBDIR)/%.cpp,$(CXX_BUILDDIR)/%.o,$(CXX_SRCS))
+
 TEST_SRCS_IN := $(wildcard $(TEST_SUBDIR)/*.c $(TEST_SUBDIR)/*/*.c $(TEST_SUBDIR)/*/*/*.c)
 TEST_SRCS := $(foreach src,$(TEST_SRCS_IN),$(if $(findstring .inc.c,$(src)),,$(src)))
 TEST_OBJS := $(patsubst $(TEST_SUBDIR)/%.c,$(TEST_BUILDDIR)/%.o,$(TEST_SRCS))
@@ -240,7 +248,7 @@ SONG_OBJS := $(patsubst $(SONG_SUBDIR)/%.s,$(SONG_BUILDDIR)/%.o,$(SONG_SRCS))
 MID_SRCS := $(wildcard $(MID_SUBDIR)/*.mid)
 MID_OBJS := $(patsubst $(MID_SUBDIR)/%.mid,$(MID_BUILDDIR)/%.o,$(MID_SRCS))
 
-OBJS     := $(C_OBJS) $(GFLIB_OBJS) $(C_ASM_OBJS) $(ASM_OBJS) $(DATA_ASM_OBJS) $(SONG_OBJS) $(MID_OBJS)
+OBJS     := $(C_OBJS) $(CXX_OBJS) $(GFLIB_OBJS) $(C_ASM_OBJS) $(ASM_OBJS) $(DATA_ASM_OBJS) $(SONG_OBJS) $(MID_OBJS)
 OBJS_REL := $(patsubst $(OBJ_DIR)/%,%,$(OBJS))
 
 SUBDIRS  := $(sort $(dir $(OBJS) $(dir $(TEST_OBJS))))
@@ -464,6 +472,14 @@ $1: $2 $$(shell $(SCANINC) -I include -I tools/agbcc/include -I gflib $2)
 	@$$(CPP) $$(CPPFLAGS) $$< | $$(PREPROC) $$< charmap.txt -i | $$(CC1) $$(CFLAGS) -o - - | cat - <(echo -e ".text\n\t.align\t2, 0") | $$(AS) $$(ASFLAGS) -o $$@ -
 endef
 $(foreach src, $(TEST_SRCS), $(eval $(call TEST_DEP,$(patsubst $(TEST_SUBDIR)/%.c,$(TEST_BUILDDIR)/%.o,$(src)),$(src),$(patsubst $(TEST_SUBDIR)/%.c,%,$(src)))))
+
+# NOTE: Based on C_DEP above, but without NODEP and KEEP_TEMPS handling.
+define CXX_DEP
+$1: $2 $$(shell $(SCANINC) -I include -I tools/agbcc/include -I gflib $2)
+	@echo "$$(CXX) <flags> -o $$@ $$<"
+	@$$(CPP) $$(CPPFLAGS) $$< | $$(PREPROC) $$< charmap.txt -i | $$(CC1PLUS) $$(CXXFLAGS) -o - - | cat - <(echo -e ".text\n\t.align\t2, 0") | $$(AS) $$(ASFLAGS) -o $$@ -
+endef
+$(foreach src, $(CXX_SRCS), $(eval $(call CXX_DEP,$(patsubst $(CXX_SUBDIR)/%.cpp,$(CXX_BUILDDIR)/%.o,$(src)),$(src),$(patsubst $(CXX_SUBDIR)/%.cpp,%,$(src)))))
 
 ifeq ($(MODERN),0)
 LD_SCRIPT := ld_script.txt

@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <cstring>
 #include <string>
 #include <stack>
 #include "preproc.h"
@@ -145,9 +146,9 @@ int main(int argc, char **argv)
     if (!extension)
         FATAL_ERROR("\"%s\" has no file extension.\n", argv[1]);
 
-    if ((extension[0] == 's') && extension[1] == 0)
+    if (strcmp(extension, "s") == 0)
         PreprocAsmFile(argv[1]);
-    else if ((extension[0] == 'c' || extension[0] == 'i') && extension[1] == 0) {
+    else if (strcmp(extension, "c") == 0 || strcmp(extension, "i") == 0 || strcmp(extension, "cpp") == 0) {
         if (argc == 4) {
             if (argv[3][0] == '-' && argv[3][1] == 'i' && argv[3][2] == '\0') {
                 PreprocCFile(argv[1], true);
