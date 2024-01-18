@@ -1,4 +1,5 @@
 #include "global.h"
+#include "characters.h"
 #include "constants/abilities.h"
 #include "constants/expansion.h"
 #include "constants/moves.h"
@@ -21,6 +22,53 @@ struct RHHRomHeader
     /*0x0C*/ u16 numSpecies;
     /*0x0E*/ u16 abilitiesCount;
     /*0x10*/ const struct Ability *abilities;
+    /*0x14*/ const void *metadataProgram;
+    /*0x18*/ u32 metadataProgramSize;
+};
+
+#define RET 0x00
+#define U8(n) 0x01, n
+#define U16(n) 0x03, n
+#define I32(n) 0x05, n
+#define SWAP 0x07
+#define FROM_POINTER 0x08
+#define INDEX 0x09
+#define OFFSET 0x0a
+#define LOAD32 0x0b
+#define LOAD8_TERMINATED 0x0c
+
+// TODO: This should be LZ77-compressed. We need to be careful to allow
+// relocations to work.
+// NOTE: We would not write this struct by hand--instead we'd design a
+// compiler which can produce it from a more readable representation.
+static const struct __attribute__((packed)) {
+    u8 cmd0; const void *op0;
+    u8 cmd1;
+    u8 cmd2;
+    u8 cmd3; u8 op1;
+    u8 cmd4;
+    u8 cmd5; u8 op2;
+    u8 cmd6;
+    u8 cmd7;
+    u8 cmd8;
+    u8 cmd9; u8 op3;
+    u8 cmd10;
+    u8 cmd11;
+} sMetadataProgram =
+{
+    // input: ability number
+    I32(gAbilities),
+    FROM_POINTER,
+    SWAP,
+    U8(sizeof(*gAbilities)),
+    INDEX,
+    U8(offsetof(struct Ability, description)),
+    OFFSET,
+    LOAD32,
+    FROM_POINTER,
+    U8(EOS),
+    LOAD8_TERMINATED,
+    RET,
 };
 
 __attribute__((section(".text.consts")))
@@ -35,4 +83,6 @@ static const struct RHHRomHeader sRHHRomHeader =
     .numSpecies = NUM_SPECIES,
     .abilitiesCount = ABILITIES_COUNT,
     .abilities = gAbilities,
+    .metadataProgram = &sMetadataProgram,
+    .metadataProgramSize = sizeof(sMetadataProgram),
 };
