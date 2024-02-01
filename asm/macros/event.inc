@@ -2090,32 +2090,58 @@
 
 	@ Gives the player a Pokémon of the specified species and level, and allows to customize extra parameters.
 	@ VAR_RESULT will be set to MON_GIVEN_TO_PARTY, MON_GIVEN_TO_PC, or MON_CANT_GIVE depending on the outcome.
-	.macro givecustommon species:req, level:req, item=ITEM_NONE, ball=ITEM_POKE_BALL, nature=NUM_NATURES, abilityNum=0, gender=MON_FEMALE, hpEv=0, atkEv=0, defEv=0, speedEv=0, spAtkEv=0, spDefEv=0, hpIv=USE_RANDOM_IVS, atkIv=USE_RANDOM_IVS, defIv=USE_RANDOM_IVS, speedIv=USE_RANDOM_IVS, spAtkIv=USE_RANDOM_IVS, spDefIv=USE_RANDOM_IVS, move1=MOVE_NONE, move2=MOVE_NONE, move3=MOVE_NONE, move4=MOVE_NONE, isShiny=FALSE, ggMaxFactor=FALSE, teraType=NUMBER_OF_MON_TYPES
+	.macro givecustommon species:req, level:req, item, ball, nature, abilityNum, gender, hpEv, atkEv, defEv, speedEv, spAtkEv, spDefEv, hpIv, atkIv, defIv, speedIv, spAtkIv, spDefIv, move1, move2, move3, move4, isShiny, ggMaxFactor, teraType
 	callnative ScriptGiveCustomMon
+	.set givecustommon_flags, 0
 	.2byte \species
 	.byte \level
-	.2byte \item
-	.byte \ball
-	.byte \nature
-	.byte \abilityNum
-	.byte \gender
-	.byte \hpEv
-	.byte \atkEv
-	.byte \defEv
-	.byte \speedEv
-	.byte \spAtkEv
-	.byte \spDefEv
-	.byte \hpIv
-	.byte \atkIv
-	.byte \defIv
-	.byte \speedIv
-	.byte \spAtkIv
-	.byte \spDefIv
-	.2byte \move1
-	.2byte \move2
-	.2byte \move3
-	.2byte \move4
-	.byte \isShiny
-	.byte \ggMaxFactor
-	.byte \teraType
+	.ifnb \item; .set givecustommon_flags, givecustommon_flags | (1 << 0); .endif
+	.ifnb \ball; .set givecustommon_flags, givecustommon_flags | (1 << 1); .endif
+	.ifnb \nature; .set givecustommon_flags, givecustommon_flags | (1 << 2); .endif
+	.ifnb \abilityNum; .set givecustommon_flags, givecustommon_flags | (1 << 3); .endif
+	.ifnb \gender; .set givecustommon_flags, givecustommon_flags | (1 << 4); .endif
+	.ifnb \hpEv; .set givecustommon_flags, givecustommon_flags | (1 << 5); .endif
+	.ifnb \atkEv; .set givecustommon_flags, givecustommon_flags | (1 << 6); .endif
+	.ifnb \defEv; .set givecustommon_flags, givecustommon_flags | (1 << 7); .endif
+	.ifnb \speedEv; .set givecustommon_flags, givecustommon_flags | (1 << 8); .endif
+	.ifnb \spAtkEv; .set givecustommon_flags, givecustommon_flags | (1 << 9); .endif
+	.ifnb \spDefEv; .set givecustommon_flags, givecustommon_flags | (1 << 10); .endif
+	.ifnb \hpIv; .set givecustommon_flags, givecustommon_flags | (1 << 11); .endif
+	.ifnb \atkIv; .set givecustommon_flags, givecustommon_flags | (1 << 12); .endif
+	.ifnb \defIv; .set givecustommon_flags, givecustommon_flags | (1 << 13); .endif
+	.ifnb \speedIv; .set givecustommon_flags, givecustommon_flags | (1 << 14); .endif
+	.ifnb \spAtkIv; .set givecustommon_flags, givecustommon_flags | (1 << 15); .endif
+	.ifnb \spDefIv; .set givecustommon_flags, givecustommon_flags | (1 << 16); .endif
+	.ifnb \move1; .set givecustommon_flags, givecustommon_flags | (1 << 17); .endif
+	.ifnb \move2; .set givecustommon_flags, givecustommon_flags | (1 << 18); .endif
+	.ifnb \move3; .set givecustommon_flags, givecustommon_flags | (1 << 19); .endif
+	.ifnb \move4; .set givecustommon_flags, givecustommon_flags | (1 << 20); .endif
+	.ifnb \isShiny; .set givecustommon_flags, givecustommon_flags | (1 << 21); .endif
+	.ifnb \ggMaxFactor; .set givecustommon_flags, givecustommon_flags | (1 << 22); .endif
+	.ifnb \teraType; .set givecustommon_flags, givecustommon_flags | (1 << 23); .endif
+	.4byte givecustommon_flags
+	.ifnb \item; .2byte \item; .endif
+	.ifnb \ball; .byte \ball; .endif
+	.ifnb \nature; .byte \nature; .endif
+	.ifnb \abilityNum; .byte \abilityNum; .endif
+	.ifnb \gender; .byte \gender; .endif
+	.ifnb \hpEv; .byte \hpEv; .endif
+	.ifnb \atkEv; .byte \atkEv; .endif
+	.ifnb \defEv; .byte \defEv; .endif
+	.ifnb \speedEv; .byte \speedEv; .endif
+	.ifnb \spAtkEv; .byte \spAtkEv; .endif
+	.ifnb \spDefEv; .byte \spDefEv; .endif
+	.ifnb \hpIv; .byte \hpIv; .endif
+	.ifnb \atkIv; .byte \atkIv; .endif
+	.ifnb \defIv; .byte \defIv; .endif
+	.ifnb \speedIv; .byte \speedIv; .endif
+	.ifnb \spAtkIv; .byte \spAtkIv; .endif
+	.ifnb \spDefIv; .byte \spDefIv; .endif
+	.ifnb \move1; .2byte \move1; .endif
+	.ifnb \move2; .2byte \move2; .endif
+	.ifnb \move3; .2byte \move3; .endif
+	.ifnb \move4; .2byte \move4; .endif
+	.ifnb \isShiny; .byte \isShiny; .endif
+	.ifnb \ggMaxFactor; .byte \ggMaxFactor; .endif
+	.ifnb \teraType; .byte \teraType; .endif
 	.endm

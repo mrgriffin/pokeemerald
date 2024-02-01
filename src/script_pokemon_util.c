@@ -328,34 +328,38 @@ void ToggleGigantamaxFactor(struct ScriptContext *ctx)
     }
 }
 
+#define PARSE_FLAG(n, parse, default_) (flags & (1 << (n))) ? (parse) : (default_)
+
 void ScriptGiveCustomMon(struct ScriptContext *ctx)
 {
-    u16 species       = VarGet(ScriptReadHalfword(ctx));
-    u8 level          = ScriptReadByte(ctx);
-    u16 item          = VarGet(ScriptReadHalfword(ctx));
-    u8 ball           = ScriptReadByte(ctx);
-    u8 nature         = ScriptReadByte(ctx);
-    u8 abilityNum     = ScriptReadByte(ctx);
-    u8 gender         = ScriptReadByte(ctx);
-    u8 hpEv           = ScriptReadByte(ctx);
-    u8 atkEv          = ScriptReadByte(ctx);
-    u8 defEv          = ScriptReadByte(ctx);
-    u8 speedEv        = ScriptReadByte(ctx);
-    u8 spAtkEv        = ScriptReadByte(ctx);
-    u8 spDefEv        = ScriptReadByte(ctx);
-    u8 hpIv           = ScriptReadByte(ctx);
-    u8 atkIv          = ScriptReadByte(ctx);
-    u8 defIv          = ScriptReadByte(ctx);
-    u8 speedIv        = ScriptReadByte(ctx);
-    u8 spAtkIv        = ScriptReadByte(ctx);
-    u8 spDefIv        = ScriptReadByte(ctx);
-    u16 move1         = VarGet(ScriptReadHalfword(ctx));
-    u16 move2         = VarGet(ScriptReadHalfword(ctx));
-    u16 move3         = VarGet(ScriptReadHalfword(ctx));
-    u16 move4         = VarGet(ScriptReadHalfword(ctx));
-    bool8 isShiny     = ScriptReadByte(ctx);
-    bool8 ggMaxFactor = ScriptReadByte(ctx);
-    u8 teraType       = ScriptReadByte(ctx);
+    u16 species = VarGet(ScriptReadHalfword(ctx));
+    u8 level = ScriptReadByte(ctx);
+
+    u32 flags         = ScriptReadWord(ctx);
+    u16 item          = PARSE_FLAG(0, VarGet(ScriptReadHalfword(ctx)), ITEM_NONE);
+    u8 ball           = PARSE_FLAG(1, ScriptReadByte(ctx), ITEM_POKE_BALL);
+    u8 nature         = PARSE_FLAG(2, ScriptReadByte(ctx), NUM_NATURES);
+    u8 abilityNum     = PARSE_FLAG(3, ScriptReadByte(ctx), 0);
+    u8 gender         = PARSE_FLAG(4, ScriptReadByte(ctx), MON_FEMALE); // TODO: Random?
+    u8 hpEv           = PARSE_FLAG(5, ScriptReadByte(ctx), 0);
+    u8 atkEv          = PARSE_FLAG(6, ScriptReadByte(ctx), 0);
+    u8 defEv          = PARSE_FLAG(7, ScriptReadByte(ctx), 0);
+    u8 speedEv        = PARSE_FLAG(8, ScriptReadByte(ctx), 0);
+    u8 spAtkEv        = PARSE_FLAG(9, ScriptReadByte(ctx), 0);
+    u8 spDefEv        = PARSE_FLAG(10, ScriptReadByte(ctx), 0);
+    u8 hpIv           = PARSE_FLAG(11, ScriptReadByte(ctx), 0);
+    u8 atkIv          = PARSE_FLAG(12, ScriptReadByte(ctx), 0);
+    u8 defIv          = PARSE_FLAG(13, ScriptReadByte(ctx), 0);
+    u8 speedIv        = PARSE_FLAG(14, ScriptReadByte(ctx), 0);
+    u8 spAtkIv        = PARSE_FLAG(15, ScriptReadByte(ctx), 0);
+    u8 spDefIv        = PARSE_FLAG(16, ScriptReadByte(ctx), 0);
+    u16 move1         = PARSE_FLAG(17, VarGet(ScriptReadHalfword(ctx)), MOVE_NONE);
+    u16 move2         = PARSE_FLAG(18, VarGet(ScriptReadHalfword(ctx)), MOVE_NONE);
+    u16 move3         = PARSE_FLAG(19, VarGet(ScriptReadHalfword(ctx)), MOVE_NONE);
+    u16 move4         = PARSE_FLAG(20, VarGet(ScriptReadHalfword(ctx)), MOVE_NONE);
+    bool8 isShiny     = PARSE_FLAG(21, ScriptReadByte(ctx), FALSE);
+    bool8 ggMaxFactor = PARSE_FLAG(22, ScriptReadByte(ctx), FALSE);
+    u8 teraType       = PARSE_FLAG(23, ScriptReadByte(ctx), NUMBER_OF_MON_TYPES);
 
     u8 evs[NUM_STATS]        = {hpEv, atkEv, defEv, speedEv, spAtkEv, spDefEv};
     u8 ivs[NUM_STATS]        = {hpIv, atkIv, defIv, speedIv, spAtkIv, spDefIv};
@@ -363,6 +367,8 @@ void ScriptGiveCustomMon(struct ScriptContext *ctx)
 
     gSpecialVar_Result = CreateCustomMon(species, level, item, ball, nature, abilityNum, gender, evs, ivs, moves, isShiny, ggMaxFactor, teraType);
 }
+
+#undef PARSE_FLAG
 
 void Script_GetChosenMonOffensiveEV(void)
 {
