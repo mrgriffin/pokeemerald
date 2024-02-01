@@ -2094,7 +2094,7 @@
 	callnative ScriptGiveCustomMon
 	.set givecustommon_flags, 0
 	.2byte \species
-	.byte \level
+	.2byte \level
 	.ifnb \item; .set givecustommon_flags, givecustommon_flags | (1 << 0); .endif
 	.ifnb \ball; .set givecustommon_flags, givecustommon_flags | (1 << 1); .endif
 	.ifnb \nature; .set givecustommon_flags, givecustommon_flags | (1 << 2); .endif
@@ -2121,27 +2121,27 @@
 	.ifnb \teraType; .set givecustommon_flags, givecustommon_flags | (1 << 23); .endif
 	.4byte givecustommon_flags
 	.ifnb \item; .2byte \item; .endif
-	.ifnb \ball; .byte \ball; .endif
-	.ifnb \nature; .byte \nature; .endif
-	.ifnb \abilityNum; .byte \abilityNum; .endif
-	.ifnb \gender; .byte \gender; .endif
-	.ifnb \hpEv; .byte \hpEv; .endif
-	.ifnb \atkEv; .byte \atkEv; .endif
-	.ifnb \defEv; .byte \defEv; .endif
-	.ifnb \speedEv; .byte \speedEv; .endif
-	.ifnb \spAtkEv; .byte \spAtkEv; .endif
-	.ifnb \spDefEv; .byte \spDefEv; .endif
-	.ifnb \hpIv; .byte \hpIv; .endif
-	.ifnb \atkIv; .byte \atkIv; .endif
-	.ifnb \defIv; .byte \defIv; .endif
-	.ifnb \speedIv; .byte \speedIv; .endif
-	.ifnb \spAtkIv; .byte \spAtkIv; .endif
-	.ifnb \spDefIv; .byte \spDefIv; .endif
+	.ifnb \ball; .2byte \ball; .endif
+	.ifnb \nature; .2byte \nature; .endif
+	.ifnb \abilityNum; .2byte \abilityNum; .endif
+	.ifnb \gender; .2byte \gender; .endif
+	.ifnb \hpEv; .2byte \hpEv; .endif
+	.ifnb \atkEv; .2byte \atkEv; .endif
+	.ifnb \defEv; .2byte \defEv; .endif
+	.ifnb \speedEv; .2byte \speedEv; .endif
+	.ifnb \spAtkEv; .2byte \spAtkEv; .endif
+	.ifnb \spDefEv; .2byte \spDefEv; .endif
+	.ifnb \hpIv; .2byte \hpIv; .endif
+	.ifnb \atkIv; .2byte \atkIv; .endif
+	.ifnb \defIv; .2byte \defIv; .endif
+	.ifnb \speedIv; .2byte \speedIv; .endif
+	.ifnb \spAtkIv; .2byte \spAtkIv; .endif
+	.ifnb \spDefIv; .2byte \spDefIv; .endif
 	.ifnb \move1; .2byte \move1; .endif
 	.ifnb \move2; .2byte \move2; .endif
 	.ifnb \move3; .2byte \move3; .endif
 	.ifnb \move4; .2byte \move4; .endif
-	.ifnb \isShiny; .byte \isShiny; .endif
-	.ifnb \ggMaxFactor; .byte \ggMaxFactor; .endif
-	.ifnb \teraType; .byte \teraType; .endif
+	.ifnb \isShiny; .2byte \isShiny; .endif
+	.ifnb \ggMaxFactor; .2byte \ggMaxFactor; .endif
+	.ifnb \teraType; .2byte \teraType; .endif
 	.endm
