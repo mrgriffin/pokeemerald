@@ -2077,7 +2077,7 @@ void CheckSaveBlock1Size(struct ScriptContext *ctx)
 void CheckSaveBlock2Size(struct ScriptContext *ctx)
 {
     u32 currSb2Size = (sizeof(struct SaveBlock2));
-    u32 maxSb2Size = SECTOR_DATA_SIZE * (SECTOR_ID_SAVEBLOCK2_END - SECTOR_ID_SAVEBLOCK2_START + 1);
+    u32 maxSb2Size = SECTOR_DATA_SIZE;
     ConvertIntToDecimalStringN(gStringVar1, currSb2Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, maxSb2Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar3, maxSb2Size - currSb2Size, STR_CONV_MODE_LEFT_ALIGN, 6);
