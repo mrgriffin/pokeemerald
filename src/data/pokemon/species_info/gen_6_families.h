@@ -1012,19 +1012,22 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .pokemonOffset = 13,                                                                \
         .trainerScale = 256,                                                                \
         .trainerOffset = 0,                                                                 \
-        .frontPic = gMonFrontPic_Scatterbug,                                                \
-        .frontPicSize = MON_COORDS_SIZE(32, 48),                                            \
+        .graphics =                                                                         \
+        {                                                                                   \
+            .frontPic = gMonFrontPic_Scatterbug,                                            \
+            .frontPicSize = MON_COORDS_SIZE(32, 48),                                        \
+            .backPic = gMonBackPic_Scatterbug,                                              \
+            .backPicSize = MON_COORDS_SIZE(40, 56),                                         \
+            .palette = gMonPalette_Scatterbug,                                              \
+            .shinyPalette = gMonShinyPalette_Scatterbug,                                    \
+            .iconSprite = gMonIcon_Scatterbug,                                              \
+            .iconPalIndex = 1,                                                              \
+        },                                                                                  \
         .frontPicYOffset = 13,                                                              \
         .frontAnimFrames = sAnims_Scatterbug,                                               \
         .frontAnimId = ANIM_V_STRETCH,                                                      \
-        .backPic = gMonBackPic_Scatterbug,                                                  \
-        .backPicSize = MON_COORDS_SIZE(40, 56),                                             \
         .backPicYOffset = 12,                                                               \
         .backAnimId = BACK_ANIM_H_SLIDE,                                                    \
-        .palette = gMonPalette_Scatterbug,                                                  \
-        .shinyPalette = gMonShinyPalette_Scatterbug,                                        \
-        .iconSprite = gMonIcon_Scatterbug,                                                  \
-        .iconPalIndex = 1,                                                                  \
         FOOTPRINT(Scatterbug)                                                               \
         OVERWORLD(                                                                          \
             sPicTable_Scatterbug,                                                           \
@@ -1093,19 +1096,22 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .pokemonOffset = 13,                                                    \
         .trainerScale = 256,                                                    \
         .trainerOffset = 0,                                                     \
-        .frontPic = gMonFrontPic_Spewpa,                                        \
-        .frontPicSize = MON_COORDS_SIZE(40, 48),                                \
+        .graphics =                                                             \
+        {                                                                       \
+            .frontPic = gMonFrontPic_Spewpa,                                    \
+            .frontPicSize = MON_COORDS_SIZE(40, 48),                            \
+            .backPic = gMonBackPic_Spewpa,                                      \
+            .backPicSize = MON_COORDS_SIZE(48, 48),                             \
+            .palette = gMonPalette_Spewpa,                                      \
+            .shinyPalette = gMonShinyPalette_Spewpa,                            \
+            .iconSprite = gMonIcon_Spewpa,                                      \
+            .iconPalIndex = 1,                                                  \
+        },                                                                      \
         .frontPicYOffset = 11,                                                  \
         .frontAnimFrames = sAnims_Spewpa,                                       \
         .frontAnimId = ANIM_V_SHAKE,                                            \
-        .backPic = gMonBackPic_Spewpa,                                          \
-        .backPicSize = MON_COORDS_SIZE(48, 48),                                 \
         .backPicYOffset = 12,                                                   \
         .backAnimId = BACK_ANIM_H_VIBRATE,                                      \
-        .palette = gMonPalette_Spewpa,                                          \
-        .shinyPalette = gMonShinyPalette_Spewpa,                                \
-        .iconSprite = gMonIcon_Spewpa,                                          \
-        .iconPalIndex = 1,                                                      \
         FOOTPRINT(Spewpa)                                                       \
         OVERWORLD(                                                              \
             sPicTable_Spewpa,                                                   \
@@ -1173,20 +1179,23 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .pokemonOffset = 4,                                                                 \
         .trainerScale = 256,                                                                \
         .trainerOffset = 0,                                                                 \
-        .frontPic = gMonFrontPic_Vivillon ##form,                                           \
-        .frontPicSize = MON_COORDS_SIZE(64, 64),                                            \
+        .graphics =                                                                         \
+        {                                                                                   \
+            .frontPic = gMonFrontPic_Vivillon ##form,                                       \
+            .frontPicSize = MON_COORDS_SIZE(64, 64),                                        \
+            .backPic = gMonBackPic_Vivillon ##form,                                         \
+            .backPicSize = MON_COORDS_SIZE(64, 64),                                         \
+            .palette = gMonPalette_Vivillon ##form,                                         \
+            .shinyPalette = gMonShinyPalette_Vivillon ##form,                               \
+            .iconSprite = gMonIcon_Vivillon ##form,                                         \
+            .iconPalIndex = iconPal,                                                        \
+        },                                                                                  \
         .frontPicYOffset = 0,                                                               \
         .frontAnimFrames = sAnims_Vivillon,                                                 \
         .frontAnimId = ANIM_ZIGZAG_SLOW,                                                    \
         .enemyMonElevation = 9,                                                             \
-        .backPic = gMonBackPic_Vivillon ##form,                                             \
-        .backPicSize = MON_COORDS_SIZE(64, 64),                                             \
         .backPicYOffset = 0,                                                                \
         .backAnimId = BACK_ANIM_CIRCLE_COUNTERCLOCKWISE,                                    \
-        .palette = gMonPalette_Vivillon ##form,                                             \
-        .shinyPalette = gMonShinyPalette_Vivillon ##form,                                   \
-        .iconSprite = gMonIcon_Vivillon ##form,                                             \
-        .iconPalIndex = iconPal,                                                            \
         FOOTPRINT(Vivillon)                                                                 \
         OVERWORLD(                                                                          \
             sPicTable_Vivillon ##form,                                                      \
@@ -1541,20 +1550,23 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .pokemonOffset = 24,                                                    \
         .trainerScale = 256,                                                    \
         .trainerOffset = 0,                                                     \
-        .frontPic = gMonFrontPic_Flabebe,                                       \
-        .frontPicSize = MON_COORDS_SIZE(48, 56),                                \
+        .graphics =                                                             \
+        {                                                                       \
+            .frontPic = gMonFrontPic_Flabebe,                                   \
+            .frontPicSize = MON_COORDS_SIZE(48, 56),                            \
+            .backPic = gMonBackPic_Flabebe,                                     \
+            .backPicSize = MON_COORDS_SIZE(64, 40),                             \
+            .palette = gMonPalette_Flabebe##Form##Flower,                       \
+            .shinyPalette = gMonShinyPalette_Flabebe##Form##Flower,             \
+            .iconSprite = gMonIcon_Flabebe##Form##Flower,                       \
+            .iconPalIndex = iconPal,                                            \
+        },                                                                      \
         .frontPicYOffset = 6,                                                   \
         .frontAnimFrames = sAnims_Flabebe,                                      \
         .frontAnimId = ANIM_H_SLIDE_SLOW,                                       \
         .enemyMonElevation = 6,                                                 \
-        .backPic = gMonBackPic_Flabebe,                                         \
-        .backPicSize = MON_COORDS_SIZE(64, 40),                                 \
         .backPicYOffset = 12,                                                   \
         .backAnimId = BACK_ANIM_CONVEX_DOUBLE_ARC,                              \
-        .palette = gMonPalette_Flabebe##Form##Flower,                           \
-        .shinyPalette = gMonShinyPalette_Flabebe##Form##Flower,                 \
-        .iconSprite = gMonIcon_Flabebe##Form##Flower,                           \
-        .iconPalIndex = iconPal,                                                \
         FOOTPRINT(Flabebe)                                                      \
         OVERWORLD(                                                              \
             sPicTable_Flabebe##Form##Flower,                                    \
@@ -1616,7 +1628,7 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
             "then it goes to sleep."),
     },
 
-#define FLOETTE_MISC_INFO(form, FORM, iconPal)                                  \
+#define FLOETTE_MISC_INFO(form, FORM)                                           \
         .types = MON_TYPES(TYPE_FAIRY),                                         \
         .catchRate = 120,                                                       \
         .evYield_SpDefense = 2,                                                 \
@@ -1638,10 +1650,6 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .frontAnimFrames = sAnims_Floette,                                      \
         .frontAnimId = ANIM_V_SLIDE_WOBBLE,                                     \
         .backAnimId = BACK_ANIM_CONVEX_DOUBLE_ARC,                              \
-        .palette = gMonPalette_Floette ##form##Flower,                          \
-        .shinyPalette = gMonShinyPalette_Floette ##form##Flower,                \
-        .iconSprite = gMonIcon_Floette##form##Flower,                           \
-        .iconPalIndex = iconPal,                                                \
         FOOTPRINT(Floette)                                                      \
         OVERWORLD(                                                              \
             sPicTable_Floette ##form##Flower,                                   \
@@ -1663,17 +1671,24 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .expYield = 130,                                                                        \
         .eggGroups = MON_EGG_GROUPS(EGG_GROUP_FAIRY),                                           \
         .cryId = CRY_FLOETTE,                                                                   \
-        .frontPic = gMonFrontPic_Floette,                                                       \
-        .frontPicSize = MON_COORDS_SIZE(48, 64),                                                \
+        .graphics =                                                                             \
+        {                                                                                       \
+            .frontPic = gMonFrontPic_Floette,                                                   \
+            .frontPicSize = MON_COORDS_SIZE(48, 64),                                            \
+            .backPic = gMonBackPic_Floette,                                                     \
+            .backPicSize = MON_COORDS_SIZE(64, 64),                                             \
+            .palette = gMonPalette_Floette ##form##Flower,                                      \
+            .shinyPalette = gMonShinyPalette_Floette ##form##Flower,                            \
+            .iconSprite = gMonIcon_Floette##form##Flower,                                       \
+            .iconPalIndex = iconPal,                                                            \
+        },                                                                                      \
         .frontPicYOffset = 3,                                                                   \
         .enemyMonElevation = 4,                                                                 \
-        .backPic = gMonBackPic_Floette,                                                         \
-        .backPicSize = MON_COORDS_SIZE(64, 64),                                                 \
         .backPicYOffset = 2,                                                                    \
         .levelUpLearnset = sFloetteLevelUpLearnset,                                             \
         .teachableLearnset = sFloetteTeachableLearnset,                                         \
         .evolutions = EVOLUTION({EVO_ITEM, ITEM_SHINY_STONE, SPECIES_FLORGES_ ##FORM##_FLOWER}),\
-        FLOETTE_MISC_INFO(form, FORM, iconPal)
+        FLOETTE_MISC_INFO(form, FORM)
 
     [SPECIES_FLOETTE_RED_FLOWER] =
     {
@@ -1722,7 +1737,6 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
     },
     [SPECIES_FLOETTE_ETERNAL_FLOWER] =
     {
-        FLOETTE_MISC_INFO(Eternal, ETERNAL, 0),
         .baseHP        = 74,
         .baseAttack    = 65,
         .baseDefense   = 67,
@@ -1744,6 +1758,10 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .backPic = gMonBackPic_FloetteEternalFlower,
         .backPicSize = MON_COORDS_SIZE(64, 64),
         .backPicYOffset = 2,
+        .palette = gMonPalette_FloetteEternalFlower,
+        .shinyPalette = gMonShinyPalette_FloetteEternalFlower,
+        .iconSprite = gMonIcon_FloetteEternalFlower,
+        .iconPalIndex = 0,
         .levelUpLearnset = sFloetteEternalFlowerLevelUpLearnset,
         .teachableLearnset = sFloetteEternalFlowerTeachableLearnset,
     },
@@ -1776,19 +1794,22 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .pokemonOffset = 7,                                                     \
         .trainerScale = 256,                                                    \
         .trainerOffset = 0,                                                     \
-        .frontPic = gMonFrontPic_Florges,                                       \
-        .frontPicSize = MON_COORDS_SIZE(64, 64),                                \
+        .graphics =                                                             \
+        {                                                                       \
+            .frontPic = gMonFrontPic_Florges,                                   \
+            .frontPicSize = MON_COORDS_SIZE(64, 64),                            \
+            .backPic = gMonBackPic_Florges,                                     \
+            .backPicSize = MON_COORDS_SIZE(64, 48),                             \
+            .palette = gMonPalette_Florges##Form##Flower,                       \
+            .shinyPalette = gMonShinyPalette_Florges##Form##Flower,             \
+            .iconSprite = gMonIcon_Florges##Form##Flower,                       \
+            .iconPalIndex = iconPal,                                            \
+        },                                                                      \
         .frontPicYOffset = 0,                                                   \
         .frontAnimFrames = sAnims_Florges,                                      \
         .frontAnimId = ANIM_V_SLIDE_SLOW,                                       \
-        .backPic = gMonBackPic_Florges,                                         \
-        .backPicSize = MON_COORDS_SIZE(64, 48),                                 \
         .backPicYOffset = 9,                                                    \
         .backAnimId = BACK_ANIM_SHRINK_GROW_VIBRATE,                            \
-        .palette = gMonPalette_Florges##Form##Flower,                           \
-        .shinyPalette = gMonShinyPalette_Florges##Form##Flower,                 \
-        .iconSprite = gMonIcon_Florges##Form##Flower,                           \
-        .iconPalIndex = iconPal,                                                \
         FOOTPRINT(Florges)                                                      \
         OVERWORLD(                                                              \
             sPicTable_Florges ##Form##Flower,                                   \
@@ -2130,19 +2151,22 @@ const struct SpeciesInfo gSpeciesInfoGen6[] =
         .pokemonOffset = 4,                                                                             \
         .trainerScale = 256,                                                                            \
         .trainerOffset = 0,                                                                             \
-        .frontPic = gMonFrontPic_Furfrou##_form,                                                        \
-        .frontPicSize = MON_COORDS_SIZE(frontWidth, 64),                                                \
+        .graphics =                                                                                     \
+        {                                                                                               \
+            .frontPic = gMonFrontPic_Furfrou##_form,                                                    \
+            .frontPicSize = MON_COORDS_SIZE(frontWidth, 64),                                            \
+            .backPic = gMonBackPic_Furfrou##_form,                                                      \
+            .backPicSize = MON_COORDS_SIZE(backWidth, 64),                                              \
+            .palette = gMonPalette_Furfrou##_form,                                                      \
+            .shinyPalette = gMonShinyPalette_Furfrou##_form,                                            \
+            .iconSprite = gMonIcon_Furfrou##_form,                                                      \
+            .iconPalIndex = _iconIdx,                                                                   \
+        },                                                                                              \
         .frontPicYOffset = frontYOffset,                                                                \
         .frontAnimFrames = sAnims_Furfrou,                                                              \
         .frontAnimId = ANIM_H_SLIDE,                                                                    \
-        .backPic = gMonBackPic_Furfrou##_form,                                                          \
-        .backPicSize = MON_COORDS_SIZE(backWidth, 64),                                                  \
         .backPicYOffset = backYOffset,                                                                  \
         .backAnimId = BACK_ANIM_V_STRETCH,                                                              \
-        .palette = gMonPalette_Furfrou##_form,                                                          \
-        .shinyPalette = gMonShinyPalette_Furfrou##_form,                                                \
-        .iconSprite = gMonIcon_Furfrou##_form,                                                          \
-        .iconPalIndex = _iconIdx,                                                                       \
         FOOTPRINT(Furfrou)                                                                              \
         OVERWORLD(                                                                                      \
             sPicTable_Furfrou##_form,                                                                   \

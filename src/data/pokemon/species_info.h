@@ -81,19 +81,22 @@ const struct SpeciesInfo gSpeciesInfo[] =
         .pokemonOffset = 0,
         .trainerScale = 256,
         .trainerOffset = 0,
-        .frontPic = gMonFrontPic_CircledQuestionMark,
-        .frontPicSize = MON_COORDS_SIZE(40, 40),
+        .graphics =
+        {
+            .frontPic = gMonFrontPic_CircledQuestionMark,
+            .frontPicSize = MON_COORDS_SIZE(40, 40),
+            .backPic = gMonBackPic_CircledQuestionMark,
+            .backPicSize = MON_COORDS_SIZE(40, 40),
+            .palette = gMonPalette_CircledQuestionMark,
+            .shinyPalette = gMonShinyPalette_CircledQuestionMark,
+            .iconSprite = gMonIcon_QuestionMark,
+            .iconPalIndex = 0,
+        },
         .frontPicYOffset = 12,
         .frontAnimFrames = sAnims_None,
         .frontAnimId = ANIM_V_SQUISH_AND_BOUNCE,
-        .backPic = gMonBackPic_CircledQuestionMark,
-        .backPicSize = MON_COORDS_SIZE(40, 40),
         .backPicYOffset = 12,
         .backAnimId = BACK_ANIM_NONE,
-        .palette = gMonPalette_CircledQuestionMark,
-        .shinyPalette = gMonShinyPalette_CircledQuestionMark,
-        .iconSprite = gMonIcon_QuestionMark,
-        .iconPalIndex = 0,
         FOOTPRINT(QuestionMark)
     #if OW_POKEMON_OBJECT_EVENTS
         .overworldData = {TAG_NONE, OBJ_EVENT_PAL_TAG_SUBSTITUTE, OBJ_EVENT_PAL_TAG_NONE, 512, 32, 32, 2, SHADOW_SIZE_M, FALSE, COMP, TRACKS_FOOT, &gObjectEventBaseOam_32x32, sOamTables_32x32, sAnimTable_Following, sPicTable_Substitute, gDummySpriteAffineAnimTable},
@@ -115,16 +118,19 @@ const struct SpeciesInfo gSpeciesInfo[] =
 
     [SPECIES_EGG] =
     {
-        .frontPic = gMonFrontPic_Egg,
-        .frontPicSize = MON_COORDS_SIZE(24, 24),
+        .graphics =
+        {
+            .frontPic = gMonFrontPic_Egg,
+            .frontPicSize = MON_COORDS_SIZE(24, 24),
+            .backPic = gMonFrontPic_Egg,
+            .backPicSize = MON_COORDS_SIZE(24, 24),
+            .palette = gMonPalette_Egg,
+            .shinyPalette = gMonPalette_Egg,
+            .iconSprite = gMonIcon_Egg,
+            .iconPalIndex = 1,
+        },
         .frontPicYOffset = 20,
-        .backPic = gMonFrontPic_Egg,
-        .backPicSize = MON_COORDS_SIZE(24, 24),
         .backPicYOffset = 20,
-        .palette = gMonPalette_Egg,
-        .shinyPalette = gMonPalette_Egg,
-        .iconSprite = gMonIcon_Egg,
-        .iconPalIndex = 1,
     },
 
     /* You may add any custom species below this point based on the following structure: */

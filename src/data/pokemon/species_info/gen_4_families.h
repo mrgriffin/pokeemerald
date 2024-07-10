@@ -6401,18 +6401,21 @@ const struct SpeciesInfo gSpeciesInfoGen4[] =
         .pokemonOffset = 0,                                                 \
         .trainerScale = 495,                                                \
         .trainerOffset = 10,                                                \
-        .frontPic = gMonFrontPic_Arceus,                                    \
-        .frontPicSize = MON_COORDS_SIZE(64, 64),                            \
+        .graphics =                                                         \
+        {                                                                   \
+            .frontPic = gMonFrontPic_Arceus,                                \
+            .frontPicSize = MON_COORDS_SIZE(64, 64),                        \
+            .backPic = gMonBackPic_Arceus,                                  \
+            .backPicSize = MON_COORDS_SIZE(64, 64),                         \
+            .palette = gMonPalette_Arceus ##typeName,                       \
+            .shinyPalette = gMonShinyPalette_Arceus ##typeName,             \
+            ARCEUS_ICON(typeName, iconPal)                                  \
+        },                                                                  \
         .frontPicYOffset = 0,                                               \
         .frontAnimFrames = sAnims_Arceus,                                   \
         .frontAnimId = ANIM_GROW_VIBRATE,                                   \
-        .backPic = gMonBackPic_Arceus,                                      \
-        .backPicSize = MON_COORDS_SIZE(64, 64),                             \
         .backPicYOffset = 3,                                                \
         .backAnimId = BACK_ANIM_GROW_STUTTER,                               \
-        .palette = gMonPalette_Arceus ##typeName,                           \
-        .shinyPalette = gMonShinyPalette_Arceus ##typeName,                 \
-        ARCEUS_ICON(typeName, iconPal)                                      \
         FOOTPRINT(Arceus)                                                   \
         OVERWORLD(                                                          \
             sPicTable_Arceus ##typeName,                                    \

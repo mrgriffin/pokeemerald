@@ -130,21 +130,21 @@ void LoadSpecialPokePic(void *dest, s32 species, u32 personality, bool8 isFrontP
 
     if (isFrontPic)
     {
-        if (gSpeciesInfo[species].frontPicFemale != NULL && IsPersonalityFemale(species, personality))
-            LZ77UnCompWram(gSpeciesInfo[species].frontPicFemale, dest);
-        else if (gSpeciesInfo[species].frontPic != NULL)
-            LZ77UnCompWram(gSpeciesInfo[species].frontPic, dest);
+        if (IsPersonalityFemale(species, personality) && gSpeciesInfo[species].femaleGraphics && gSpeciesInfo[species].femaleGraphics->frontPic)
+            LZ77UnCompWram(gSpeciesInfo[species].femaleGraphics->frontPic, dest);
+        else if (gSpeciesInfo[species].graphics.frontPic)
+            LZ77UnCompWram(gSpeciesInfo[species].graphics.frontPic, dest);
         else
-            LZ77UnCompWram(gSpeciesInfo[SPECIES_NONE].frontPic, dest);
+            LZ77UnCompWram(gSpeciesInfo[SPECIES_NONE].graphics.frontPic, dest);
     }
     else
     {
-        if (gSpeciesInfo[species].backPicFemale != NULL && IsPersonalityFemale(species, personality))
-            LZ77UnCompWram(gSpeciesInfo[species].backPicFemale, dest);
-        else if (gSpeciesInfo[species].backPic != NULL)
-            LZ77UnCompWram(gSpeciesInfo[species].backPic, dest);
+        if (IsPersonalityFemale(species, personality) && gSpeciesInfo[species].femaleGraphics && gSpeciesInfo[species].femaleGraphics->backPic)
+            LZ77UnCompWram(gSpeciesInfo[species].femaleGraphics->backPic, dest);
+        else if (gSpeciesInfo[species].graphics.backPic)
+            LZ77UnCompWram(gSpeciesInfo[species].graphics.backPic, dest);
         else
-            LZ77UnCompWram(gSpeciesInfo[SPECIES_NONE].backPic, dest);
+            LZ77UnCompWram(gSpeciesInfo[SPECIES_NONE].graphics.backPic, dest);
     }
 
     if (species == SPECIES_SPINDA && isFrontPic)

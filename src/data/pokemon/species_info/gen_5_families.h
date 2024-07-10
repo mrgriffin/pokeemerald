@@ -11863,19 +11863,22 @@ const struct SpeciesInfo gSpeciesInfoGen5[] =
         .pokemonOffset = 2,                                             \
         .trainerScale = 271,                                            \
         .trainerOffset = 0,                                             \
-        .frontPic = gMonFrontPic_Genesect,                              \
-        .frontPicSize = MON_COORDS_SIZE(56, 64),                        \
+        .graphics =                                                     \
+        {                                                               \
+            .frontPic = gMonFrontPic_Genesect,                          \
+            .frontPicSize = MON_COORDS_SIZE(56, 64),                    \
+            .backPic = gMonBackPic_Genesect,                            \
+            .backPicSize = MON_COORDS_SIZE(64, 48),                     \
+            .palette = gMonPalette_##form,                              \
+            .shinyPalette = gMonShinyPalette_##form,                    \
+            .iconSprite = gMonIcon_Genesect,                            \
+            .iconPalIndex = 2,                                          \
+        },                                                              \
         .frontPicYOffset = 0,                                           \
         .frontAnimFrames = sAnims_Genesect,                             \
         .frontAnimId = ANIM_H_VIBRATE,                                  \
-        .backPic = gMonBackPic_Genesect,                                \
-        .backPicSize = MON_COORDS_SIZE(64, 48),                         \
         .backPicYOffset = 8,                                            \
         .backAnimId = BACK_ANIM_CIRCLE_COUNTERCLOCKWISE,                \
-        .palette = gMonPalette_##form,                                  \
-        .shinyPalette = gMonShinyPalette_##form,                        \
-        .iconSprite = gMonIcon_Genesect,                                \
-        .iconPalIndex = 2,                                              \
         FOOTPRINT(Genesect)                                             \
         OVERWORLD(                                                      \
             sPicTable_Genesect,                                         \

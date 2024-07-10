@@ -1121,12 +1121,17 @@ static void LoadAllContestMonIcons(u8 srcOffset, bool8 useDmaNow)
 
 static void LoadAllContestMonIconPalettes(void)
 {
-    int i, species;
+    int i, species, personality, iconSpecies;
 
     for (i = 0; i < CONTESTANT_COUNT; i++)
     {
         species = gContestMons[i].species;
-        LoadPalette(gMonIconPalettes[gSpeciesInfo[GetIconSpecies(species, 0)].iconPalIndex], BG_PLTT_ID(10 + i), PLTT_SIZE_4BPP);
+        personality = gContestMons[i].personality;
+        iconSpecies = GetIconSpecies(species, personality);
+        if (IsPersonalityFemale(species, personality) && gSpeciesInfo[iconSpecies].femaleGraphics)
+            LoadPalette(gMonIconPalettes[gSpeciesInfo[iconSpecies].femaleGraphics->iconPalIndex], BG_PLTT_ID(10 + i), PLTT_SIZE_4BPP);
+        else
+            LoadPalette(gMonIconPalettes[gSpeciesInfo[iconSpecies].graphics.iconPalIndex], BG_PLTT_ID(10 + i), PLTT_SIZE_4BPP);
     }
 }
 

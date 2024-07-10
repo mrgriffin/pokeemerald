@@ -5818,21 +5818,21 @@ const u32 *GetMonSpritePalFromSpecies(u16 species, bool32 isShiny, bool32 isFema
 
     if (isShiny)
     {
-        if (gSpeciesInfo[species].shinyPaletteFemale != NULL && isFemale)
-            return gSpeciesInfo[species].shinyPaletteFemale;
-        else if (gSpeciesInfo[species].shinyPalette != NULL)
-            return gSpeciesInfo[species].shinyPalette;
+        if (isFemale && gSpeciesInfo[species].femaleGraphics && gSpeciesInfo[species].femaleGraphics->shinyPalette)
+            return gSpeciesInfo[species].femaleGraphics->shinyPalette;
+        else if (gSpeciesInfo[species].graphics.shinyPalette)
+            return gSpeciesInfo[species].graphics.shinyPalette;
         else
-            return gSpeciesInfo[SPECIES_NONE].shinyPalette;
+            return gSpeciesInfo[SPECIES_NONE].graphics.shinyPalette;
     }
     else
     {
-        if (gSpeciesInfo[species].paletteFemale != NULL && isFemale)
-            return gSpeciesInfo[species].paletteFemale;
-        else if (gSpeciesInfo[species].palette != NULL)
-            return gSpeciesInfo[species].palette;
+        if (isFemale && gSpeciesInfo[species].femaleGraphics && gSpeciesInfo[species].femaleGraphics->palette)
+            return gSpeciesInfo[species].femaleGraphics->palette;
+        else if (gSpeciesInfo[species].graphics.palette)
+            return gSpeciesInfo[species].graphics.palette;
         else
-            return gSpeciesInfo[SPECIES_NONE].palette;
+            return gSpeciesInfo[SPECIES_NONE].graphics.palette;
     }
 }
 
@@ -6679,14 +6679,7 @@ void TrySpecialOverworldEvo(void)
 
 bool32 SpeciesHasGenderDifferences(u16 species)
 {
-    if (gSpeciesInfo[species].frontPicFemale != NULL
-     || gSpeciesInfo[species].paletteFemale != NULL
-     || gSpeciesInfo[species].backPicFemale != NULL
-     || gSpeciesInfo[species].shinyPaletteFemale != NULL
-     || gSpeciesInfo[species].iconSpriteFemale != NULL)
-        return TRUE;
-
-    return FALSE;
+    return gSpeciesInfo[species].femaleGraphics != NULL;
 }
 
 bool32 TryFormChange(u32 monId, u32 side, u16 method)

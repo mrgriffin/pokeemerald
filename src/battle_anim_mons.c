@@ -2129,7 +2129,7 @@ s16 GetBattlerSpriteCoordAttr(u8 battlerId, u8 attr)
         species = SanitizeSpeciesId(species);
         if (species == SPECIES_UNOWN)
             species = GetUnownSpeciesId(personality);
-        size = gSpeciesInfo[species].backPicSize;
+        size = gSpeciesInfo[species].graphics.backPicSize;
         y_offset = gSpeciesInfo[species].backPicYOffset;
     }
     else
@@ -2151,10 +2151,10 @@ s16 GetBattlerSpriteCoordAttr(u8 battlerId, u8 attr)
             species = SanitizeSpeciesId(species);
             if (species == SPECIES_UNOWN)
                 species = GetUnownSpeciesId(personality);
-            if (gSpeciesInfo[species].backPicFemale != NULL && IsPersonalityFemale(species, personality))
-                size = gSpeciesInfo[species].backPicSizeFemale;
+            if (IsPersonalityFemale(species, personality) && gSpeciesInfo[species].femaleGraphics && gSpeciesInfo[species].femaleGraphics->backPic)
+                size = gSpeciesInfo[species].femaleGraphics->backPicSize;
             else
-                size = gSpeciesInfo[species].backPicSize;
+                size = gSpeciesInfo[species].graphics.backPicSize;
             y_offset = gSpeciesInfo[species].backPicYOffset;
         }
         else
@@ -2174,10 +2174,10 @@ s16 GetBattlerSpriteCoordAttr(u8 battlerId, u8 attr)
             species = SanitizeSpeciesId(species);
             if (species == SPECIES_UNOWN)
                 species = GetUnownSpeciesId(personality);
-            if (gSpeciesInfo[species].frontPicFemale != NULL && IsPersonalityFemale(species, personality))
-                size = gSpeciesInfo[species].frontPicSizeFemale;
+            if (IsPersonalityFemale(species, personality) && gSpeciesInfo[species].femaleGraphics && gSpeciesInfo[species].femaleGraphics->frontPic)
+                size = gSpeciesInfo[species].femaleGraphics->frontPicSize;
             else
-                size = gSpeciesInfo[species].frontPicSize;
+                size = gSpeciesInfo[species].graphics.frontPicSize;
             y_offset = gSpeciesInfo[species].frontPicYOffset;
         }
     }

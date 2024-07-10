@@ -351,7 +351,21 @@ struct Evolution
     u16 targetSpecies;
 };
 
-struct SpeciesInfo /*0xC4*/
+struct SpeciesGraphics
+{
+    // All Pokémon pics are 64x64, but this data table defines where in this 64x64 frame the sprite's non-transparent pixels actually are.
+    u8 frontPicSize;
+    u8 backPicSize;
+    u8 iconPalIndex;
+    u8 padding_03;
+    const u32 *frontPic;
+    const u32 *backPic;
+    const u32 *palette;
+    const u32 *shinyPalette;
+    const u8 *iconSprite;
+};
+
+struct SpeciesInfo /*0xB4*/
 {
  /* 0x00 */ u8 baseHP;
  /* 0x01 */ u8 baseAttack;
@@ -399,32 +413,17 @@ struct SpeciesInfo /*0xC4*/
  /* 0x42 */ u8 frontAnimId;
  /* 0x43 */ u8 backAnimId;
  /* 0x44 */ const union AnimCmd *const *frontAnimFrames;
- /* 0x48 */ const u32 *frontPic;
- /* 0x4C */ const u32 *frontPicFemale;
- /* 0x50 */ const u32 *backPic;
- /* 0x54 */ const u32 *backPicFemale;
- /* 0x58 */ const u32 *palette;
- /* 0x5C */ const u32 *paletteFemale;
- /* 0x60 */ const u32 *shinyPalette;
- /* 0x64 */ const u32 *shinyPaletteFemale;
- /* 0x68 */ const u8 *iconSprite;
- /* 0x6C */ const u8 *iconSpriteFemale;
+ /* 0x48 */ struct SpeciesGraphics graphics;
+ /* 0x60 */ const struct SpeciesGraphics *femaleGraphics;
 #if P_FOOTPRINTS
- /* 0x70 */ const u8 *footprint;
+ /* 0x64 */ const u8 *footprint;
 #endif
-            // All Pokémon pics are 64x64, but this data table defines where in this 64x64 frame the sprite's non-transparent pixels actually are.
- /* 0x74 */ u8 frontPicSize; // The dimensions of this drawn pixel area.
- /* 0x74 */ u8 frontPicSizeFemale; // The dimensions of this drawn pixel area.
- /* 0x75 */ u8 frontPicYOffset; // The number of pixels between the drawn pixel area and the bottom edge.
- /* 0x76 */ u8 backPicSize; // The dimensions of this drawn pixel area.
- /* 0x76 */ u8 backPicSizeFemale; // The dimensions of this drawn pixel area.
- /* 0x77 */ u8 backPicYOffset; // The number of pixels between the drawn pixel area and the bottom edge.
- /* 0x78 */ u8 iconPalIndex:3;
-            u8 iconPalIndexFemale:3;
-            u8 padding3:2;
- /* 0x79 */ u8 enemyMonElevation; // This determines how much higher above the usual position the enemy Pokémon is during battle. Species that float or fly have nonzero values.
+ /* 0x68 */ u8 frontPicYOffset; // The number of pixels between the drawn pixel area and the bottom edge.
+ /* 0x69 */ u8 backPicYOffset; // The number of pixels between the drawn pixel area and the bottom edge.
+ /* 0x6A */ u8 enemyMonElevation; // This determines how much higher above the usual position the enemy Pokémon is during battle. Species that float or fly have nonzero values.
+ /* 0x6B */ u8 padding_6B;
             // Flags
- /* 0x7A */ u32 isLegendary:1;
+ /* 0x6C */ u32 isLegendary:1;
             u32 isMythical:1;
             u32 isUltraBeast:1;
             u32 isParadox:1;
@@ -445,17 +444,17 @@ struct SpeciesInfo /*0xC4*/
             u32 isFrontierBanned:1; // This species is not allowed to participate in Battle Frontier facilities.
             u32 padding4:14;
             // Move Data
- /* 0x80 */ const struct LevelUpMove *levelUpLearnset;
- /* 0x84 */ const u16 *teachableLearnset;
- /* 0x88 */ const u16 *eggMoveLearnset;
- /* 0x8C */ const struct Evolution *evolutions;
- /* 0x90 */ const u16 *formSpeciesIdTable;
- /* 0x94 */ const struct FormChange *formChangeTable;
+ /* 0x70 */ const struct LevelUpMove *levelUpLearnset;
+ /* 0x74 */ const u16 *teachableLearnset;
+ /* 0x78 */ const u16 *eggMoveLearnset;
+ /* 0x7C */ const struct Evolution *evolutions;
+ /* 0x80 */ const u16 *formSpeciesIdTable;
+ /* 0x84 */ const struct FormChange *formChangeTable;
 #if OW_POKEMON_OBJECT_EVENTS
- /* 0x98 */ struct ObjectEventGraphicsInfo overworldData;
+ /* 0x88 */ struct ObjectEventGraphicsInfo overworldData;
 #if OW_PKMN_OBJECTS_SHARE_PALETTES == FALSE
- /* 0xBC */ const void* overworldPalette;
- /* 0xC0 */ const void* overworldShinyPalette;
+ /* 0xAC */ const void* overworldPalette;
+ /* 0xB0 */ const void* overworldShinyPalette;
 #endif //OW_PKMN_OBJECTS_SHARE_PALETTES
 #endif //OW_POKEMON_OBJECT_EVENTS
 };
