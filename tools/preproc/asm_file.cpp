@@ -523,6 +523,19 @@ bool AsmFile::ParseEnum()
     long enumCounter = 0;
     long symbolCount = 0;
 
+    if (m_buffer[m_pos] == ':') // : <type>
+    {
+        m_pos++;
+        currentHeaderLine += SkipWhitespaceAndEol();
+        std::string underlyingType = ReadIdentifier();
+        if (underlyingType.empty())
+        {
+            m_pos = fallbackPosition - 4;
+            return false;
+        }
+        currentHeaderLine += SkipWhitespaceAndEol();
+    }
+
     if (m_buffer[m_pos] != '{') // assume assembly macro, otherwise assume enum and report errors accordingly
     {
         m_pos = fallbackPosition - 4;
