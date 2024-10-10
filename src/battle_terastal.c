@@ -61,7 +61,7 @@ void ApplyBattlerVisualsForTeraAnim(u32 battler)
 // Returns whether a battler can Terastallize.
 bool32 CanTerastallize(u32 battler)
 {
-    u32 holdEffect = GetBattlerHoldEffect(battler, FALSE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, FALSE);
 
     // Prevents Zigzagoon from terastalizing in vanilla.
     if (gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE && GetBattlerSide(battler) == B_SIDE_OPPONENT)

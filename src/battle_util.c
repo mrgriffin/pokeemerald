@@ -446,7 +446,7 @@ void HandleAction_UseItem(void)
 bool32 TryRunFromBattle(u32 battler)
 {
     bool32 effect = FALSE;
-    u8 holdEffect;
+    enum ItemHoldEffect holdEffect;
     u8 pyramidMultiplier;
     u8 speedVar;
 
@@ -778,7 +778,10 @@ void HandleAction_ActionFinished(void)
     }
 }
 
-static const u8 sHoldEffectToType[][2] =
+static const struct {
+    enum ItemHoldEffect holdEffect;
+    u8 type;
+} sHoldEffectToType[] =
 {
     {HOLD_EFFECT_BUG_POWER, TYPE_BUG},
     {HOLD_EFFECT_STEEL_POWER, TYPE_STEEL},
@@ -1261,7 +1264,7 @@ u32 TrySetCantSelectMoveBattleScript(u32 battler)
     u32 limitations = 0;
     u8 moveId = gBattleResources->bufferB[battler][2] & ~RET_GIMMICK;
     u32 move = gBattleMons[battler].moves[moveId];
-    u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, TRUE);
     u16 *choicedMove = &gBattleStruct->choicedMove[battler];
 
     if (DYNAMAX_BYPASS_CHECK && GetActiveGimmick(gBattlerAttacker) != GIMMICK_Z_MOVE && gDisableStructs[battler].disabledMove == move && move != MOVE_NONE)
@@ -1503,7 +1506,7 @@ u32 TrySetCantSelectMoveBattleScript(u32 battler)
 u8 CheckMoveLimitations(u32 battler, u8 unusableMoves, u16 check)
 {
     u32 move, moveEffect;
-    u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, TRUE);
     u16 *choicedMove = &gBattleStruct->choicedMove[battler];
     s32 i;
 
@@ -7170,7 +7173,7 @@ static u32 RestoreWhiteHerbStats(u32 battler)
     return effect;
 }
 
-static u8 ItemEffectMoveEnd(u32 battler, u16 holdEffect)
+static u8 ItemEffectMoveEnd(u32 battler, enum ItemHoldEffect holdEffect)
 {
     u8 effect = 0;
 
@@ -7383,6 +7386,8 @@ static u8 ItemEffectMoveEnd(u32 battler, u16 holdEffect)
     case HOLD_EFFECT_MIRROR_HERB:
         effect = TryConsumeMirrorHerb(battler, FALSE);
         break;
+    default:
+        break;
     }
 
     return effect;
@@ -7392,7 +7397,7 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
 {
     int i = 0, moveType;
     u8 effect = ITEM_NO_EFFECT;
-    u32 battlerHoldEffect = 0, atkHoldEffect;
+    enum ItemHoldEffect battlerHoldEffect = 0, atkHoldEffect;
     u8 atkHoldEffectParam;
     u16 atkItem;
 
@@ -7625,6 +7630,8 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
                 case HOLD_EFFECT_PARAM_PSYCHIC_TERRAIN:
                     effect = TryHandleSeed(battler, STATUS_FIELD_PSYCHIC_TERRAIN, STAT_SPDEF, gLastUsedItem, TRUE);
                     break;
+                default:
+                    break;
                 }
                 break;
             case HOLD_EFFECT_EJECT_PACK:
@@ -7677,6 +7684,8 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
                     BattleScriptExecute(BattleScript_BoosterEnergyEnd2);
                     effect = ITEM_EFFECT_OTHER;
                 }
+                break;
+            default:
                 break;
             }
             if (effect != 0)
@@ -7946,6 +7955,8 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
                     effect = ITEM_EFFECT_OTHER;
                 }
                 break;
+            default:
+                break;
             }
 
             if (effect != 0)
@@ -8031,6 +8042,8 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
                 gBattlescriptCurrInstr = BattleScript_AttackerItemStatRaise;
             }
             break;
+        default:
+            break;
         }
         break;
     case ITEMEFFECT_LIFEORB_SHELLBELL:
@@ -8087,6 +8100,8 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
                 BattleScriptPushCursor();
                 gBattlescriptCurrInstr = BattleScript_AttackerItemStatRaise;
             }
+            break;
+        default:
             break;
         }
         break;
@@ -8254,6 +8269,8 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
                     effect = ITEM_EFFECT_OTHER;
                 }
                 break;
+            default:
+                break;
             }
         }
         break;
@@ -8292,6 +8309,8 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
                 PREPARE_ITEM_BUFFER(gBattleTextBuff1, gLastUsedItem);
             }
             break;
+        default:
+            break;
         }
 
         if (effect == ITEM_STATUS_CHANGE)
@@ -8311,6 +8330,8 @@ u8 ItemBattleEffects(u8 caseID, u32 battler, bool32 moveTurn)
                 BattleScriptPushCursor();
                 gBattlescriptCurrInstr = BattleScript_WhiteHerbRet;
             }
+            break;
+        default:
             break;
         }
         break;
@@ -8539,17 +8560,17 @@ u8 GetAttackerObedienceForAction()
     }
 }
 
-u32 GetBattlerHoldEffect(u32 battler, bool32 checkNegating)
+enum ItemHoldEffect GetBattlerHoldEffect(u32 battler, bool32 checkNegating)
 {
     return GetBattlerHoldEffectInternal(battler, checkNegating, TRUE);
 }
 
-u32 GetBattlerHoldEffectIgnoreAbility(u32 battler, bool32 checkNegating)
+enum ItemHoldEffect GetBattlerHoldEffectIgnoreAbility(u32 battler, bool32 checkNegating)
 {
     return GetBattlerHoldEffectInternal(battler, checkNegating, FALSE);
 }
 
-u32 GetBattlerHoldEffectInternal(u32 battler, bool32 checkNegating, bool32 checkAbility)
+enum ItemHoldEffect GetBattlerHoldEffectInternal(u32 battler, bool32 checkNegating, bool32 checkAbility)
 {
     if (checkNegating)
     {
@@ -8587,7 +8608,7 @@ u32 GetBattlerHoldEffectParam(u32 battler)
 
 bool32 IsMoveMakingContact(u32 move, u32 battlerAtk)
 {
-    u32 atkHoldEffect = GetBattlerHoldEffect(battlerAtk, TRUE);
+    enum ItemHoldEffect atkHoldEffect = GetBattlerHoldEffect(battlerAtk, TRUE);
 
     if (!gMovesInfo[move].makesContact)
     {
@@ -8667,7 +8688,7 @@ bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
 // Only called directly when calculating damage type effectiveness
 static bool32 IsBattlerGrounded2(u32 battler, bool32 considerInverse)
 {
-    u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, TRUE);
 
     if (holdEffect == HOLD_EFFECT_IRON_BALL)
         return TRUE;
@@ -8724,7 +8745,7 @@ u32 GetBattlerWeight(u32 battler)
     u32 i;
     u32 weight = GetSpeciesWeight(gBattleMons[battler].species);
     u32 ability = GetBattlerAbility(battler);
-    u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, TRUE);
 
     if (ability == ABILITY_HEAVY_METAL)
         weight *= 2;
@@ -9171,7 +9192,7 @@ static inline u32 CalcMoveBasePower(u32 move, u32 battlerAtk, u32 battlerDef, u3
     return basePower;
 }
 
-static inline u32 CalcMoveBasePowerAfterModifiers(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, bool32 updateFlags, u32 atkAbility, u32 defAbility, u32 holdEffectAtk, u32 weather)
+static inline u32 CalcMoveBasePowerAfterModifiers(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, bool32 updateFlags, u32 atkAbility, u32 defAbility, enum ItemHoldEffect holdEffectAtk, u32 weather)
 {
     u32 i;
     u32 holdEffectParamAtk;
@@ -9507,9 +9528,9 @@ static inline u32 CalcMoveBasePowerAfterModifiers(u32 move, u32 battlerAtk, u32 
     case HOLD_EFFECT_FAIRY_POWER:
         for (i = 0; i < ARRAY_COUNT(sHoldEffectToType); i++)
         {
-            if (holdEffectAtk == sHoldEffectToType[i][0])
+            if (holdEffectAtk == sHoldEffectToType[i].holdEffect)
             {
-                if (moveType == sHoldEffectToType[i][1])
+                if (moveType == sHoldEffectToType[i].type)
                     modifier = uq4_12_multiply(modifier, holdEffectModifier);
                 break;
             }
@@ -9526,6 +9547,8 @@ static inline u32 CalcMoveBasePowerAfterModifiers(u32 move, u32 battlerAtk, u32 
     case HOLD_EFFECT_OGERPON_MASK:
         if (GET_BASE_SPECIES_ID(gBattleMons[battlerAtk].species) == SPECIES_OGERPON)
            modifier = uq4_12_multiply(modifier, UQ_4_12(1.2));
+        break;
+    default:
         break;
     }
 
@@ -9544,7 +9567,7 @@ static inline u32 CalcMoveBasePowerAfterModifiers(u32 move, u32 battlerAtk, u32 
     return uq4_12_multiply_by_int_half_down(modifier, basePower);
 }
 
-static inline u32 CalcAttackStat(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, bool32 isCrit, bool32 updateFlags, u32 atkAbility, u32 defAbility, u32 holdEffectAtk)
+static inline u32 CalcAttackStat(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, bool32 isCrit, bool32 updateFlags, u32 atkAbility, u32 defAbility, enum ItemHoldEffect holdEffectAtk)
 {
     u8 atkStage;
     u32 atkStat;
@@ -9741,6 +9764,8 @@ static inline u32 CalcAttackStat(u32 move, u32 battlerAtk, u32 battlerDef, u32 m
         if (IS_MOVE_SPECIAL(move) && GetActiveGimmick(battlerAtk) != GIMMICK_DYNAMAX)
             modifier = uq4_12_multiply_half_down(modifier, UQ_4_12(1.5));
         break;
+    default:
+        break;
     }
 
     // The offensive stats of a Player's Pokémon are boosted by x1.1 (+10%) if they have the 1st badge and 7th badges.
@@ -9770,7 +9795,7 @@ static bool32 CanEvolve(u32 species)
     return FALSE;
 }
 
-static inline u32 CalcDefenseStat(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, bool32 isCrit, bool32 updateFlags, u32 atkAbility, u32 defAbility, u32 holdEffectDef, u32 weather)
+static inline u32 CalcDefenseStat(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, bool32 isCrit, bool32 updateFlags, u32 atkAbility, u32 defAbility, enum ItemHoldEffect holdEffectDef, u32 weather)
 {
     bool32 usesDefStat;
     u8 defStage;
@@ -9903,6 +9928,8 @@ static inline u32 CalcDefenseStat(u32 move, u32 battlerAtk, u32 battlerDef, u32 
          && !usesDefStat)
             modifier = uq4_12_multiply_half_down(modifier, UQ_4_12(1.5));
         break;
+    default:
+        break;
     }
 
     // sandstorm sp.def boost for rock types
@@ -9954,7 +9981,7 @@ static inline uq4_12_t GetSameTypeAttackBonusModifier(u32 battlerAtk, u32 moveTy
 }
 
 // Utility Umbrella holders take normal damage from what would be rain- and sun-weakened attacks.
-static uq4_12_t GetWeatherDamageModifier(u32 battlerAtk, u32 move, u32 moveType, u32 holdEffectAtk, u32 holdEffectDef, u32 weather)
+static uq4_12_t GetWeatherDamageModifier(u32 battlerAtk, u32 move, u32 moveType, enum ItemHoldEffect holdEffectAtk, enum ItemHoldEffect holdEffectDef, u32 weather)
 {
     if (weather == B_WEATHER_NONE)
         return UQ_4_12(1.0);
@@ -10129,7 +10156,7 @@ static inline uq4_12_t GetDefenderPartnerAbilitiesModifier(u32 battlerPartnerDef
     return UQ_4_12(1.0);
 }
 
-static inline uq4_12_t GetAttackerItemsModifier(u32 battlerAtk, uq4_12_t typeEffectivenessModifier, u32 holdEffectAtk)
+static inline uq4_12_t GetAttackerItemsModifier(u32 battlerAtk, uq4_12_t typeEffectivenessModifier, enum ItemHoldEffect holdEffectAtk)
 {
     u32 percentBoost;
     switch (holdEffectAtk)
@@ -10145,13 +10172,15 @@ static inline uq4_12_t GetAttackerItemsModifier(u32 battlerAtk, uq4_12_t typeEff
     case HOLD_EFFECT_LIFE_ORB:
         return UQ_4_12(1.3);
         break;
+    default:
+        break;
     }
     return UQ_4_12(1.0);
 }
 
-static inline uq4_12_t GetDefenderItemsModifier(u32 moveType, u32 battlerDef, uq4_12_t typeEffectivenessModifier, bool32 updateFlags, u32 abilityDef, u32 holdEffectDef)
+static inline uq4_12_t GetDefenderItemsModifier(u32 moveType, u32 battlerDef, uq4_12_t typeEffectivenessModifier, bool32 updateFlags, u32 abilityDef, enum ItemHoldEffect holdEffectDef)
 {
-    u32 holdEffectDefParam = GetBattlerHoldEffectParam(battlerDef);
+    enum ItemHoldEffect holdEffectDefParam = GetBattlerHoldEffectParam(battlerDef);
     u32 itemDef = gBattleMons[battlerDef].item;
 
     switch (holdEffectDef)
@@ -10165,6 +10194,8 @@ static inline uq4_12_t GetDefenderItemsModifier(u32 moveType, u32 battlerDef, uq
                 gSpecialStatuses[battlerDef].berryReduced = TRUE;
             return (abilityDef == ABILITY_RIPEN) ? UQ_4_12(0.25) : UQ_4_12(0.5);
         }
+        break;
+    default:
         break;
     }
     return UQ_4_12(1.0);
@@ -10181,7 +10212,7 @@ static inline uq4_12_t GetDefenderItemsModifier(u32 moveType, u32 battlerDef, uq
 // Please Note: Fixed Point Multiplication is not associative.
 // The order of operations is relevant.
 static inline uq4_12_t GetOtherModifiers(u32 move, u32 moveType, u32 battlerAtk, u32 battlerDef, bool32 isCrit, uq4_12_t typeEffectivenessModifier, bool32 updateFlags,
-                                         u32 abilityAtk, u32 abilityDef, u32 holdEffectAtk, u32 holdEffectDef)
+                                         u32 abilityAtk, u32 abilityDef, enum ItemHoldEffect holdEffectAtk, enum ItemHoldEffect holdEffectDef)
 {
     uq4_12_t finalModifier = UQ_4_12(1.0);
     u32 battlerDefPartner = BATTLE_PARTNER(battlerDef);
@@ -10222,7 +10253,7 @@ static inline uq4_12_t GetOtherModifiers(u32 move, u32 moveType, u32 battlerAtk,
 
 static inline s32 DoMoveDamageCalcVars(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, s32 fixedBasePower,
                             bool32 isCrit, bool32 randomFactor, bool32 updateFlags, uq4_12_t typeEffectivenessModifier, u32 weather,
-                            u32 holdEffectAtk, u32 holdEffectDef, u32 abilityAtk, u32 abilityDef)
+                            enum ItemHoldEffect holdEffectAtk, enum ItemHoldEffect holdEffectDef, u32 abilityAtk, u32 abilityDef)
 {
     s32 dmg;
     u32 userFinalAttack;
@@ -10266,7 +10297,8 @@ static inline s32 DoMoveDamageCalcVars(u32 move, u32 battlerAtk, u32 battlerDef,
 static inline s32 DoMoveDamageCalc(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, s32 fixedBasePower,
                             bool32 isCrit, bool32 randomFactor, bool32 updateFlags, uq4_12_t typeEffectivenessModifier, u32 weather)
 {
-    u32 holdEffectAtk, holdEffectDef, abilityAtk, abilityDef;
+    enum ItemHoldEffect holdEffectAtk, holdEffectDef;
+    u32 abilityAtk, abilityDef;
 
     if (typeEffectivenessModifier == UQ_4_12(0.0))
         return 0;
@@ -10282,7 +10314,7 @@ static inline s32 DoMoveDamageCalc(u32 move, u32 battlerAtk, u32 battlerDef, u32
 
 static inline s32 DoFutureSightAttackDamageCalcVars(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType,
                             bool32 isCrit, bool32 randomFactor, bool32 updateFlags, uq4_12_t typeEffectivenessModifier, u32 weather,
-                            u32 holdEffectDef, u32 abilityDef)
+                            enum ItemHoldEffect holdEffectDef, u32 abilityDef)
 {
     s32 dmg;
     u32 userFinalAttack;
@@ -10328,7 +10360,8 @@ static inline s32 DoFutureSightAttackDamageCalcVars(u32 move, u32 battlerAtk, u3
 static inline s32 DoFutureSightAttackDamageCalc(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType,
                             bool32 isCrit, bool32 randomFactor, bool32 updateFlags, uq4_12_t typeEffectivenessModifier, u32 weather)
 {
-    u32 holdEffectDef, abilityDef;
+    enum ItemHoldEffect holdEffectDef;
+    u32 abilityDef;
 
     if (typeEffectivenessModifier == UQ_4_12(0.0))
         return 0;
@@ -10371,7 +10404,7 @@ s32 CalculateMoveDamage(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, 
 
 // for AI so that typeEffectivenessModifier, weather, abilities and holdEffects are calculated only once
 s32 CalculateMoveDamageVars(u32 move, u32 battlerAtk, u32 battlerDef, u32 moveType, s32 fixedBasePower, uq4_12_t typeEffectivenessModifier,
-                                          u32 weather, bool32 isCrit, u32 holdEffectAtk, u32 holdEffectDef, u32 abilityAtk, u32 abilityDef)
+                                          u32 weather, bool32 isCrit, enum ItemHoldEffect holdEffectAtk, enum ItemHoldEffect holdEffectDef, u32 abilityAtk, u32 abilityDef)
 {
     return DoMoveDamageCalcVars(move, battlerAtk, battlerDef, moveType, fixedBasePower, isCrit, FALSE, FALSE,
                                 typeEffectivenessModifier, weather, holdEffectAtk, holdEffectDef, abilityAtk, abilityDef);
@@ -10712,7 +10745,7 @@ bool32 DoesSpeciesUseHoldItemToChangeForm(u16 species, u16 heldItemId)
 
 bool32 CanMegaEvolve(u32 battler)
 {
-    u32 holdEffect = GetBattlerHoldEffect(battler, FALSE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, FALSE);
 
     // Check if Player has a Mega Ring.
     if (!TESTING
@@ -10750,7 +10783,7 @@ bool32 CanMegaEvolve(u32 battler)
 
 bool32 CanUltraBurst(u32 battler)
 {
-    u32 holdEffect = GetBattlerHoldEffect(battler, FALSE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, FALSE);
 
     // Check if Player has a Z-Ring
     if (!TESTING && (GetBattlerPosition(battler) == B_POSITION_PLAYER_LEFT
@@ -11027,7 +11060,7 @@ bool32 DoBattlersShareType(u32 battler1, u32 battler2)
 bool32 CanBattlerGetOrLoseItem(u32 battler, u16 itemId)
 {
     u16 species = gBattleMons[battler].species;
-    u16 holdEffect = ItemId_GetHoldEffect(itemId);
+    enum ItemHoldEffect holdEffect = ItemId_GetHoldEffect(itemId);
 
     // Mail can be stolen now
     if (itemId == ITEM_ENIGMA_BERRY_E_READER)
@@ -11356,7 +11389,7 @@ void TrySaveExchangedItem(u32 battler, u16 stolenItem)
 bool32 IsBattlerAffectedByHazards(u32 battler, bool32 toxicSpikes)
 {
     bool32 ret = TRUE;
-    u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, TRUE);
     if (toxicSpikes && holdEffect == HOLD_EFFECT_HEAVY_DUTY_BOOTS && !IS_BATTLER_OF_TYPE(battler, TYPE_POISON))
     {
         ret = FALSE;

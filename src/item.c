@@ -896,7 +896,7 @@ const u8 *ItemId_GetEffect(u32 itemId)
         return gItemsInfo[SanitizeItemId(itemId)].effect;
 }
 
-u32 ItemId_GetHoldEffect(u32 itemId)
+enum ItemHoldEffect ItemId_GetHoldEffect(u32 itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].holdEffect;
 }

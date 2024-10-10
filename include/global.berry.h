@@ -4,6 +4,8 @@
 #define BERRY_NAME_LENGTH 6
 #define BERRY_ITEM_EFFECT_COUNT 18
 
+#include "constants/hold_effects.h"
+
 struct Berry
 {
     const u8 name[BERRY_NAME_LENGTH + 1];
@@ -56,7 +58,7 @@ struct EnigmaBerry
 {
     struct Berry2 berry;
     u8 itemEffect[BERRY_ITEM_EFFECT_COUNT];
-    u8 holdEffect;
+    enum ItemHoldEffect holdEffect;
     u8 holdEffectParam;
     u32 checksum;
 };
@@ -64,7 +66,7 @@ struct EnigmaBerry
 struct BattleEnigmaBerry
 {
     /*0x00*/ u8 name[BERRY_NAME_LENGTH + 1];
-    /*0x07*/ u8 holdEffect;
+    /*0x07*/ enum ItemHoldEffect holdEffect;
     /*0x08*/ u8 itemEffect[BERRY_ITEM_EFFECT_COUNT];
     /*0x1A*/ u8 holdEffectParam;
 };

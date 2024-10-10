@@ -1597,12 +1597,12 @@ static bool32 AccuracyCalcHelper(u16 move)
     return FALSE;
 }
 
-u32 GetTotalAccuracy(u32 battlerAtk, u32 battlerDef, u32 move, u32 atkAbility, u32 defAbility, u32 atkHoldEffect, u32 defHoldEffect)
+u32 GetTotalAccuracy(u32 battlerAtk, u32 battlerDef, u32 move, u32 atkAbility, u32 defAbility, enum ItemHoldEffect atkHoldEffect, enum ItemHoldEffect defHoldEffect)
 {
     u32 calc, moveAcc;
     s8 buff, accStage, evasionStage;
-    u32 atkParam = GetBattlerHoldEffectParam(battlerAtk);
-    u32 defParam = GetBattlerHoldEffectParam(battlerDef);
+    enum ItemHoldEffect atkParam = GetBattlerHoldEffectParam(battlerAtk);
+    enum ItemHoldEffect defParam = GetBattlerHoldEffectParam(battlerDef);
     u32 atkAlly = BATTLE_PARTNER(battlerAtk);
     u32 atkAllyAbility = GetBattlerAbility(atkAlly);
 
@@ -1689,6 +1689,8 @@ u32 GetTotalAccuracy(u32 battlerAtk, u32 battlerDef, u32 move, u32 atkAbility, u
         if (GetBattlerTurnOrderNum(battlerAtk) > GetBattlerTurnOrderNum(battlerDef))
             calc = (calc * (100 + atkParam)) / 100;
         break;
+    default:
+        break;
     }
 
     // Target's hold effect
@@ -1696,6 +1698,8 @@ u32 GetTotalAccuracy(u32 battlerAtk, u32 battlerDef, u32 move, u32 atkAbility, u
     {
     case HOLD_EFFECT_EVASION_UP:
         calc = (calc * (100 - defParam)) / 100;
+        break;
+    default:
         break;
     }
 
@@ -1724,7 +1728,7 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
     u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, move);
     u32 abilityAtk = GetBattlerAbility(gBattlerAttacker);
     u32 abilityDef = GetBattlerAbility(gBattlerTarget);
-    u32 holdEffectAtk = GetBattlerHoldEffect(gBattlerAttacker, TRUE);
+    enum ItemHoldEffect holdEffectAtk = GetBattlerHoldEffect(gBattlerAttacker, TRUE);
 
     if (move == ACC_CURR_MOVE)
         move = gCurrentMove;
@@ -1904,7 +1908,7 @@ static void Cmd_ppreduce(void)
 #endif // B_CRIT_CHANCE
 
 #define BENEFITS_FROM_LEEK(battler, holdEffect)((holdEffect == HOLD_EFFECT_LEEK) && (GET_BASE_SPECIES_ID(gBattleMons[battler].species) == SPECIES_FARFETCHD || gBattleMons[battler].species == SPECIES_SIRFETCHD))
-s32 CalcCritChanceStageArgs(u32 battlerAtk, u32 battlerDef, u32 move, bool32 recordAbility, u32 abilityAtk, u32 abilityDef, u32 holdEffectAtk)
+s32 CalcCritChanceStageArgs(u32 battlerAtk, u32 battlerDef, u32 move, bool32 recordAbility, u32 abilityAtk, u32 abilityDef, enum ItemHoldEffect holdEffectAtk)
 {
     s32 critChance = 0;
 
@@ -1954,7 +1958,7 @@ s32 CalcCritChanceStage(u32 battlerAtk, u32 battlerDef, u32 move, bool32 recordA
 {
     u32 abilityAtk = GetBattlerAbility(gBattlerAttacker);
     u32 abilityDef = GetBattlerAbility(gBattlerTarget);
-    u32 holdEffectAtk = GetBattlerHoldEffect(battlerAtk, TRUE);
+    enum ItemHoldEffect holdEffectAtk = GetBattlerHoldEffect(battlerAtk, TRUE);
     return CalcCritChanceStageArgs(battlerAtk, battlerDef, move, recordAbility, abilityAtk, abilityDef, holdEffectAtk);
 }
 
@@ -1980,7 +1984,7 @@ s32 CalcCritChanceStageGen1(u8 battlerAtk, u8 battlerDef, u32 move, bool32 recor
     s32 bonusCritStage = gBattleStruct->bonusCritStages[gBattlerAttacker]; // G-Max Chi Strike
     u32 abilityAtk = GetBattlerAbility(gBattlerAttacker);
     u32 abilityDef = GetBattlerAbility(gBattlerTarget);
-    u32 holdEffectAtk = GetBattlerHoldEffect(battlerAtk, TRUE);
+    enum ItemHoldEffect holdEffectAtk = GetBattlerHoldEffect(battlerAtk, TRUE);
     u16 baseSpeed = gSpeciesInfo[gBattleMons[battlerAtk].species].baseSpeed;
 
     critChance = baseSpeed / 2;
@@ -2108,7 +2112,8 @@ static void Cmd_adjustdamage(void)
 {
     CMD_ARGS();
 
-    u8 holdEffect, param;
+    enum ItemHoldEffect holdEffect;
+    u8 param;
     u32 affectionScore = GetBattlerAffectionHearts(gBattlerTarget);
     u32 rand = Random() % 100;
     u32 moveType = GetMoveType(gCurrentMove);
@@ -4372,9 +4377,9 @@ static bool32 BattleTypeAllowsExp(void)
         return TRUE;
 }
 
-static u32 GetMonHoldEffect(struct Pokemon *mon)
+static enum ItemHoldEffect GetMonHoldEffect(struct Pokemon *mon)
 {
-    u32 holdEffect;
+    enum ItemHoldEffect holdEffect;
     u32 item = GetMonData(mon, MON_DATA_HELD_ITEM);
 
     if (item == ITEM_ENIGMA_BERRY_E_READER)
@@ -4393,7 +4398,7 @@ static void Cmd_getexp(void)
 {
     CMD_ARGS(u8 battler);
 
-    u32 holdEffect;
+    enum ItemHoldEffect holdEffect;
     s32 i; // also used as stringId
     u8 *expMonId = &gBattleStruct->expGetterMonId;
 
@@ -5549,7 +5554,7 @@ static void Cmd_moveend(void)
     s32 i;
     bool32 effect = FALSE;
     u32 moveType = 0;
-    u32 holdEffectAtk = 0;
+    enum ItemHoldEffect holdEffectAtk = 0;
     u32 endMode, endState;
     u32 originallyUsedMove;
 
@@ -6252,7 +6257,7 @@ static void Cmd_moveend(void)
                 u32 ejectPackBattlers = 0, ejectButtonBattlers = 0, i;
                 for (i = 0; i < gBattlersCount; i++)
                 {
-                    u32 holdEffect;
+                    enum ItemHoldEffect holdEffect;
                     holdEffect = GetBattlerHoldEffect(i, TRUE);
                     if (holdEffect == HOLD_EFFECT_EJECT_BUTTON)
                         ejectButtonBattlers |= 1u << i;
@@ -9117,7 +9122,7 @@ static void Cmd_various(void)
     }
     case VARIOUS_JUMP_IF_HOLD_EFFECT:
     {
-        VARIOUS_ARGS(u8 holdEffect, const u8 *jumpInstr, u8 equal);
+        VARIOUS_ARGS(enum ItemHoldEffect holdEffect, const u8 *jumpInstr, u8 equal);
         if ((GetBattlerHoldEffect(battler, TRUE) == cmd->holdEffect) == cmd->equal)
         {
             if (cmd->equal)
@@ -10386,6 +10391,8 @@ static void Cmd_various(void)
             case HOLD_EFFECT_PARAM_PSYCHIC_TERRAIN:
                 effect = TryHandleSeed(battler, STATUS_FIELD_PSYCHIC_TERRAIN, STAT_SPDEF, item, FALSE);
                 break;
+            default:
+                break;
             }
 
             if (effect)
@@ -10887,7 +10894,7 @@ static void Cmd_various(void)
     }
     case VARIOUS_JUMP_IF_LAST_USED_ITEM_HOLD_EFFECT:
     {
-        VARIOUS_ARGS(u8 holdEffect, const u8 *jumpInstr);
+        VARIOUS_ARGS(enum ItemHoldEffect holdEffect, const u8 *jumpInstr);
         if (ItemId_GetHoldEffect(gLastUsedItem) == cmd->holdEffect)
             gBattlescriptCurrInstr = cmd->jumpInstr;
         else
@@ -12339,7 +12346,7 @@ static void Cmd_tryKO(void)
     CMD_ARGS(const u8 *failInstr);
 
     bool32 lands = FALSE;
-    u32 holdEffect = GetBattlerHoldEffect(gBattlerTarget, TRUE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(gBattlerTarget, TRUE);
     u16 targetAbility = GetBattlerAbility(gBattlerTarget);
 
     // Dynamaxed Pokemon cannot be hit by OHKO moves.
@@ -16228,7 +16235,7 @@ u8 GetFirstFaintedPartyIndex(u8 battler)
 
 void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBattler)
 {
-    u32 holdEffect = GetMonHoldEffect(&gPlayerParty[expGetterMonId]);
+    enum ItemHoldEffect holdEffect = GetMonHoldEffect(&gPlayerParty[expGetterMonId]);
 
     if (IsTradedMon(&gPlayerParty[expGetterMonId]))
         *expAmount = (*expAmount * 150) / 100;
@@ -16587,7 +16594,7 @@ void BS_SetRemoveTerrain(void)
     }
     else
     {
-        u32 atkHoldEffect = GetBattlerHoldEffect(gBattlerAttacker, TRUE);
+        enum ItemHoldEffect atkHoldEffect = GetBattlerHoldEffect(gBattlerAttacker, TRUE);
 
         gFieldStatuses &= ~(STATUS_FIELD_TERRAIN_ANY | STATUS_FIELD_TERRAIN_PERMANENT);
         gFieldStatuses |= statusFlag;

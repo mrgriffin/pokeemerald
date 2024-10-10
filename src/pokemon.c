@@ -3734,7 +3734,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
     u8 itemEffectParam = ITEM_EFFECT_ARG_START;
     u32 temp1, temp2;
     s8 friendshipChange = 0;
-    u8 holdEffect;
+    enum ItemHoldEffect holdEffect;
     u8 battlerId = MAX_BATTLERS_COUNT;
     u32 friendshipOnly = FALSE;
     u16 heldItem;
@@ -4409,7 +4409,8 @@ u16 GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode mode, u16 
     u16 friendship;
     u8 beauty = GetMonData(mon, MON_DATA_BEAUTY, 0);
     u16 upperPersonality = personality >> 16;
-    u32 holdEffect, currentMap, partnerSpecies, partnerHeldItem, partnerHoldEffect;
+    enum ItemHoldEffect holdEffect, partnerHoldEffect;
+    u32 currentMap, partnerSpecies, partnerHeldItem;
     bool32 consumeItem = FALSE;
     u16 evolutionTracker = GetMonData(mon, MON_DATA_EVOLUTION_TRACKER, 0);
     const struct Evolution *evolutions = GetSpeciesEvolutions(species);
@@ -5110,7 +5111,7 @@ u16 ModifyStatByNature(u8 nature, u16 stat, u8 statIndex)
 void AdjustFriendship(struct Pokemon *mon, u8 event)
 {
     u16 species, heldItem;
-    u8 holdEffect;
+    enum ItemHoldEffect holdEffect;
     s8 mod;
 
     if (ShouldSkipFriendshipChange())
@@ -5192,7 +5193,7 @@ void MonGainEVs(struct Pokemon *mon, u16 defeatedSpecies)
     u16 evIncrease = 0;
     u16 totalEVs = 0;
     u16 heldItem;
-    u8 holdEffect;
+    enum ItemHoldEffect holdEffect;
     int i, multiplier;
     u8 stat;
     u8 bonus;

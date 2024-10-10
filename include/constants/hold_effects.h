@@ -1,7 +1,9 @@
 #ifndef GUARD_HOLD_EFFECTS_H
 #define GUARD_HOLD_EFFECTS_H
 
-enum ItemHoldEffect
+// WARNING: 'sizeof(enum ItemHoldEffect)' is part of save compatibility
+// because of 'struct EnigmaBerry' in 'include/global.berry.h'.
+enum ItemHoldEffect : u8
 {
     HOLD_EFFECT_NONE,
     HOLD_EFFECT_RESTORE_HP,

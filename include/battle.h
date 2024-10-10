@@ -4,6 +4,7 @@
 // should they be included here or included individually by every file?
 #include "constants/battle.h"
 #include "constants/form_change_types.h"
+#include "constants/hold_effects.h"
 #include "battle_main.h"
 #include "battle_message.h"
 #include "battle_util.h"
@@ -359,7 +360,7 @@ struct AiLogicData
 {
     u16 abilities[MAX_BATTLERS_COUNT];
     u16 items[MAX_BATTLERS_COUNT];
-    u16 holdEffects[MAX_BATTLERS_COUNT];
+    enum ItemHoldEffect holdEffects[MAX_BATTLERS_COUNT];
     u8 holdEffectParams[MAX_BATTLERS_COUNT];
     u16 predictedMoves[MAX_BATTLERS_COUNT];
     u8 hpPercents[MAX_BATTLERS_COUNT];

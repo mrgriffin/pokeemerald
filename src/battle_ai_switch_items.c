@@ -459,7 +459,7 @@ static bool32 ShouldSwitchIfGameStatePrompt(u32 battler, bool32 emitResult)
     bool32 switchMon = FALSE;
     bool32 monIdChosen = FALSE; // Id of the mon to switch into.
     u16 monAbility = AI_DATA->abilities[battler];
-    u16 holdEffect = AI_DATA->holdEffects[battler];
+    enum ItemHoldEffect holdEffect = AI_DATA->holdEffects[battler];
     u8 opposingPosition = BATTLE_OPPOSITE(GetBattlerPosition(battler));
     u8 opposingBattler = GetBattlerAtPosition(opposingPosition);
     s32 moduloChance = 4; //25% Chance Default
@@ -920,7 +920,7 @@ static bool32 ShouldSwitchIfEncored(u32 battler, bool32 emitResult)
 
 static bool32 ShouldSwitchIfBadChoiceLock(u32 battler, bool32 emitResult)
 {
-    u32 holdEffect = GetBattlerHoldEffect(battler, FALSE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, FALSE);
 
     if (HOLD_EFFECT_CHOICE(holdEffect) && gBattleMons[battler].ability != ABILITY_KLUTZ)
     {
@@ -1398,7 +1398,7 @@ static u32 GetSwitchinHazardsDamage(u32 battler, struct BattlePokemon *battleMon
 static s32 GetSwitchinWeatherImpact(void)
 {
     s32 weatherImpact = 0, maxHP = AI_DATA->switchinCandidate.battleMon.maxHP, ability = AI_DATA->switchinCandidate.battleMon.ability;
-    u32 holdEffect = ItemId_GetHoldEffect(AI_DATA->switchinCandidate.battleMon.item);
+    enum ItemHoldEffect holdEffect = ItemId_GetHoldEffect(AI_DATA->switchinCandidate.battleMon.item);
 
     if (WEATHER_HAS_EFFECT)
     {
@@ -1462,7 +1462,7 @@ static s32 GetSwitchinWeatherImpact(void)
 static u32 GetSwitchinRecurringHealing(void)
 {
     u32 recurringHealing = 0, maxHP = AI_DATA->switchinCandidate.battleMon.maxHP, ability = AI_DATA->switchinCandidate.battleMon.ability;
-    u32 holdEffect = ItemId_GetHoldEffect(AI_DATA->switchinCandidate.battleMon.item);
+    enum ItemHoldEffect holdEffect = ItemId_GetHoldEffect(AI_DATA->switchinCandidate.battleMon.item);
 
     // Items
     if (ability != ABILITY_KLUTZ)
@@ -1496,7 +1496,7 @@ static u32 GetSwitchinRecurringHealing(void)
 static u32 GetSwitchinRecurringDamage(void)
 {
     u32 passiveDamage = 0, maxHP = AI_DATA->switchinCandidate.battleMon.maxHP, ability = AI_DATA->switchinCandidate.battleMon.ability;
-    u32 holdEffect = ItemId_GetHoldEffect(AI_DATA->switchinCandidate.battleMon.item);
+    enum ItemHoldEffect holdEffect = ItemId_GetHoldEffect(AI_DATA->switchinCandidate.battleMon.item);
 
     // Items
     if (ability != ABILITY_MAGIC_GUARD && ability != ABILITY_KLUTZ)

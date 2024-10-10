@@ -4071,7 +4071,8 @@ void BattleTurnPassed(void)
 
 u8 IsRunningFromBattleImpossible(u32 battler)
 {
-    u32 holdEffect, i;
+    enum ItemHoldEffect holdEffect;
+    u32 i;
 
     if (gBattleMons[battler].item == ITEM_ENIGMA_BERRY_E_READER)
         holdEffect = gEnigmaBerries[battler].holdEffect;
@@ -4729,7 +4730,7 @@ void SwapTurnOrder(u8 id1, u8 id2)
 }
 
 // For AI, so it doesn't 'cheat' by knowing player's ability
-u32 GetBattlerTotalSpeedStatArgs(u32 battler, u32 ability, u32 holdEffect)
+u32 GetBattlerTotalSpeedStatArgs(u32 battler, u32 ability, enum ItemHoldEffect holdEffect)
 {
     u32 speed = gBattleMons[battler].speed;
 
@@ -4799,7 +4800,7 @@ u32 GetBattlerTotalSpeedStatArgs(u32 battler, u32 ability, u32 holdEffect)
 u32 GetBattlerTotalSpeedStat(u32 battler)
 {
     u32 ability = GetBattlerAbility(battler);
-    u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, TRUE);
     return GetBattlerTotalSpeedStatArgs(battler, ability, holdEffect);
 }
 
@@ -4856,7 +4857,7 @@ s8 GetMovePriority(u32 battler, u16 move)
 
 // Function for AI with variables provided as arguments to speed the computation time
 s32 GetWhichBattlerFasterArgs(u32 battler1, u32 battler2, bool32 ignoreChosenMoves, u32 ability1, u32 ability2,
-                              u32 holdEffectBattler1, u32 holdEffectBattler2, u32 speedBattler1, u32 speedBattler2, s32 priority1, s32 priority2)
+                              enum ItemHoldEffect holdEffectBattler1, enum ItemHoldEffect holdEffectBattler2, u32 speedBattler1, u32 speedBattler2, s32 priority1, s32 priority2)
 {
     u32 strikesFirst = 0;
 
@@ -4923,9 +4924,9 @@ s32 GetWhichBattlerFasterOrTies(u32 battler1, u32 battler2, bool32 ignoreChosenM
     s32 priority1 = 0, priority2 = 0;
     u32 ability1 = GetBattlerAbility(battler1);
     u32 speedBattler1 = GetBattlerTotalSpeedStat(battler1);
-    u32 holdEffectBattler1 = GetBattlerHoldEffect(battler1, TRUE);
+    enum ItemHoldEffect holdEffectBattler1 = GetBattlerHoldEffect(battler1, TRUE);
     u32 speedBattler2 = GetBattlerTotalSpeedStat(battler2);
-    u32 holdEffectBattler2 = GetBattlerHoldEffect(battler2, TRUE);
+    enum ItemHoldEffect holdEffectBattler2 = GetBattlerHoldEffect(battler2, TRUE);
     u32 ability2 = GetBattlerAbility(battler2);
 
     if (!ignoreChosenMoves)
@@ -5253,8 +5254,8 @@ static void TryChangeTurnOrder(void)
 static void TryChangingTurnOrderEffects(u32 battler1, u32 battler2)
 {
     u32 ability1 = GetBattlerAbility(battler1);
-    u32 holdEffectBattler1 = GetBattlerHoldEffect(battler1, TRUE);
-    u32 holdEffectBattler2 = GetBattlerHoldEffect(battler2, TRUE);
+    enum ItemHoldEffect holdEffectBattler1 = GetBattlerHoldEffect(battler1, TRUE);
+    enum ItemHoldEffect holdEffectBattler2 = GetBattlerHoldEffect(battler2, TRUE);
     u32 ability2 = GetBattlerAbility(battler2);
 
     // Battler 1
@@ -6026,7 +6027,7 @@ void SetTypeBeforeUsingMove(u32 move, u32 battler)
 {
     u32 moveType;
     u32 heldItem = gBattleMons[battler].item;
-    u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
+    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler, TRUE);
 
     gBattleStruct->dynamicMoveType = 0;
     gBattleStruct->ateBoost[battler] = FALSE;
