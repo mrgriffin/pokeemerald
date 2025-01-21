@@ -638,6 +638,10 @@ static inline void Copy16(const void *_src, void *_dst, u32 size)
 //      Insert the current value from the Symbol vector into current result position <length> times, then advance symbol vector by 1
 //  If length is 0:
 //      Insert <offset> number of symbols from the symbol vector into the result vector and advance the symbol vector position by <offset>
+#if 1
+extern void DecodeInstructions(u32 headerLoSize, u8 *loVec, u16 *symVec, u16 *dest);
+extern char DecodeInstructions_End[];
+#else
 ARM_FUNC __attribute__((noinline, no_reorder)) __attribute__((optimize("-O3"))) static void DecodeInstructions(u32 headerLoSize, u8 *loVec, u16 *symVec, u16 *dest)
 {
     u8 *loVecEnd = loVec + headerLoSize;
@@ -645,34 +649,24 @@ ARM_FUNC __attribute__((noinline, no_reorder)) __attribute__((optimize("-O3"))) 
     {
         u32 currOffset, currLength;
 
-        if (loVec[0] & CONTINUE_BIT)
+        if (*loVec & 0x01)
         {
-            currLength = (loVec[0] & FIRST_LO_MASK) | (loVec[1] << 7);
-            currOffset = loVec[2] & FIRST_LO_MASK;
-            if (loVec[2] & CONTINUE_BIT)
-            {
-                currOffset |= loVec[3] << 7;
-                loVec += 4;
-            }
-            else
-            {
-                loVec += 3;
-            }
+            currOffset = *loVec++ >> 1;
+            currOffset += *loVec++ << 7;
         }
         else
         {
-            currLength = loVec[0] & FIRST_LO_MASK;
-            currOffset = loVec[1] & FIRST_LO_MASK;
+            currOffset = *loVec++ >> 1;
+        }
 
-            if (loVec[1] & CONTINUE_BIT)
-            {
-                currOffset |= (loVec[2] << 7);
-                loVec += 3;
-            }
-            else
-            {
-                loVec += 2;
-            }
+        if (*loVec & 0x01)
+        {
+            currLength = *loVec++ >> 1;
+            currLength += *loVec++ << 7;
+        }
+        else
+        {
+            currLength = *loVec++ >> 1;
         }
 
         if (currLength != 0)
@@ -703,6 +697,9 @@ ARM_FUNC __attribute__((noinline, no_reorder)) __attribute__((optimize("-O3"))) 
     } while (loVec < loVecEnd);
 }
 
+__attribute__((no_reorder)) static void DecodeInstructions_End(void) {}
+#endif
+
 //  Dark Egg magic
 ARM_FUNC __attribute__((no_reorder)) static void SwitchToArmCallDecodeInstructions(u32 headerLoSize, u8 *loVec, u16 *symVec, void *dest, void (*decodeFunction)(u32 headerLoSize, u8 *loVec, u16 *symVec, void *dest))
 {
@@ -714,7 +711,7 @@ static void DecodeInstructionsIwram(u32 headerLoSize, u8 *loVec, u16 *symVec, vo
 {
     u32 funcBuffer[350];
 
-    CopyFuncToIwram(funcBuffer, DecodeInstructions, SwitchToArmCallDecodeInstructions);
+    CopyFuncToIwram(funcBuffer, DecodeInstructions, DecodeInstructions_End);
     SwitchToArmCallDecodeInstructions(headerLoSize, loVec, symVec, dest, (void *) funcBuffer);
 }
 

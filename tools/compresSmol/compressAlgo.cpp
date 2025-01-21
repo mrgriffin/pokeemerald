@@ -141,21 +141,21 @@ void ShortCompressionInstruction::buildBytes()
     {
         //  Current pattern either exists earlier in the image
         //  or it's a long run of the same value
-        size_t currLength = length;
-        loBytes.push_back(currLength & LO_LOW_BITS_MASK);
-        currLength = currLength >> LO_NUM_LOW_BITS;
-        if (currLength != 0)
-        {
-            loBytes[loBytes.size() - 1] += LO_CONTINUE_BIT;
-            loBytes.push_back(currLength & BYTE_MASK);
-        }
         size_t currOffset = offset;
-        loBytes.push_back(currOffset & LO_LOW_BITS_MASK);
+        loBytes.push_back((currOffset & LO_LOW_BITS_MASK) << 1);
         currOffset = currOffset >> LO_NUM_LOW_BITS;
         if (currOffset != 0)
         {
-            loBytes[loBytes.size() - 1] += LO_CONTINUE_BIT;
+            loBytes[loBytes.size() - 1] += 0x01;
             loBytes.push_back(currOffset & BYTE_MASK);
+        }
+        size_t currLength = length;
+        loBytes.push_back((currLength & LO_LOW_BITS_MASK) << 1);
+        currLength = currLength >> LO_NUM_LOW_BITS;
+        if (currLength != 0)
+        {
+            loBytes[loBytes.size() - 1] += 0x01;
+            loBytes.push_back(currLength & BYTE_MASK);
         }
         symShorts.push_back(firstSymbol);
     }
@@ -164,15 +164,15 @@ void ShortCompressionInstruction::buildBytes()
         //  The current pattern doesn't exist earlier in the image
         //  it has to be written section by section
         //  Set LENGTH parameter to 0, and use OFFSET parameter as length
-        loBytes.push_back(0);
         size_t currLength = length;
-        loBytes.push_back(currLength & LO_LOW_BITS_MASK);
+        loBytes.push_back((currLength & LO_LOW_BITS_MASK) << 1);
         currLength = currLength >> LO_NUM_LOW_BITS;
         if (currLength != 0)
         {
-            loBytes[loBytes.size() - 1] += LO_CONTINUE_BIT;
+            loBytes[loBytes.size() - 1] += 0x01;
             loBytes.push_back(currLength & BYTE_MASK);
         }
+        loBytes.push_back(0);
         for (unsigned short currSymbol : symbols)
             symShorts.push_back(currSymbol);
     }
@@ -282,18 +282,18 @@ std::vector<unsigned short> decodeBytesShort(std::vector<unsigned char> *pLoVec,
     {
         size_t currLength = 0;
         size_t currOffset = 0;
-        currLength += (*pLoVec)[loIndex] & LO_LOW_BITS_MASK;
-        loIndex++;
-        if (((*pLoVec)[loIndex-1] & LO_CONTINUE_BIT) == LO_CONTINUE_BIT)
-        {
-            currLength += (*pLoVec)[loIndex] << LO_NUM_LOW_BITS;
-            loIndex++;
-        }
-        currOffset += (*pLoVec)[loIndex] & LO_LOW_BITS_MASK;
+        currOffset += (*pLoVec)[loIndex] >> 1;
         loIndex++;
         if (((*pLoVec)[loIndex-1] & LO_CONTINUE_BIT) == LO_CONTINUE_BIT)
         {
             currOffset += (*pLoVec)[loIndex] << LO_NUM_LOW_BITS;
+            loIndex++;
+        }
+        currLength += (*pLoVec)[loIndex] >> 1;
+        loIndex++;
+        if (((*pLoVec)[loIndex-1] & LO_CONTINUE_BIT) == LO_CONTINUE_BIT)
+        {
+            currLength += (*pLoVec)[loIndex] << LO_NUM_LOW_BITS;
             loIndex++;
         }
         if (currLength != 0)

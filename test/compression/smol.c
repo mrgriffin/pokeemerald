@@ -26,6 +26,7 @@ TEST("Compression test: tileset smol")
         if (val1 != val2)
         {
             areEqual = FALSE;
+            DebugPrintf("different at %x", &compBuffer[i]);
             break;
         }
     }

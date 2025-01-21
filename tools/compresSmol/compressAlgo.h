@@ -16,7 +16,7 @@
 #define OVERWORLD_32X32         1024
 
 #define TANS_TABLE_SIZE         64
-#define LO_CONTINUE_BIT         0x80
+#define LO_CONTINUE_BIT         0x01
 #define LO_LOW_BITS_MASK        0x7f
 #define LO_NUM_LOW_BITS         0x7
 #define BYTE_MASK               0xff
