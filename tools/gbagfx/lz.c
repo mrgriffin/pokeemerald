@@ -93,6 +93,9 @@ unsigned char *LZCompress(unsigned char *src, int srcSize, int *compressedSize, 
 	int srcPos = 0;
 	int destPos = 4;
 
+        int popcounts[9] = {};
+        int clzs[9] = {};
+
 	for (;;) {
 		unsigned char *flags = &dest[destPos++];
 		*flags = 0;
@@ -143,9 +146,15 @@ unsigned char *LZCompress(unsigned char *src, int srcSize, int *compressedSize, 
 				}
 
 				*compressedSize = destPos;
+                                printf("popcounts: %d %d %d %d %d %d %d %d %d\n", popcounts[0], popcounts[1], popcounts[2], popcounts[3], popcounts[4], popcounts[5], popcounts[6], popcounts[7], popcounts[8]);
+                                printf("clzs: %d %d %d %d %d %d %d %d %d\n", clzs[0], clzs[1], clzs[2], clzs[3], clzs[4], clzs[5], clzs[6], clzs[7], clzs[8]);
 				return dest;
 			}
 		}
+
+                popcounts[__builtin_popcount(*flags)]++;
+                if (*flags) clzs[__builtin_clz(*flags) - 23]++;
+                else clzs[0]++;
 	}
 
 fail:

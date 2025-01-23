@@ -1281,8 +1281,8 @@ bool8 LoadCompressedSpritePaletteUsingHeap(const struct CompressedSpritePalette 
     return FALSE;
 }
 
-extern const u32 LZ77UnCompWRAMOptimized[];
-extern const u32 LZ77UnCompWRAMOptimized_end[];
+extern const u32 LZ77UnCompWRAMOptimized2[];
+extern const u32 LZ77UnCompWRAMOptimized2_end[];
 
 ARM_FUNC static void SwitchToArmCallFastLZ77(const u32 *src, void *dest, void (*funcPtr)(const u32 *src, void *dest))
 {
@@ -1293,6 +1293,6 @@ void FastLZ77UnCompWram(const u32 *src, void *dest)
 {
     u32 funcBuffer[200];
 
-    CopyFuncToIwram(funcBuffer, LZ77UnCompWRAMOptimized, LZ77UnCompWRAMOptimized_end);
+    CopyFuncToIwram(funcBuffer, LZ77UnCompWRAMOptimized2, LZ77UnCompWRAMOptimized2_end);
     SwitchToArmCallFastLZ77(src, dest, (void *) funcBuffer);
 }

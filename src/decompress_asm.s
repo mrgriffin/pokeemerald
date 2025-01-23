@@ -18,10 +18,75 @@ FastUnsafeCopy32:
     bgt     .Lloop_32
     pop     {r4-r10}
     bx    lr
-    
-    
+
+    @ Have this copy itself to the stack and execute. Will be faster
+    @ because we don't have to load addresses from ROM and can
+    @ specialize the loop length.
+.global LZ77UnCompWRAMOptimized2
+.type LZ77UnCompWRAMOptimized2, %function
+LZ77UnCompWRAMOptimized2:
+    ldmia r0/*src*/!, {r2/*header*/, r3/*buffer*/}
+    add r2/*end*/, r1/*dest*/, r2/*header*/, lsr #8
+    push {r4-r7, r9-r11}
+    ldr r12/*shift*/, =0x98100800
+    mov r11/*end-of-bits-marker*/, #0x00800000
+    mov r10/*15*/, #15
+    ldr r9/*displacement-mask*/, =0x0F0000FF
+.LRefillBits:
+    ror r4/*bits*/, r3/*buffer*/, r12/*shift*/
+    rors r12/*shift*/, #8
+    ldrmi r3/*buffer*/, [r0/*src*/], #4
+    orr r4/*bits*/, r11/*end-of-bits-marker*/, r4/*bits*/, lsl #24
+.LNext:
+    lsls r4/*bits*/, #1
+    beq .LRefillBits
+    bcs .LBackReference
+.LRawByte:
+    ror r5/*byte*/, r3/*buffer*/, r12/*shift*/
+    rors r12/*shift*/, #8
+    ldrmi r3/*buffer*/, [r0/*src*/], #4
+    strb r5/*byte*/, [r1/*dest*/], #1
+    cmp r1/*dest*/, r2/*end*/
+    blt .LNext
+    pop {r4-r7, r9-r11}
+    bx lr
+
+.LBackReference:
+    rors r12/*shift*/, #8
+    bmi .LBackReference1
+    ror r5/*data*/, r3/*buffer*/, r12/*shift*/
+    rors r12/*shift*/, #8
+    ldrmi r3/*buffer*/, [r0/*src*/], #4
+.LCopyBackReference:
+    sub r6/*reverse-count*/, r10/*15*/, r5/*NDxxxxDD*/, lsr #28
+    and r5/*0D0000DD*/, r9/*displacement-mask*/
+    orrs r5/*0DDD00DD*/, r5/*0D0000DD*/, r5/*0D0000DD*/, lsl #16 @ C=0
+    sbc r5/*from*/, r1/*dest*/, r5/*0DDD0000*/, lsr #16
+    add pc, pc, r6/*reverse-count*/, lsl #3
+    nop
+.rept 18
+    ldrb r6/*byte*/, [r5/*from*/], #1
+    strb r6/*byte*/, [r1/*dest*/], #1
+.endr
+    cmp r1/*dest*/, r2/*end*/
+    blt .LNext
+    pop {r4-r7, r9-r11}
+    bx lr
+
+.LBackReference1:
+    and r5/*ND000000*/, r3/*buffer*/, #0xFF000000
+    rors r12/*shift*/, #8
+    ldr r3/*buffer*/, [r0/*src*/], #4
+    and r6/*000000DD*/, r3/*buffer*/, #0x000000FF
+    orr r5/*ND0000DD*/, r5/*ND000000*/, r6/*000000DD*/
+    b .LCopyBackReference
+
+    .pool
+.global LZ77UnCompWRAMOptimized2_end
+LZ77UnCompWRAMOptimized2_end:
+
 @ Credit to:  luckytyphlosion as it's his implementation
-    
+
     .section .text @Copied to stack on run-time
     .align 2
 

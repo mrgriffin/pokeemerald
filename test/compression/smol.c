@@ -20,6 +20,9 @@ enum
     COMPRESSION_FASTLZ,
 };
 
+#undef T_COMPRESSION_SHOULD_PRINT
+#define T_COMPRESSION_SHOULD_PRINT 1
+
 extern void FastLZ77UnCompWram(const u32 *src, void *dest);
 
 static bool32 DecompressImgPrintResults(const u32 *img, const u32 *orgImg, const char *imgName, s32 mode, s32 size)
@@ -58,6 +61,7 @@ static bool32 DecompressImgPrintResults(const u32 *img, const u32 *orgImg, const
     {
         if (orgImg[i] != compBuffer[i])
         {
+            DebugPrintf("difference at %07x, got: %08x, expected: %08x", &compBuffer[i], compBuffer[i], orgImg[i]);
             areEqual = FALSE;
             break;
         }
