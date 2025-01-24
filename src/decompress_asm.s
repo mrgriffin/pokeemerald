@@ -22,66 +22,85 @@ FastUnsafeCopy32:
     @ Have this copy itself to the stack and execute. Will be faster
     @ because we don't have to load addresses from ROM and can
     @ specialize the loop length.
+    @ TODO: Backup the last 8 bytes after end, because that's the most
+    @ that could be accidentally overwritten.
 .global LZ77UnCompWRAMOptimized2
 .type LZ77UnCompWRAMOptimized2, %function
 LZ77UnCompWRAMOptimized2:
     ldmia r0/*src*/!, {r2/*header*/, r3/*buffer*/}
     add r2/*end*/, r1/*dest*/, r2/*header*/, lsr #8
-    push {r4-r7, r9-r11}
-    ldr r12/*shift*/, =0x98100800
+    push {r4-r11}
+    mov r12/*shift*/, #0
     mov r11/*end-of-bits-marker*/, #0x00800000
-    mov r10/*15*/, #15
+    adr r10/*copy-back-reference-3*/, .LCopyBackReferenceEnd - 3*8
     ldr r9/*displacement-mask*/, =0x0F0000FF
+    adr r8/*lz-lut*/, .LLZLUT
+    adr r7/*uncompressed-rept-1*/, .LUncompressedReptEnd - 1*16
 .LRefillBits:
     ror r4/*bits*/, r3/*buffer*/, r12/*shift*/
-    rors r12/*shift*/, #8
-    ldrmi r3/*buffer*/, [r0/*src*/], #4
+    adds r12/*shift*/, #0x40000008
+    ldrcs r3/*buffer*/, [r0/*src*/], #4
     orr r4/*bits*/, r11/*end-of-bits-marker*/, r4/*bits*/, lsl #24
 .LNext:
     lsls r4/*bits*/, #1
     beq .LRefillBits
-    bcs .LBackReference
-.LRawByte:
-    ror r5/*byte*/, r3/*buffer*/, r12/*shift*/
-    rors r12/*shift*/, #8
-    ldrmi r3/*buffer*/, [r0/*src*/], #4
-    strb r5/*byte*/, [r1/*dest*/], #1
-    cmp r1/*dest*/, r2/*end*/
-    blt .LNext
-    pop {r4-r7, r9-r11}
-    bx lr
-
+    ldrbcc r6/*lz*/, [r8/*lz-lut*/, r4/*bits*/, lsr #25]
+    subcc pc, r7/*uncompressed-rept-1*/, r6/*lz*/, lsl #4
 .LBackReference:
-    rors r12/*shift*/, #8
-    bmi .LBackReference1
+    adds r12/*shift*/, #0x40000008
+    bcs .LBackReference1
     ror r5/*data*/, r3/*buffer*/, r12/*shift*/
-    rors r12/*shift*/, #8
-    ldrmi r3/*buffer*/, [r0/*src*/], #4
+    adds r12/*shift*/, #0x40000008
+    ldrcs r3/*buffer*/, [r0/*src*/], #4
 .LCopyBackReference:
-    sub r6/*reverse-count*/, r10/*15*/, r5/*NDxxxxDD*/, lsr #28
+    lsr r6/*N*/, r5/*NDxxxxDD*/, #28
     and r5/*0D0000DD*/, r9/*displacement-mask*/
     orrs r5/*0DDD00DD*/, r5/*0D0000DD*/, r5/*0D0000DD*/, lsl #16 @ C=0
     sbc r5/*from*/, r1/*dest*/, r5/*0DDD0000*/, lsr #16
-    add pc, pc, r6/*reverse-count*/, lsl #3
-    nop
+    sub pc, r10/*copy-back-reference-3*/, r6/*N*/, lsl #3
 .rept 18
     ldrb r6/*byte*/, [r5/*from*/], #1
     strb r6/*byte*/, [r1/*dest*/], #1
 .endr
+.LCopyBackReferenceEnd:
     cmp r1/*dest*/, r2/*end*/
     blt .LNext
-    pop {r4-r7, r9-r11}
+    pop {r4-r11}
     bx lr
 
 .LBackReference1:
     and r5/*ND000000*/, r3/*buffer*/, #0xFF000000
-    rors r12/*shift*/, #8
+    add r12/*shift*/, #0x40000008
     ldr r3/*buffer*/, [r0/*src*/], #4
     and r6/*000000DD*/, r3/*buffer*/, #0x000000FF
     orr r5/*ND0000DD*/, r5/*ND000000*/, r6/*000000DD*/
+    @ XXX: Instead of this branch, we could copy the setup code and do
+    @ our own branch into the repeat table.
     b .LCopyBackReference
 
+.rept 8
+    ror r5/*byte*/, r3/*buffer*/, r12/*shift*/
+    adds r12/*shift*/, #0x40000008
+    ldrcs r3/*buffer*/, [r0/*src*/], #4
+    strb r5/*byte*/, [r1/*dest*/], #1
+.endr
+.LUncompressedReptEnd:
+    lsl r4/*bits*/, r6/*lz*/
+    cmp r1/*dest*/, r2/*end*/
+    blt .LNext
+    pop {r4-r11}
+    bx lr
+
     .pool
+.LLZLUT:
+    .rept 1;   .byte 7; .endr
+    .rept 1;   .byte 6; .endr
+    .rept 2;   .byte 5; .endr
+    .rept 4;   .byte 4; .endr
+    .rept 8;   .byte 3; .endr
+    .rept 16;  .byte 2; .endr
+    .rept 32;  .byte 1; .endr
+    .rept 64;  .byte 0; .endr
 .global LZ77UnCompWRAMOptimized2_end
 LZ77UnCompWRAMOptimized2_end:
 
