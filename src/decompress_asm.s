@@ -22,14 +22,16 @@ FastUnsafeCopy32:
     @ Have this copy itself to the stack and execute. Will be faster
     @ because we don't have to load addresses from ROM and can
     @ specialize the loop length.
-    @ TODO: Backup the last 8 bytes after end, because that's the most
-    @ that could be accidentally overwritten.
+    @ Could you copy the first N bytes and then switch into ARM to
+    @ continue the copy?
 .global LZ77UnCompWRAMOptimized2
 .type LZ77UnCompWRAMOptimized2, %function
 LZ77UnCompWRAMOptimized2:
     ldmia r0/*src*/!, {r2/*header*/, r3/*buffer*/}
     add r2/*end*/, r1/*dest*/, r2/*header*/, lsr #8
     push {r4-r11,lr}
+    ldmia r2/*end*/, {r4/*backup1*/, r5/*backup2*/}
+    push {r4/*backup1*/, r5/*backup2*/}
     mov r14/*0x0000000F*/, #0x0000000F
     mov r12/*shift*/, #0
     mov r11/*end-of-bits-marker*/, #0x01000000
@@ -53,7 +55,6 @@ LZ77UnCompWRAMOptimized2:
 .LBackReference:
     adds r12/*shift*/, #0x40000008
     bcs .LBackReference1
-    @ NOTE: Could do mov, movmi, movlt to detect 0, 8, 16.
     ror r5/*NDxxxxDD*/, r3/*buffer*/, r12/*shift*/
     ldrlt r3/*buffer*/, [r0/*src*/], #4 @ V<>N only if shift was 16
     lsr r6/*N*/, r5/*NDxxxxDD*/, #28
@@ -81,8 +82,6 @@ LZ77UnCompWRAMOptimized2:
     sub pc, r10/*copy-back-reference-3*/, r6/*N*/, lsl #3
 
 .rept 8
-    @ XXX: We might be able to do fewer rotates and loads by detecting
-    @ where we are in the cycle?
     ror r5/*byte*/, r3/*buffer*/, r12/*shift*/
     adds r12/*shift*/, #0x40000008
     ldrcs r3/*buffer*/, [r0/*src*/], #4
@@ -94,7 +93,9 @@ LZ77UnCompWRAMOptimized2:
     b .LBackReference
 
 .LExit:
-    @ XXX: Need to restore the backup here.
+    pop {r4/*backup1*/, r5/*backup2*/}
+    @ Restore backup if 'dest > end'.
+    stmiagt r2/*end*/, {r4/*backup1*/, r5/*backup2*/}
     pop {r4-r11,lr}
     bx lr
 
