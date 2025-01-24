@@ -32,22 +32,22 @@ LZ77UnCompWRAMOptimized2:
     push {r4-r11,lr}
     mov r14/*0x0000000F*/, #0x0000000F
     mov r12/*shift*/, #0
-    mov r11/*end-of-bits-marker*/, #0x00800000
+    mov r11/*end-of-bits-marker*/, #0x01000000
     adr r10/*copy-back-reference-3*/, .LCopyBackReferenceEnd - 3*8
     ldr r9/*displacement-mask*/, =0x0F0000FF
     adr r8/*lz-+1-lut*/, .LLZP1LUT
     adr r7/*uncompressed-rept*/, .LUncompressedReptEnd
-.LCheckEndRefillBits:
+.LRefillBits:
+    @ 'dest >= end' checks are deferred until the bits are refilled.
+    @ We assume that unused 'bits' are set to '0', so worst-case there
+    @ will be 7 uncompressed bytes written to 'end ... end + 6'.
     cmp r1/*dest*/, r2/*end*/
     bge .LExit
-.LRefillBits:
     ror r4/*bits*/, r3/*buffer*/, r12/*shift*/
     adds r12/*shift*/, #0x40000008
     ldrcs r3/*buffer*/, [r0/*src*/], #4
-    orr r4/*bits*/, r11/*end-of-bits-marker*/, r4/*bits*/, lsl #24
-.LNext:
-    lsls r4/*bits*/, #1
-    beq .LRefillBits
+    orrs r4/*bits*/, r11/*end-of-bits-marker*/, r4/*bits*/, lsl #25
+.LNextBit:
     ldrbcc r6/*lz+1*/, [r8/*lz-+1-lut*/, r4/*bits*/, lsr #25]
     subcc pc, r7/*uncompressed-rept*/, r6/*lz+1*/, lsl #4
 .LBackReference:
@@ -67,11 +67,9 @@ LZ77UnCompWRAMOptimized2:
     strb r6/*byte*/, [r1/*dest*/], #1
 .endr
 .LCopyBackReferenceEnd:
-    cmp r1/*dest*/, r2/*end*/
-    blt .LNext
-.LExit:
-    pop {r4-r11,lr}
-    bx lr
+    lsls r4/*bits*/, #1
+    beq .LRefillBits
+    b .LNextBit
 
 .LBackReference1:
     lsr r6/*N*/, r3/*buffer*/, #28
@@ -92,9 +90,13 @@ LZ77UnCompWRAMOptimized2:
 .endr
 .LUncompressedReptEnd:
     lsls r4/*bits*/, r6/*lz+1*/
-    beq .LCheckEndRefillBits
-    @ NOTE: Assumes that back references are in-bounds.
+    beq .LRefillBits
     b .LBackReference
+
+.LExit:
+    @ XXX: Need to restore the backup here.
+    pop {r4-r11,lr}
+    bx lr
 
     .pool
 .LLZP1LUT:
