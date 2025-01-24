@@ -29,7 +29,8 @@ FastUnsafeCopy32:
 LZ77UnCompWRAMOptimized2:
     ldmia r0/*src*/!, {r2/*header*/, r3/*buffer*/}
     add r2/*end*/, r1/*dest*/, r2/*header*/, lsr #8
-    push {r4-r11}
+    push {r4-r11,lr}
+    mov r14/*0x0000000F*/, #0x0000000F
     mov r12/*shift*/, #0
     mov r11/*end-of-bits-marker*/, #0x00800000
     adr r10/*copy-back-reference-3*/, .LCopyBackReferenceEnd - 3*8
@@ -51,8 +52,8 @@ LZ77UnCompWRAMOptimized2:
     bcs .LBackReference1
     ror r5/*data*/, r3/*buffer*/, r12/*shift*/
     adds r12/*shift*/, #0x40000008
+    @ XXX: could ldrmi and defer the adds until later (gives us C=0)?
     ldrcs r3/*buffer*/, [r0/*src*/], #4
-.LCopyBackReference:
     lsr r6/*N*/, r5/*NDxxxxDD*/, #28
     and r5/*0D0000DD*/, r9/*displacement-mask*/
     orrs r5/*0DDD00DD*/, r5/*0D0000DD*/, r5/*0D0000DD*/, lsl #16 @ C=0
@@ -65,20 +66,21 @@ LZ77UnCompWRAMOptimized2:
 .LCopyBackReferenceEnd:
     cmp r1/*dest*/, r2/*end*/
     blt .LNext
-    pop {r4-r11}
+    pop {r4-r11,lr}
     bx lr
 
 .LBackReference1:
-    and r5/*ND000000*/, r3/*buffer*/, #0xFF000000
-    add r12/*shift*/, #0x40000008
+    lsr r6/*N*/, r3/*buffer*/, #28
+    and r5/*0000000D*/, r14/*0x0000000F*/, r3/*buffer*/, lsr #24
+    adds r12/*shift*/, #0x40000008 @ C=0
     ldr r3/*buffer*/, [r0/*src*/], #4
-    and r6/*000000DD*/, r3/*buffer*/, #0x000000FF
-    orr r5/*ND0000DD*/, r5/*ND000000*/, r6/*000000DD*/
-    @ XXX: Instead of this branch, we could copy the setup code and do
-    @ our own branch into the repeat table.
-    b .LCopyBackReference
+    orr r5/*DD00000D*/, r5/*0000000D*/, r3/*buffer*/, lsl #24
+    sbc r5/*from*/, r1/*dest*/, r5/*DD00000D*/, ror #24
+    sub pc, r10/*copy-back-reference-3*/, r6/*N*/, lsl #3
 
 .rept 8
+    @ XXX: We might be able to do fewer rotates by detecting where we
+    @ are in the cycle?
     ror r5/*byte*/, r3/*buffer*/, r12/*shift*/
     adds r12/*shift*/, #0x40000008
     ldrcs r3/*buffer*/, [r0/*src*/], #4
@@ -88,7 +90,7 @@ LZ77UnCompWRAMOptimized2:
     lsl r4/*bits*/, r6/*lz*/
     cmp r1/*dest*/, r2/*end*/
     blt .LNext
-    pop {r4-r11}
+    pop {r4-r11,lr}
     bx lr
 
     .pool
