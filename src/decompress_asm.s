@@ -35,8 +35,11 @@ LZ77UnCompWRAMOptimized2:
     mov r11/*end-of-bits-marker*/, #0x00800000
     adr r10/*copy-back-reference-3*/, .LCopyBackReferenceEnd - 3*8
     ldr r9/*displacement-mask*/, =0x0F0000FF
-    adr r8/*lz-lut*/, .LLZLUT
-    adr r7/*uncompressed-rept-1*/, .LUncompressedReptEnd - 1*16
+    adr r8/*lz-+1-lut*/, .LLZP1LUT
+    adr r7/*uncompressed-rept*/, .LUncompressedReptEnd
+.LCheckEndRefillBits:
+    cmp r1/*dest*/, r2/*end*/
+    bge .LExit
 .LRefillBits:
     ror r4/*bits*/, r3/*buffer*/, r12/*shift*/
     adds r12/*shift*/, #0x40000008
@@ -45,19 +48,19 @@ LZ77UnCompWRAMOptimized2:
 .LNext:
     lsls r4/*bits*/, #1
     beq .LRefillBits
-    ldrbcc r6/*lz*/, [r8/*lz-lut*/, r4/*bits*/, lsr #25]
-    subcc pc, r7/*uncompressed-rept-1*/, r6/*lz*/, lsl #4
+    ldrbcc r6/*lz+1*/, [r8/*lz-+1-lut*/, r4/*bits*/, lsr #25]
+    subcc pc, r7/*uncompressed-rept*/, r6/*lz+1*/, lsl #4
 .LBackReference:
     adds r12/*shift*/, #0x40000008
     bcs .LBackReference1
-    ror r5/*data*/, r3/*buffer*/, r12/*shift*/
-    adds r12/*shift*/, #0x40000008
-    @ XXX: could ldrmi and defer the adds until later (gives us C=0)?
-    ldrcs r3/*buffer*/, [r0/*src*/], #4
+    @ NOTE: Could do mov, movmi, movlt to detect 0, 8, 16.
+    ror r5/*NDxxxxDD*/, r3/*buffer*/, r12/*shift*/
+    ldrlt r3/*buffer*/, [r0/*src*/], #4 @ V<>N only if shift was 16
     lsr r6/*N*/, r5/*NDxxxxDD*/, #28
     and r5/*0D0000DD*/, r9/*displacement-mask*/
-    orrs r5/*0DDD00DD*/, r5/*0D0000DD*/, r5/*0D0000DD*/, lsl #16 @ C=0
+    orr r5/*0DDD00DD*/, r5/*0D0000DD*/, r5/*0D0000DD*/, lsl #16
     sbc r5/*from*/, r1/*dest*/, r5/*0DDD0000*/, lsr #16
+    adds r12/*shift*/, #0x40000008
     sub pc, r10/*copy-back-reference-3*/, r6/*N*/, lsl #3
 .rept 18
     ldrb r6/*byte*/, [r5/*from*/], #1
@@ -66,6 +69,7 @@ LZ77UnCompWRAMOptimized2:
 .LCopyBackReferenceEnd:
     cmp r1/*dest*/, r2/*end*/
     blt .LNext
+.LExit:
     pop {r4-r11,lr}
     bx lr
 
@@ -79,30 +83,29 @@ LZ77UnCompWRAMOptimized2:
     sub pc, r10/*copy-back-reference-3*/, r6/*N*/, lsl #3
 
 .rept 8
-    @ XXX: We might be able to do fewer rotates by detecting where we
-    @ are in the cycle?
+    @ XXX: We might be able to do fewer rotates and loads by detecting
+    @ where we are in the cycle?
     ror r5/*byte*/, r3/*buffer*/, r12/*shift*/
     adds r12/*shift*/, #0x40000008
     ldrcs r3/*buffer*/, [r0/*src*/], #4
     strb r5/*byte*/, [r1/*dest*/], #1
 .endr
 .LUncompressedReptEnd:
-    lsl r4/*bits*/, r6/*lz*/
-    cmp r1/*dest*/, r2/*end*/
-    blt .LNext
-    pop {r4-r11,lr}
-    bx lr
+    lsls r4/*bits*/, r6/*lz+1*/
+    beq .LCheckEndRefillBits
+    @ NOTE: Assumes that back references are in-bounds.
+    b .LBackReference
 
     .pool
-.LLZLUT:
+.LLZP1LUT:
+    .rept 1;   .byte 8; .endr
     .rept 1;   .byte 7; .endr
-    .rept 1;   .byte 6; .endr
-    .rept 2;   .byte 5; .endr
-    .rept 4;   .byte 4; .endr
-    .rept 8;   .byte 3; .endr
-    .rept 16;  .byte 2; .endr
-    .rept 32;  .byte 1; .endr
-    .rept 64;  .byte 0; .endr
+    .rept 2;   .byte 6; .endr
+    .rept 4;   .byte 5; .endr
+    .rept 8;   .byte 4; .endr
+    .rept 16;  .byte 3; .endr
+    .rept 32;  .byte 2; .endr
+    .rept 64;  .byte 1; .endr
 .global LZ77UnCompWRAMOptimized2_end
 LZ77UnCompWRAMOptimized2_end:
 
