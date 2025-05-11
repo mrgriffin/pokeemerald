@@ -293,7 +293,9 @@ EventScript_UseWaterfall::
 	msgbox Text_WantToWaterfall, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, EventScript_EndWaterfall
 	msgbox Text_MonUsedWaterfall, MSGBOX_DEFAULT
+.if FNPC_ENABLE_NPC_FOLLOWERS
 	hidefollowernpc
+.endif
 	dofieldeffect FLDEFF_USE_WATERFALL
 	callnative FollowerNPC_WarpSetEnd
 	goto EventScript_EndWaterfall
@@ -330,7 +332,9 @@ EventScript_UseDive::
 	msgbox Text_WantToDive, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, EventScript_EndDive
 	msgbox Text_MonUsedDive, MSGBOX_DEFAULT
+.if FNPC_ENABLE_NPC_FOLLOWERS
 	hidefollowernpc
+.endif
 	setfieldeffectargument 0, VAR_0x8004
 	setfieldeffectargument 1, 1
 	dofieldeffect FLDEFF_USE_DIVE
@@ -356,7 +360,9 @@ EventScript_UseDiveUnderwater::
 	msgbox Text_WantToSurface, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, EventScript_EndSurface
 	msgbox Text_MonUsedDive, MSGBOX_DEFAULT
+.if FNPC_ENABLE_NPC_FOLLOWERS
 	hidefollowernpc
+.endif
 	dofieldeffect FLDEFF_USE_DIVE
 	goto EventScript_EndSurface
 	end

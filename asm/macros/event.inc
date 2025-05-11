@@ -2526,6 +2526,7 @@
 	@ Follower flags are defined in include/constants/follower_npc.h
 	@ If you want to specify a battle partner without specifying a custom script, you can set the script parameter to 0.
 	.macro setfollowernpc localId:req, flags:req, script=0, battlePartner=0
+	.if FNPC_ENABLE_NPC_FOLLOWERS
 	checkfollowernpc
 	goto_if_eq VAR_RESULT, TRUE, 1f
 	hidefollower
@@ -2543,16 +2544,27 @@
 	.4byte \script
 	updatefollowingmon
 	1:
+	.else
+	.error "setfollowernpc unavailable with FNPC_ENABLE_NPC_FOLLOWERS defined as FALSE"
+	.endif
 	.endm
 
 	@ Remove the follower NPC (assumes there will only ever be one).
 	.macro destroyfollowernpc
+	.if FNPC_ENABLE_NPC_FOLLOWERS
 	callnative ScriptDestroyFollowerNPC
+	.else
+	.error "destroyfollowernpc unavailable with FNPC_ENABLE_NPC_FOLLOWERS defined as FALSE"
+	.endif
 	.endm
 
 	@ Makes the player and follower NPC face one another.
 	.macro facefollowernpc
+	.if FNPC_ENABLE_NPC_FOLLOWERS
 	callnative ScriptFaceFollowerNPC
+	.else
+	.error "facefollowernpc unavailable with FNPC_ENABLE_NPC_FOLLOWERS defined as FALSE"
+	.endif
 	.endm
 
 	@ Makes the follower NPC walk into the player and get hidden.
@@ -2562,10 +2574,14 @@
 	@ 2 = Fast
 	@ 3 = Faster
 	.macro hidefollowernpc speed=1
+	.if FNPC_ENABLE_NPC_FOLLOWERS
 	callnative ScriptHideNPCFollower
 	.byte \speed
 	waitmovement OBJ_EVENT_ID_NPC_FOLLOWER
 	callnative HideNPCFollower
+	.else
+	.error "hidefollowernpc unavailable with FNPC_ENABLE_NPC_FOLLOWERS defined as FALSE"
+	.endif
 	.endm
 
 	@ Checks if you have a follower NPC. Returns the result to VAR_RESULT.
@@ -2575,11 +2591,19 @@
 
 	@ Updates Pokemon follower.
 	.macro updatefollowingmon
+	.if FNPC_ENABLE_NPC_FOLLOWERS
 	callnative ScriptUpdateFollowingMon
+	.else
+	.error "updatefollowingmon unavailable with FNPC_ENABLE_NPC_FOLLOWERS defined as FALSE"
+	.endif
 	.endm
 
 	@ Changes the battle partner of the existing follower NPC.
 	.macro changefollowerbattler battlePartner:req
+	.if FNPC_ENABLE_NPC_FOLLOWERS
 	callnative ScriptChangeFollowerNPCBattlePartner
 	.2byte \battlePartner
+	.else
+	.error "changefollowerbattler unavailable with FNPC_ENABLE_NPC_FOLLOWERS defined as FALSE"
+	.endif
 	.endm
