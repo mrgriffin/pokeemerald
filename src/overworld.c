@@ -60,6 +60,7 @@
 #include "start_menu.h"
 #include "string_util.h"
 #include "task.h"
+#include "test_runner.h"
 #include "tileset_anims.h"
 #include "time_events.h"
 #include "trainer_hill.h"
@@ -1522,8 +1523,9 @@ bool32 IsOverworldLinkActive(void)
 
 static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
 {
-    struct FieldInput inputStruct;
     UpdatePlayerAvatarTransitionState();
+    UNUSED bool32 playerFieldControlsWereLocked = ArePlayerFieldControlsLocked();
+    struct FieldInput inputStruct;
     FieldClearPlayerInput(&inputStruct);
     FieldGetPlayerInput(&inputStruct, newKeys, heldKeys);
     CancelSignPostMessageBox(&inputStruct);
@@ -1543,6 +1545,8 @@ static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
     // If stop running but keep holding B -> fix follower frame.
     if (PlayerHasFollowerNPC() && (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_ON_FOOT) && IsPlayerStandingStill())
         ObjectEventSetHeldMovement(&gObjectEvents[GetFollowerNPCObjectId()], GetFaceDirectionAnimNum(gObjectEvents[GetFollowerNPCObjectId()].facingDirection));
+
+    TestRunner_Overworld_PostPlayerInput(&inputStruct, &gPlayerAvatar, &gObjectEvents[gPlayerAvatar.objectEventId], playerFieldControlsWereLocked, ArePlayerFieldControlsLocked());
 }
 
 void CB1_Overworld(void)
@@ -1792,7 +1796,10 @@ void CB2_NewGame(void)
     PlayTimeCounter_Start();
     ScriptContext_Init();
     UnlockPlayerFieldControls();
-    gFieldCallback = ExecuteTruckSequence;
+    if (TESTING)
+        gFieldCallback = NULL;
+    else
+        gFieldCallback = ExecuteTruckSequence;
     gFieldCallback2 = NULL;
     DoMapLoadLoop(&gMain.state);
     SetFieldVBlankCallback();

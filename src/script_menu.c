@@ -1146,3 +1146,17 @@ int ScriptMenu_AdjustLeftCoordFromWidth(int left, int width)
 
     return adjustedLeft;
 }
+
+enum MultichoiceType ActiveMultichoiceType(void)
+{
+    if (FuncIsActiveTask(Task_HandleYesNoInput))
+        return MULTICHOICE_YESNO;
+    else if (FuncIsActiveTask(Task_HandleMultichoiceInput))
+        return MULTICHOICE_NORMAL;
+    else if (FuncIsActiveTask(Task_HandleScrollingMultichoiceInput))
+        return MULTICHOICE_SCROLLING;
+    else if (FuncIsActiveTask(Task_HandleMultichoiceGridInput))
+        return MULTICHOICE_GRID;
+    else
+        return MULTICHOICE_NONE;
+}

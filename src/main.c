@@ -268,7 +268,11 @@ void InitKeys(void)
 
 static void ReadKeys(void)
 {
-    u16 keyInput = REG_KEYINPUT ^ KEYS_MASK;
+    u16 keyInput;
+    if (TESTING)
+        keyInput = TestRunner_ReadKeys(gMain.heldKeysRaw);
+    else
+        keyInput = REG_KEYINPUT ^ KEYS_MASK;
     gMain.newKeysRaw = keyInput & ~gMain.heldKeysRaw;
     gMain.newKeys = gMain.newKeysRaw;
     gMain.newAndRepeatedKeys = gMain.newKeysRaw;

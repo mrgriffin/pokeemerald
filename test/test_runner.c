@@ -5,6 +5,7 @@
 #include "load_save.h"
 #include "main.h"
 #include "malloc.h"
+#include "new_game.h"
 #include "random.h"
 #include "task.h"
 #include "constants/characters.h"
@@ -189,7 +190,7 @@ void TestRunner_CheckMemory(void)
 static void ClearSaveBlocks(void)
 {
     ClearSav1();
-    ClearSav2();
+    Sav2_ClearSetDefault();
     ClearSav3();
 }
 

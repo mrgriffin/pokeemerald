@@ -12,6 +12,15 @@
 #define MULTICHOICE_DYNAMIC_STACK_SIZE 5
 #define MULTICHOICE_DYNAMIC_STACK_INC 5
 
+enum MultichoiceType
+{
+    MULTICHOICE_NONE,
+    MULTICHOICE_YESNO,
+    MULTICHOICE_NORMAL,
+    MULTICHOICE_SCROLLING,
+    MULTICHOICE_GRID,
+};
+
 extern const u8 *const gStdStrings[];
 
 struct DynamicMultichoiceStack
@@ -21,6 +30,7 @@ struct DynamicMultichoiceStack
     struct ListMenuItem *elements;
 };
 
+enum MultichoiceType ActiveMultichoiceType(void);
 void MultichoiceDynamic_InitStack(u32 capacity);
 void MultichoiceDynamic_ReallocStack(u32 newCapacity);
 bool32 MultichoiceDynamic_StackFull(void);
