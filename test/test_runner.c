@@ -615,7 +615,7 @@ const struct TestRunner gAssumptionsRunner =
  *
  * WARNING: This could potentially be flaky because other global state
  * will not be cleaned up, we may decide to Exit on a timeout instead. */
-static NAKED void JumpToAgbMainLoop(void)
+static __attribute__((noreturn)) NAKED void JumpToAgbMainLoop(void)
 {
     asm(".arm\n\
          .word 0xe3104778\n\
