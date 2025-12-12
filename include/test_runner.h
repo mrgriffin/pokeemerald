@@ -34,11 +34,6 @@ u32 TestRunner_Battle_GetForcedAbility(u32 side, u32 partyIndex);
 u32 TestRunner_Battle_GetChosenGimmick(u32 side, u32 partyIndex);
 u32 TestRunner_Battle_GetForcedEnvironment(void);
 
-struct FieldInput;
-struct PlayerAvatar;
-struct ObjectEvent;
-
-void TestRunner_Overworld_PostPlayerInput(const struct FieldInput *input, const struct PlayerAvatar *avatar, const struct ObjectEvent *objectEvent, bool32 playerFieldControlsWereLocked, bool32 playerFieldControlsAreLocked);
 void TestRunner_Overworld_SetInitialWarpDestination(void);
 
 u32 TestRunner_ReadKeys(u32 prevKeyInput);

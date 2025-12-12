@@ -1524,7 +1524,6 @@ bool32 IsOverworldLinkActive(void)
 static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
 {
     UpdatePlayerAvatarTransitionState();
-    UNUSED bool32 playerFieldControlsWereLocked = ArePlayerFieldControlsLocked();
     struct FieldInput inputStruct;
     FieldClearPlayerInput(&inputStruct);
     FieldGetPlayerInput(&inputStruct, newKeys, heldKeys);
@@ -1545,8 +1544,6 @@ static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
     // If stop running but keep holding B -> fix follower frame.
     if (PlayerHasFollowerNPC() && (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_ON_FOOT) && IsPlayerStandingStill())
         ObjectEventSetHeldMovement(&gObjectEvents[GetFollowerNPCObjectId()], GetFaceDirectionAnimNum(gObjectEvents[GetFollowerNPCObjectId()].facingDirection));
-
-    TestRunner_Overworld_PostPlayerInput(&inputStruct, &gPlayerAvatar, &gObjectEvents[gPlayerAvatar.objectEventId], playerFieldControlsWereLocked, ArePlayerFieldControlsLocked());
 }
 
 void CB1_Overworld(void)
