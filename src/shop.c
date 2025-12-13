@@ -1316,3 +1316,25 @@ void CreateDecorationShop2Menu(const u16 *itemsForSale)
     SetShopItemsForSale(itemsForSale);
     SetShopMenuCallback(ScriptContext_Enable);
 }
+
+#if TESTING
+bool32 InPokemartMenu(void)
+{
+    return FuncIsActiveTask(Task_ShopMenu);
+}
+
+const u8 *PokemartMenu_ItemText(u32 index)
+{
+    if (FuncIsActiveTask(Task_ShopMenu))
+    {
+        if (index < sMartInfo.itemCount)
+            return sMartInfo.menuActions[index].text;
+        else
+            return NULL;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+#endif

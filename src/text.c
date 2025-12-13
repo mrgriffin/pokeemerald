@@ -489,6 +489,16 @@ bool32 IsTextPrinterActive(u8 id)
     return sTextPrinters[id].active;
 }
 
+bool32 AnyTextPrinterActive(void)
+{
+    for (u32 i = 0; i < ARRAY_COUNT(sTextPrinters); i++)
+    {
+        if (sTextPrinters[i].active)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static u32 RenderFont(struct TextPrinter *textPrinter)
 {
     u32 ret;

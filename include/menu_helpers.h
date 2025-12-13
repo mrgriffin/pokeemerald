@@ -38,4 +38,8 @@ void DestroySwapLineSprites(u8 *spriteIds, u8 count);
 void SetSwapLineSpritesInvisibility(u8 *spriteIds, u8 count, bool8 invisible);
 void UpdateSwapLineSpritesPos(u8 *spriteIds, u8 count, s16 x, u16 y);
 
+#if TESTING
+bool32 InYesNoMenu(void);
+#endif
+
 #endif //GUARD_MENU_HELPERS_H

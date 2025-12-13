@@ -1505,3 +1505,13 @@ void Script_ForceSaveGame(struct ScriptContext *ctx)
     gMenuCallback = SaveCallback;
     sSaveDialogCallback = SaveSavingMessageCallback;
 }
+
+#if TESTING
+const u8 *StartMenu_ItemText(u32 index)
+{
+    if (index < sNumStartMenuActions)
+        return sStartMenuItems[sCurrentStartMenuActions[index]].text;
+    else
+        return NULL;
+}
+#endif

@@ -153,4 +153,10 @@ void Task_ScrollIndicatorArrowPairOnMainMenu(u8 taskId);
 bool8 ListMenuChangeSelection(struct ListMenu *list, bool8 updateCursorAndCallCallback, u8 count, bool8 movingDown);
 bool8 ListMenuChangeSelectionFull(struct ListMenu *list, bool32 updateCursor, bool32 callCallback, u8 count, bool8 movingDown);
 
+#if TESTING
+bool32 InListMenu(void);
+const u8 *ListMenu_ItemText(u32 index);
+u32 ListMenu_CursorPos(void);
+#endif
+
 #endif //GUARD_LIST_MENU_H
