@@ -444,6 +444,7 @@ static void Task_HandleShopMenuQuit(u8 taskId)
 {
     ClearStdWindowAndFrameToTransparent(sMartInfo.windowId, 2); // Incorrect use, making it not copy it to vram.
     RemoveWindow(sMartInfo.windowId);
+    sMartInfo.windowId = WINDOW_NONE;
     TryPutSmartShopperOnAir();
     UnlockPlayerFieldControls();
     DestroyTask(taskId);
@@ -1318,23 +1319,16 @@ void CreateDecorationShop2Menu(const u16 *itemsForSale)
 }
 
 #if TESTING
-bool32 InPokemartMenu(void)
+static const u8 *Pokemart_MenuText(u32 index)
 {
-    return FuncIsActiveTask(Task_ShopMenu);
+    if (index < sMartInfo.itemCount)
+        return sMartInfo.menuActions[index].text;
+    else
+        return NULL;
 }
 
-const u8 *PokemartMenu_ItemText(u32 index)
+MenuText IsPokemartMenuWindow(u32 windowId)
 {
-    if (FuncIsActiveTask(Task_ShopMenu))
-    {
-        if (index < sMartInfo.itemCount)
-            return sMartInfo.menuActions[index].text;
-        else
-            return NULL;
-    }
-    else
-    {
-        return NULL;
-    }
+    return sMartInfo.windowId == windowId ? Pokemart_MenuText : NULL;
 }
 #endif

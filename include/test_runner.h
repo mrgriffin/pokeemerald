@@ -11,6 +11,8 @@ extern const bool8 gTestRunnerSkipIsFail;
 
 #if TESTING
 
+#include "constants/test_runner.h"
+
 enum Gimmick;
 
 void TestRunner_Battle_RecordAbilityPopUp(u32 battlerId, enum Ability ability);
@@ -34,7 +36,7 @@ u32 TestRunner_Battle_GetForcedAbility(u32 side, u32 partyIndex);
 u32 TestRunner_Battle_GetChosenGimmick(u32 side, u32 partyIndex);
 u32 TestRunner_Battle_GetForcedEnvironment(void);
 
-void TestRunner_Overworld_SetInitialWarpDestination(void);
+void TestRunner_Overworld_MenuInputHasFocus(enum MenuInputType type, s32 value, uintptr_t context);
 
 u32 TestRunner_ReadKeys(u32 prevKeyInput);
 
@@ -62,8 +64,7 @@ u32 TestRunner_ReadKeys(u32 prevKeyInput);
 
 #define TestRunner_Battle_GetForcedEnvironment(...) (u8)0
 
-#define TestRunner_Overworld_PostPlayerInput(...) (void)0
-#define TestRunner_Overworld_SetInitialWarpDestination(...) (void)0
+#define TestRunner_Overworld_MenuInputHasFocus(...) (void)0
 
 #define TestRunner_ReadKeys(...) (u32)0
 

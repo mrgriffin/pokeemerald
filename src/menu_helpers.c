@@ -12,6 +12,7 @@
 #include "sound.h"
 #include "string_util.h"
 #include "task.h"
+#include "test_runner.h"
 #include "text.h"
 #include "window.h"
 #include "constants/items.h"
@@ -164,13 +165,11 @@ static void Task_CallYesOrNoCallback(u8 taskId)
     case 0:
         PlaySE(SE_SELECT);
         sYesNo.yesFunc(taskId);
-        memset(&sYesNo, 0, sizeof(sYesNo));
         break;
     case 1:
     case MENU_B_PRESSED:
         PlaySE(SE_SELECT);
         sYesNo.noFunc(taskId);
-        memset(&sYesNo, 0, sizeof(sYesNo));
         break;
     }
 }
@@ -179,6 +178,7 @@ static void Task_CallYesOrNoCallback(u8 taskId)
 bool8 AdjustQuantityAccordingToDPadInput(s16 *quantity, u16 max)
 {
     s16 valBefore = *quantity;
+    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_QUANTITY, valBefore, max);
 
     if (JOY_REPEAT(DPAD_ANY) == DPAD_UP)
     {
@@ -449,10 +449,3 @@ void UpdateSwapLineSpritesPos(u8 *spriteIds, u8 count, s16 x, u16 y)
         gSprites[spriteIds[i]].y = 1 + y;
     }
 }
-
-#if TESTING
-bool32 InYesNoMenu(void)
-{
-    return sYesNo.yesFunc != NULL;
-}
-#endif

@@ -22,6 +22,7 @@
 #include "strings.h"
 #include "script.h"
 #include "task.h"
+#include "test_runner.h"
 #include "text_window.h"
 #include "window.h"
 #include "constants/songs.h"
@@ -1120,6 +1121,8 @@ u8 Menu_GetCursorPos(void)
 
 s8 Menu_ProcessInput(void)
 {
+    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_MENU, sMenu.cursorPos, sMenu.windowId);
+
     if (JOY_NEW(A_BUTTON))
     {
         if (!sMenu.APressMuted)
@@ -1148,6 +1151,8 @@ s8 Menu_ProcessInput(void)
 
 s8 Menu_ProcessInputNoWrap(void)
 {
+    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_MENU, sMenu.cursorPos, sMenu.windowId);
+
     u8 oldPos = sMenu.cursorPos;
 
     if (JOY_NEW(A_BUTTON))
@@ -1356,6 +1361,7 @@ void EraseYesNoWindow(void)
 {
     ClearStdWindowAndFrameToTransparent(sYesNoWindowId, TRUE);
     RemoveWindow(sYesNoWindowId);
+    sYesNoWindowId = WINDOW_NONE;
 }
 
 static void PrintMenuActionGridText(u8 windowId, u8 fontId, u8 left, u8 top, u8 width, u8 height, u8 columns, u8 rows, const struct MenuAction *menuActions)
@@ -1571,6 +1577,8 @@ static s8 UNUSED Menu_ProcessGridInput_NoSoundLimit(void)
 
 s8 Menu_ProcessGridInput(void)
 {
+    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_GRIDMENU, sMenu.cursorPos, sMenu.windowId);
+
     u8 oldPos = sMenu.cursorPos;
 
     if (JOY_NEW(A_BUTTON))
@@ -2317,3 +2325,25 @@ void HBlankCB_DoublePopupWindow(void)
         REG_BG0VOFS = 512 - offset;
     }
 }
+
+#if TESTING
+u32 GetGridMenuColumns(void)
+{
+    return sMenu.columns;
+}
+
+static const u8 *YesNo_MenuText(u32 index)
+{
+    switch (index)
+    {
+    case 0: return gText_Yes;
+    case 1: return gText_No;
+    default: return NULL;
+    }
+}
+
+MenuText IsYesNoMenuWindow(u32 windowId)
+{
+    return windowId == sYesNoWindowId ? YesNo_MenuText : NULL;
+}
+#endif

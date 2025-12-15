@@ -1,11 +1,15 @@
 #include <stdarg.h>
 #include "global.h"
+#include "event_data.h"
 #include "field_message_box.h"
+#include "item_menu.h"
 #include "list_menu.h"
+#include "load_save.h"
 #include "main.h"
 #include "main_menu.h"
 #include "menu.h"
 #include "menu_helpers.h"
+#include "money.h"
 #include "overworld.h"
 #include "palette.h"
 #include "script.h"
@@ -18,32 +22,33 @@
 #include "window.h"
 #include "test/overworld.h"
 #include "constants/event_object_movement.h"
+#include "constants/test_runner.h"
 
 #define INVALID(fmt, ...) Test_ExitWithResult(TEST_RESULT_INVALID, sourceLine, ":L%s:%d: " fmt, gTestRunnerState.test->filename, sourceLine, ##__VA_ARGS__)
 #define INVALID_IF(c, fmt, ...) do { if (c) Test_ExitWithResult(TEST_RESULT_INVALID, sourceLine, ":L%s:%d: " fmt, gTestRunnerState.test->filename, sourceLine, ##__VA_ARGS__); } while (0)
 
+// NOTE: 'commands' could be a cache of the next 128 bytes, and when
+// exhausted we could call the function again to refill them.
 struct OverworldTestState
 {
-    u8 initialMapGroup;
-    u8 initialMapNum;
-    s8 initialMapX;
-    s8 initialMapY;
     u8 commands[128];
     u16 currentCommand;
     u16 checkProgressCommand;
     union CommandState {
         struct { u8 frames; } delay;
-        struct { u8 state; } pressKeys;
         struct { u8 frames; } holdKeys;
         struct { u8 state; } waitFade;
-        struct { u8 state; bool8 newKey; } menuSelect;
+        struct { u8 waitTextPrintersState; } menuSelect;
+        struct { u8 waitTextPrintersState; } menuQuantity;
         struct { u8 state; } walkDirection;
         struct { u8 state; } interactBegin;
         struct { u16 keys; } interactEnd;
         struct { u8 state; } startMenuBegin;
-        struct { bool8 newKey; } startMenuEnd;
     } currentCommandState;
-    bool8 inInteract:1;
+    // WARNING: currentMenuInput is lagged by a frame.
+    enum MenuInputType currentMenuInputType:8;
+    s32 currentMenuInputValue;
+    uintptr_t currentMenuInputContext;
 };
 
 EWRAM_DATA struct OverworldTestState gOverworldTestState = {0};
@@ -60,7 +65,7 @@ static u32 DirectionToDpad(u32 direction)
     case DIR_EAST:  return DPAD_RIGHT;
     }
 
-    u32 sourceLine = 0;
+    u32 sourceLine = SourceLine(0);
     INVALID("DirectionToDpad: invalid direction %d", direction);
 }
 
@@ -89,10 +94,12 @@ enum Opcode
 
     // Menus.
     OP_MENU_SELECT,
+    OP_MENU_QUANTITY,
 
     // OW-specific.
     OP_OW_FACE_DIRECTION,
     OP_OW_WALK_DIRECTION,
+    OP_OW_RUN_DIRECTION,
     OP_OW_INTERACT_BEGIN,
     OP_OW_INTERACT_END,
     OP_OW_START_MENU_BEGIN,
@@ -109,14 +116,14 @@ static void NextCommand(u32 size)
 
 #define CMD_ARGS(...) const struct __attribute__((packed)) { u8 opcode; RECURSIVELY(R_FOR_EACH(APPEND_SEMICOLON, __VA_ARGS__)) } *const cmd UNUSED = (const void *)&STATE.commands[STATE.currentCommand]
 
-static u32 Cmd_End(union CommandState *s)
+static u32 Cmd_End(u32, union CommandState *)
 {
     CMD_ARGS();
     SetMainCallback2(CB2_TestRunner);
     return 0;
 }
 
-static u32 Cmd_Delay(union CommandState *s)
+static u32 Cmd_Delay(u32, union CommandState *s)
 {
     CMD_ARGS(u16 frames);
 
@@ -126,44 +133,45 @@ static u32 Cmd_Delay(union CommandState *s)
     return 0;
 }
 
-static u32 Cmd_PressKeys(union CommandState *s)
+static u32 Cmd_PressKeys(u32 prevKeys, union CommandState *)
 {
     CMD_ARGS(u16 keys);
 
-    switch (s->pressKeys.state)
+    if (prevKeys == 0)
     {
-    case 0:
-        s->pressKeys.state++;
-        return 0;
-    case 1:
         NEXT_CMD;
         return cmd->keys;
     }
-
-    return 0;
+    else
+    {
+        return 0;
+    }
 }
 
-static u32 Cmd_HoldKeys(union CommandState *s)
+static u32 Cmd_HoldKeys(u32 prevKeys, union CommandState *s)
 {
     CMD_ARGS(u16 keys, u8 frames);
 
-    if (s->holdKeys.frames++ >= cmd->frames)
-        NEXT_CMD;
+    if (prevKeys == cmd->keys)
+    {
+        if (++s->holdKeys.frames >= cmd->frames)
+            NEXT_CMD;
+    }
 
     return cmd->keys;
 }
 
-static u32 Cmd_WaitFadeIn(union CommandState *s)
+static u32 Cmd_WaitFadeIn(u32, union CommandState *s)
 {
     CMD_ARGS();
 
     switch (s->waitFade.state)
     {
-    case 0:
+    case 0: // Wait for the fade to start.
         if (gPaletteFade.targetY == 0 && gPaletteFade.active)
             s->waitFade.state++;
         break;
-    case 1:
+    case 1: // Wait for the fade to end.
         if (!gPaletteFade.active)
             NEXT_CMD;
         break;
@@ -172,188 +180,197 @@ static u32 Cmd_WaitFadeIn(union CommandState *s)
     return 0;
 }
 
-enum MenuMode
+static u32 TryWaitTextPrinters(u32 prevKeys, u8 *waitTextPrintersState)
 {
-    MENU_NONE,
-    MENU_START,
-    MENU_SHOP,
-    MENU_GENERIC_LISTMENU,
-    MENU_GENERIC_YESNO,
-    MENU_MULTICHOICE_YESNO,
-};
+    if (gPaletteFade.active)
+        return 0;
 
-static enum MenuMode CurrentMenuMode(void)
-{
-    enum MultichoiceType multichoiceType;
-
-    if (GetStartMenuWindowId() != WINDOW_NONE)
+    switch (TextPrinterState())
     {
-        return MENU_START;
-    }
-
-    if (InPokemartMenu())
-    {
-        return MENU_SHOP;
-    }
-
-    if (InYesNoMenu())
-    {
-        return MENU_GENERIC_YESNO;
-    }
-
-    if (InListMenu())
-    {
-        return MENU_GENERIC_LISTMENU;
-    }
-
-    if ((multichoiceType = ActiveMultichoiceType()) != MULTICHOICE_NONE)
-    {
-        switch (multichoiceType)
+    case TEXT_PRINTER_INACTIVE:
+        if (*waitTextPrintersState > 0)
         {
-        case MULTICHOICE_YESNO: return MENU_MULTICHOICE_YESNO;
-        default: break;
+            // Try an A press if we are stuck for 30 frames.
+            if (--(*waitTextPrintersState) == 0)
+            {
+                if (prevKeys == 0)
+                    return A_BUTTON;
+                else // Would be a hold, try next frame.
+                    *waitTextPrintersState = 1;
+            }
         }
-    }
-
-    return MENU_NONE;
-}
-
-static u32 MenuTextIndex_StringCompare(const u8 *targetText, const u8 *(*getText)(u32))
-{
-    for (u32 i = 0;; i++)
-    {
-        u8 expandedText[32];
-        const u8 *text = getText(i);
-        if (!text)
-            break;
-        StringExpandPlaceholders(expandedText, text);
-        if (StringCompare(expandedText, targetText) == 0)
-            return i;
-    }
-
-    u32 sourceLine = 0;
-    INVALID("SELECT(\"%S\"): not found", targetText);
-}
-
-static u32 MenuTextIndex(const u8 *targetText)
-{
-    switch (CurrentMenuMode())
-    {
-    case MENU_START:
-        return MenuTextIndex_StringCompare(targetText, StartMenu_ItemText);
-
-    case MENU_SHOP:
-        return MenuTextIndex_StringCompare(targetText, PokemartMenu_ItemText);
-
-    case MENU_GENERIC_LISTMENU:
-        return MenuTextIndex_StringCompare(targetText, ListMenu_ItemText);
-
-    case MENU_GENERIC_YESNO:
-    case MENU_MULTICHOICE_YESNO:
-        if (StringCompare(targetText, gText_Yes) == 0)
-            return 0;
-        else if (StringCompare(targetText, gText_No) == 0)
-            return 1;
         break;
 
-    case MENU_NONE:
-        return 0;
+    case TEXT_PRINTER_ACTIVE:
+        *waitTextPrintersState = 30;
+        // Hold A to try and speed up.
+        return A_BUTTON;
+
+    case TEXT_PRINTER_AWAIT_PRESS:
+        if (prevKeys == 0)
+            return A_BUTTON;
+        break;
     }
 
-    u32 sourceLine = 0;
-    INVALID("SELECT(\"%S\"): not found", targetText);
+    return 0;
 }
 
-static u32 Cmd_MenuSelect(union CommandState *s)
+static s32 MenuTextIndex(enum MenuInputType type, uintptr_t context, const u8 *text)
+{
+    u32 sourceLine = SourceLine(0);
+
+    switch (type)
+    {
+    case MENU_INPUT_NONE:
+        return -1;
+
+    case MENU_INPUT_MENU:
+    case MENU_INPUT_GRIDMENU:
+    {
+        const u8 *(*getText)(u32 index);
+        if ((getText = IsYesNoMenuWindow(context))
+         || (getText = IsPokemartMenuWindow(context))
+         || (getText = IsStartMenuWindow(context))
+         || (getText = IsBagMenuWindow(context)))
+        {
+            const u8 *text_;
+            u8 expandedText_[32];
+            for (u32 i = 0; (text_ = getText(i)); i++)
+            {
+                StringExpandPlaceholders(expandedText_, text_);
+                if (StringCompare(expandedText_, text) == 0)
+                    return i;
+            }
+        }
+        return -1;
+    }
+
+    case MENU_INPUT_LISTMENU:
+    {
+        struct ListMenu *list = (void *) gTasks[context].data;
+        INVALID_IF(list->template.isDynamic, "MENU_INPUT_LISTMENU isDynamic unimplemented");
+        for (u32 i = 0; i < list->template.totalItems; i++)
+        {
+            u8 expandedText_[32];
+            StringExpandPlaceholders(expandedText_, list->template.items[i].name);
+            if (StringCompare(expandedText_, text) == 0)
+                return i;
+        }
+        return -1;
+    }
+
+    case MENU_INPUT_QUANTITY:
+        return -1;
+    }
+
+    return -1;
+}
+
+static u32 Cmd_MenuSelect(u32 prevKeys, union CommandState *s)
 {
     CMD_ARGS(uintptr_t argument);
 
-    enum MenuMode mode = CurrentMenuMode();
-    s->menuSelect.newKey ^= TRUE;
+    if (STATE.currentMenuInputType == MENU_INPUT_NONE)
+        return TryWaitTextPrinters(prevKeys, &s->menuQuantity.waitTextPrintersState);
 
-    u32 keys = 0;
+    if (prevKeys)
+        return 0;
 
-    switch (s->menuSelect.state)
+    s32 index;
+    switch (cmd->argument >> 24)
     {
-    case 0:
-        if (mode == MENU_NONE)
-        {
-            if (STATE.inInteract && Overworld_Ready())
-            {
-                if (!IsFieldMessageBoxHidden())
-                    return s->menuSelect.newKey ? A_BUTTON : 0;
-            }
+    // Pointers.
+    case 0x02:
+    case 0x03:
+    case 0x08:
+    case 0x09:
+        index = MenuTextIndex(STATE.currentMenuInputType, STATE.currentMenuInputContext, (const u8 *)cmd->argument);
+        if (index < 0)
             return 0;
-        }
-
-        if (s->menuSelect.newKey)
-        {
-            u32 cursorPos, targetPos;
-            switch (cmd->argument >> 24)
-            {
-            // Pointers.
-            case 0x02:
-            case 0x03:
-            case 0x08:
-            case 0x09:
-                // TODO: Cache this.
-                targetPos = MenuTextIndex((const u8 *)cmd->argument);
-                break;
-            default:
-                targetPos = cmd->argument;
-                break;
-            }
-
-            switch (mode)
-            {
-            case MENU_START:
-            case MENU_SHOP:
-            case MENU_GENERIC_YESNO:
-            case MENU_MULTICHOICE_YESNO:
-                cursorPos = Menu_GetCursorPos();
-                break;
-
-            case MENU_GENERIC_LISTMENU:
-                // Wait until text printers are done.
-                if (AnyTextPrinterActive())
-                    return 0;
-                cursorPos = ListMenu_CursorPos();
-                break;
-
-            case MENU_NONE:
-                cursorPos = 0;
-                break;
-            }
-
-            if (cursorPos < targetPos)
-            {
-                keys = DPAD_DOWN;
-            }
-            else if (cursorPos > targetPos)
-            {
-                keys = DPAD_UP;
-            }
-            else
-            {
-                keys = A_BUTTON;
-                s->menuSelect.state = 1;
-            }
-        }
-
         break;
-
-    case 1:
-        if (mode == MENU_NONE || mode == MENU_GENERIC_LISTMENU)
-            NEXT_CMD;
-        else
-            s->menuSelect.state = 0;
+    default:
+        index = cmd->argument;
         break;
     }
 
-    return keys;
+    switch (STATE.currentMenuInputType)
+    {
+    case MENU_INPUT_MENU:
+    case MENU_INPUT_LISTMENU:
+        if (STATE.currentMenuInputValue < index)
+        {
+            return DPAD_DOWN;
+        }
+        else if (STATE.currentMenuInputValue > index)
+        {
+            return DPAD_UP;
+        }
+        else
+        {
+            NEXT_CMD;
+            return A_BUTTON;
+        }
+
+    case MENU_INPUT_GRIDMENU:
+    {
+        u32 columns = GetGridMenuColumns();
+        if (STATE.currentMenuInputValue < index - columns)
+        {
+            return DPAD_RIGHT;
+        }
+        else if (STATE.currentMenuInputValue > index + columns)
+        {
+            return DPAD_LEFT;
+        }
+        else if (STATE.currentMenuInputValue < index)
+        {
+            return DPAD_DOWN;
+        }
+        else if (STATE.currentMenuInputValue > index)
+        {
+            return DPAD_UP;
+        }
+        else
+        {
+            NEXT_CMD;
+            return A_BUTTON;
+        }
+        break;
+    }
+
+    case MENU_INPUT_NONE:
+    case MENU_INPUT_QUANTITY:
+    }
+
+    return 0;
 }
 
-static u32 Cmd_Overworld_FaceDirection(union CommandState *s)
+static u32 Cmd_MenuQuantity(u32 prevKeys, union CommandState *s)
+{
+    CMD_ARGS(u16 quantity);
+
+    if (STATE.currentMenuInputType == MENU_INPUT_NONE)
+        return TryWaitTextPrinters(prevKeys, &s->menuQuantity.waitTextPrintersState);
+
+    if (prevKeys)
+        return 0;
+
+    if (STATE.currentMenuInputValue < cmd->quantity)
+    {
+        return DPAD_UP;
+    }
+    else if (STATE.currentMenuInputValue > cmd->quantity)
+    {
+        return DPAD_DOWN;
+    }
+    else
+    {
+        NEXT_CMD;
+        return A_BUTTON;
+    }
+}
+
+static u32 Cmd_Overworld_FaceDirection(u32, union CommandState *)
 {
     CMD_ARGS(u8 direction);
 
@@ -373,7 +390,7 @@ static u32 Cmd_Overworld_FaceDirection(union CommandState *s)
     }
 }
 
-static u32 Cmd_Overworld_WalkDirection(union CommandState *s)
+static u32 Cmd_Overworld_WalkDirection(u32, union CommandState *s)
 {
     CMD_ARGS(u8 direction);
 
@@ -404,7 +421,41 @@ static u32 Cmd_Overworld_WalkDirection(union CommandState *s)
     return 0;
 }
 
-static u32 Cmd_Overworld_InteractBegin(union CommandState *s)
+static u32 Cmd_Overworld_RunDirection(u32, union CommandState *s)
+{
+    CMD_ARGS(u8 direction);
+
+    u32 sourceLine = SourceLine(0);
+    INVALID_IF(!FlagGet(FLAG_SYS_B_DASH), "cannot run without running shoes");
+
+    if (!Overworld_PlayerInputReady())
+        return 0;
+
+    const struct ObjectEvent *objectEvent = &gObjectEvents[gPlayerAvatar.objectEventId];
+
+    switch (s->walkDirection.state)
+    {
+    case 0:
+        if (objectEvent->playerCopyableMovement != COPY_MOVE_WALK
+         && objectEvent->playerCopyableMovement != COPY_MOVE_JUMP2) // ledge
+        {
+            return DirectionToDpad(cmd->direction | B_BUTTON);
+        }
+        else
+        {
+            s->walkDirection.state++;
+        }
+        break;
+    case 1:
+        if (objectEvent->heldMovementFinished)
+            NEXT_CMD;
+        break;
+    }
+
+    return 0;
+}
+
+static u32 Cmd_Overworld_InteractBegin(u32, union CommandState *s)
 {
     CMD_ARGS();
 
@@ -422,21 +473,16 @@ static u32 Cmd_Overworld_InteractBegin(union CommandState *s)
         break;
     case 1:
         if (!ArePlayerFieldControlsLocked())
-        {
             s->interactBegin.state = 0;
-        }
         else
-        {
             NEXT_CMD;
-            STATE.inInteract = TRUE;
-        }
         break;
     }
 
     return 0;
 }
 
-static u32 Cmd_Overworld_InteractEnd(union CommandState *s)
+static u32 Cmd_Overworld_InteractEnd(u32, union CommandState *s)
 {
     CMD_ARGS();
 
@@ -445,20 +491,16 @@ static u32 Cmd_Overworld_InteractEnd(union CommandState *s)
 
     if (ArePlayerFieldControlsLocked())
     {
-        u32 sourceLine = 0;
-        INVALID_IF(CurrentMenuMode() != MENU_NONE, "cannot end interaction while a menu is open");
-        return s->interactEnd.keys ^= A_BUTTON;
+        return s->interactEnd.keys ^= B_BUTTON;
     }
     else
     {
         NEXT_CMD;
-        STATE.inInteract = FALSE;
+        return 0;
     }
-
-    return 0;
 }
 
-static u32 Cmd_Overworld_StartMenuBegin(union CommandState *s)
+static u32 Cmd_Overworld_StartMenuBegin(u32, union CommandState *s)
 {
     CMD_ARGS();
 
@@ -486,18 +528,16 @@ static u32 Cmd_Overworld_StartMenuBegin(union CommandState *s)
     return 0;
 }
 
-static u32 Cmd_Overworld_StartMenuEnd(union CommandState *s)
+static u32 Cmd_Overworld_StartMenuEnd(u32 prevKeys, union CommandState *s)
 {
     CMD_ARGS();
 
     if (!Overworld_Ready())
         return 0;
 
-    s->startMenuEnd.newKey ^= TRUE;
-
     if (GetStartMenuWindowId() != WINDOW_NONE)
     {
-        return s->startMenuEnd.newKey ? B_BUTTON : 0;
+        return prevKeys ? 0 : B_BUTTON;
     }
     else
     {
@@ -506,7 +546,7 @@ static u32 Cmd_Overworld_StartMenuEnd(union CommandState *s)
     }
 }
 
-static const u32 (*sCommands[])(union CommandState *) =
+static const u32 (*sCommands[])(u32 prevKeys, union CommandState *) =
 {
     [OP_END] = Cmd_End,
     [OP_DELAY] = Cmd_Delay,
@@ -514,22 +554,28 @@ static const u32 (*sCommands[])(union CommandState *) =
     [OP_HOLD_KEYS] = Cmd_HoldKeys,
     [OP_WAIT_FADE_IN] = Cmd_WaitFadeIn,
     [OP_MENU_SELECT] = Cmd_MenuSelect,
+    [OP_MENU_QUANTITY] = Cmd_MenuQuantity,
     [OP_OW_FACE_DIRECTION] = Cmd_Overworld_FaceDirection,
     [OP_OW_WALK_DIRECTION] = Cmd_Overworld_WalkDirection,
+    [OP_OW_RUN_DIRECTION] = Cmd_Overworld_RunDirection,
     [OP_OW_INTERACT_BEGIN] = Cmd_Overworld_InteractBegin,
     [OP_OW_INTERACT_END] = Cmd_Overworld_InteractEnd,
     [OP_OW_START_MENU_BEGIN] = Cmd_Overworld_StartMenuBegin,
     [OP_OW_START_MENU_END] = Cmd_Overworld_StartMenuEnd,
 };
 
-u32 TestRunner_ReadKeys(u32 prevKeyInput)
+u32 TestRunner_ReadKeys(u32 prevKeys)
 {
-    return sCommands[STATE.commands[STATE.currentCommand]](&STATE.currentCommandState);
+    u32 keys = sCommands[STATE.commands[STATE.currentCommand]](prevKeys, &STATE.currentCommandState);
+    STATE.currentMenuInputType = MENU_INPUT_NONE;
+    return keys;
 }
 
-void TestRunner_Overworld_SetInitialWarpDestination(void)
+void TestRunner_Overworld_MenuInputHasFocus(enum MenuInputType type, s32 value, uintptr_t context)
 {
-    SetWarpDestination(STATE.initialMapGroup, STATE.initialMapNum, WARP_ID_NONE, STATE.initialMapX, STATE.initialMapY);
+    STATE.currentMenuInputType = type;
+    STATE.currentMenuInputValue = value;
+    STATE.currentMenuInputContext = context;
 }
 
 static void OverworldTest_Run(void *data)
@@ -540,7 +586,8 @@ static void OverworldTest_Run(void *data)
     gOverworldTestState.currentCommand = 0;
     gSaveBlock2Ptr->playerGender = MALE;
     StringCopy_PlayerName(gSaveBlock2Ptr->playerName, COMPOUND_STRING("PLAYER"));
-    SetMainCallback2(CB2_NewGame);
+    SetContinueGameWarpStatus();
+    SetMainCallback2(CB2_ContinueSavedGame);
 }
 
 static bool32 OverworldTest_CheckProgress(void *data)
@@ -607,17 +654,12 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
 #define GIVEN if (1)
 #define WHEN if (1)
 
-#define ON_MAP(map, x, y) \
-    do { \
-        STATE.initialMapGroup = MAP_GROUP(map); \
-        STATE.initialMapNum = MAP_NUM(map); \
-        STATE.initialMapX = (x); \
-        STATE.initialMapY = (y); \
-    } while (0)
+#define ON_MAP(map, x, y) SetContinueGameWarp(MAP_GROUP(map), MAP_NUM(map), -1, (x), (y))
 
 /* TODO:
  * - Smaller commands for PRESS_KEY / HOLD_KEY.
- * - HOLD_KEYS(0, frames) => DELAY(frames). */
+ * - HOLD_KEYS(0, frames) => DELAY(frames).
+ * - DELAY(0) / HOLD_KEYS(_, 0): error. */
 
 #define DELAY(frames) OverworldTest_PushCommand(__LINE__, OP_DELAY, ARG_16, frames, ARG_END)
 #define PRESS_KEYS(keys) OverworldTest_PushCommand(__LINE__, OP_PRESS_KEYS, ARG_16, keys, ARG_END)
@@ -627,6 +669,7 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
 // TODO: Support passing a pointer.
 #define SELECT(text) OverworldTest_PushCommand(__LINE__, OP_MENU_SELECT, ARG_32, (static const u8[]) _(text), ARG_END)
 #define SELECT_INDEX(index) OverworldTest_PushCommand(__LINE__, OP_MENU_SELECT, ARG_32, index, ARG_END)
+#define QUANTITY(n) OverworldTest_PushCommand(__LINE__, OP_MENU_QUANTITY, ARG_16, n, ARG_END)
 
 #define FACE_DOWN OverworldTest_PushCommand(__LINE__, OP_OW_FACE_DIRECTION, ARG_8, DIR_SOUTH, ARG_END)
 #define FACE_UP OverworldTest_PushCommand(__LINE__, OP_OW_FACE_DIRECTION, ARG_8, DIR_NORTH, ARG_END)
@@ -637,6 +680,11 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
 #define WALK_UP OverworldTest_PushCommand(__LINE__, OP_OW_WALK_DIRECTION, ARG_8, DIR_NORTH, ARG_END)
 #define WALK_LEFT OverworldTest_PushCommand(__LINE__, OP_OW_WALK_DIRECTION, ARG_8, DIR_WEST, ARG_END)
 #define WALK_RIGHT OverworldTest_PushCommand(__LINE__, OP_OW_WALK_DIRECTION, ARG_8, DIR_EAST, ARG_END)
+
+#define RUN_DOWN OverworldTest_PushCommand(__LINE__, OP_OW_RUN_DIRECTION, ARG_8, DIR_SOUTH, ARG_END)
+#define RUN_UP OverworldTest_PushCommand(__LINE__, OP_OW_RUN_DIRECTION, ARG_8, DIR_NORTH, ARG_END)
+#define RUN_LEFT OverworldTest_PushCommand(__LINE__, OP_OW_RUN_DIRECTION, ARG_8, DIR_WEST, ARG_END)
+#define RUN_RIGHT OverworldTest_PushCommand(__LINE__, OP_OW_RUN_DIRECTION, ARG_8, DIR_EAST, ARG_END)
 
 #define INTERACT \
     for (bool32 _once = TRUE; \
@@ -652,6 +700,7 @@ OVERWORLD_TEST("OVERWORLD")
 {
     GIVEN {
         ON_MAP(MAP_PETALBURG_CITY_MART, -1, -1);
+        SetMoney(&gSaveBlock1Ptr->money, 3000);
     } WHEN {
         WALK_UP;
         WALK_LEFT;
@@ -659,18 +708,17 @@ OVERWORLD_TEST("OVERWORLD")
         INTERACT {
             SELECT("BUY");
             SELECT("Potion");
-            DELAY(240);
-            PRESS_KEYS(A_BUTTON); // 1x
+            QUANTITY(3);
             SELECT("YES");
-            DELAY(240);
-            PRESS_KEYS(A_BUTTON); // "Here you go! Thank you very much."
             SELECT("CANCEL");
+            SELECT("QUIT");
         }
-        /*
         START_MENU {
             SELECT("BAG");
-            WAIT_FADE_IN;
+            SELECT("Potion");
+            SELECT("TOSS");
+            QUANTITY(1);
+            SELECT("YES");
         }
-        */
     }
 }

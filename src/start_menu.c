@@ -39,6 +39,7 @@
 #include "strings.h"
 #include "string_util.h"
 #include "task.h"
+#include "test_runner.h"
 #include "text.h"
 #include "text_window.h"
 #include "trainer_card.h"
@@ -621,6 +622,8 @@ void ShowStartMenu(void)
 
 static bool8 HandleStartMenuInput(void)
 {
+    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_MENU, sStartMenuCursorPos, GetStartMenuWindowId());
+
     if (JOY_NEW(DPAD_UP))
     {
         PlaySE(SE_SELECT);
@@ -1507,11 +1510,16 @@ void Script_ForceSaveGame(struct ScriptContext *ctx)
 }
 
 #if TESTING
-const u8 *StartMenu_ItemText(u32 index)
+static const u8 *Start_MenuText(u32 index)
 {
     if (index < sNumStartMenuActions)
         return sStartMenuItems[sCurrentStartMenuActions[index]].text;
     else
         return NULL;
+}
+
+MenuText IsStartMenuWindow(u32 windowId)
+{
+    return GetStartMenuWindowId() == windowId ? Start_MenuText : NULL;
 }
 #endif

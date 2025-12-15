@@ -1190,4 +1190,6 @@ extern bool32 gCountAllocs;
 extern s32 gSpriteAllocs;
 #endif // T_SHOULD_RUN_MOVE_ANIM
 
+typedef const u8 *(*MenuText)(u32 index);
+
 #endif // GUARD_GLOBAL_H

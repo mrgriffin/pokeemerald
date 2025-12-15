@@ -134,4 +134,9 @@ void RemoveSecondaryPopUpWindow(void);
 void HBlankCB_DoublePopupWindow(void);
 void RedrawDialogueFrame(void);
 
+#if TESTING
+u32 GetGridMenuColumns(void);
+MenuText IsYesNoMenuWindow(u32 windowId);
+#endif
+
 #endif // GUARD_MENU_H

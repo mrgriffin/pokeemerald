@@ -8,6 +8,7 @@
 #include "sound.h"
 #include "strings.h"
 #include "task.h"
+#include "test_runner.h"
 #include "text_window.h"
 #include "trig.h"
 #include "window.h"
@@ -77,10 +78,6 @@ static EWRAM_DATA struct {
 } sMysteryGiftLinkMenu = {0};
 
 EWRAM_DATA struct ScrollArrowsTemplate gTempScrollArrowTemplate = {0};
-
-#if TESTING
-EWRAM_DATA u8 gLastListTaskId = 0;
-#endif
 
 // IWRAM common
 COMMON_DATA struct {
@@ -392,8 +389,9 @@ u8 ListMenuInitInRect(struct ListMenuTemplate *listMenuTemplate, struct ListMenu
 
 s32 ListMenu_ProcessInput(u8 listTaskId)
 {
-    gLastListTaskId = listTaskId;
     struct ListMenu *list = (void *) gTasks[listTaskId].data;
+
+    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_LISTMENU, list->scrollOffset + list->selectedRow, listTaskId);
 
     if (JOY_NEW(A_BUTTON))
     {
@@ -1476,28 +1474,3 @@ static void ListMenuRemoveRedArrowCursorObject(u8 taskId)
     DestroySprite(&gSprites[data->spriteId]);
     DestroyTask(taskId);
 }
-
-#if TESTING
-bool32 InListMenu(void)
-{
-    return gTasks[gLastListTaskId].isActive
-        && gTasks[gLastListTaskId].func == ListMenuDummyTask;
-}
-
-const u8 *ListMenu_ItemText(u32 index)
-{
-    struct ListMenu *list = (void *)gTasks[gLastListTaskId].data;
-
-    // TODO: Support list->template.isDynamic.
-    if (index < list->template.totalItems)
-        return list->template.items[index].name;
-    else
-        return NULL;
-}
-
-u32 ListMenu_CursorPos(void)
-{
-    struct ListMenu *list = (void *)gTasks[gLastListTaskId].data;
-    return list->selectedRow;
-}
-#endif

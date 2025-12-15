@@ -14,7 +14,7 @@ void HideStartMenu(void);
 void AppendToList(u8 *list, u8 *pos, u8 newEntry);
 
 #if TESTING
-const u8 *StartMenu_ItemText(u32 index);
+MenuText IsStartMenuWindow(u32 windowId);
 #endif
 
 #endif // GUARD_START_MENU_H

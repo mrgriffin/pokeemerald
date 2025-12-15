@@ -489,16 +489,6 @@ bool32 IsTextPrinterActive(u8 id)
     return sTextPrinters[id].active;
 }
 
-bool32 AnyTextPrinterActive(void)
-{
-    for (u32 i = 0; i < ARRAY_COUNT(sTextPrinters); i++)
-    {
-        if (sTextPrinters[i].active)
-            return TRUE;
-    }
-    return FALSE;
-}
-
 static u32 RenderFont(struct TextPrinter *textPrinter)
 {
     u32 ret;
@@ -2433,3 +2423,25 @@ u8 *WrapFontIdToFit(u8 *start, u8 *end, u32 fontId, u32 width)
         return end;
     }
 }
+
+#if TESTING
+enum TextPrinterState TextPrinterState(void)
+{
+    for (u32 i = 0; i < ARRAY_COUNT(sTextPrinters); i++)
+    {
+        if (sTextPrinters[i].active)
+        {
+            switch (*sTextPrinters[i].printerTemplate.currentChar)
+            {
+            case CHAR_PROMPT_SCROLL:
+            case CHAR_PROMPT_CLEAR:
+            case EXT_CTRL_CODE_PAUSE_UNTIL_PRESS:
+                return TEXT_PRINTER_AWAIT_PRESS;
+            default:
+                return TEXT_PRINTER_ACTIVE;
+            }
+        }
+    }
+    return TEXT_PRINTER_INACTIVE;
+}
+#endif

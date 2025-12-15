@@ -9,8 +9,7 @@ void CreateDecorationShop2Menu(const u16 *itemsForSale);
 void CB2_ExitSellMenu(void);
 
 #if TESTING
-bool32 InPokemartMenu(void);
-const u8 *PokemartMenu_ItemText(u32 index);
+MenuText IsPokemartMenuWindow(u32 windowId);
 #endif
 
 #endif // GUARD_SHOP_H

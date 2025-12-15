@@ -42,6 +42,7 @@
 #include "strings.h"
 #include "string_util.h"
 #include "task.h"
+#include "test_runner.h"
 #include "text_window.h"
 #include "menu_helpers.h"
 #include "window.h"
@@ -1794,6 +1795,17 @@ static void Task_ItemContext_MultipleRows(u8 taskId)
     if (MenuHelpers_ShouldWaitForLinkRecv() != TRUE)
     {
         s8 cursorPos = Menu_GetCursorPos();
+
+        if (TESTING)
+        {
+            u32 windowId;
+            if ((windowId = gBagMenu->windowIds[ITEMWIN_2x2]) != WINDOW_NONE
+             || (windowId = gBagMenu->windowIds[ITEMWIN_2x3]) != WINDOW_NONE)
+            {
+                TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_GRIDMENU, cursorPos, windowId);
+            }
+        }
+
         if (JOY_NEW(DPAD_UP))
         {
             if (cursorPos > 0 && IsValidContextMenuPos(cursorPos - 2))
@@ -3020,3 +3032,28 @@ static s32 CompareItemsByIndex(enum Pocket pocketId, struct ItemSlot item1, stru
 
     return 0; // Cannot have multiple stacks of indexed items
 }
+
+#if TESTING
+static const u8 *Bag_MenuText(u32 index)
+{
+    if (index < gBagMenu->contextMenuNumItems)
+        return sItemMenuActions[gBagMenu->contextMenuItemsPtr[index]].text;
+    else
+        return NULL;
+}
+
+MenuText IsBagMenuWindow(u32 windowId)
+{
+    if (gBagMenu->windowIds[ITEMWIN_1x1] == windowId
+     || gBagMenu->windowIds[ITEMWIN_1x2] == windowId
+     || gBagMenu->windowIds[ITEMWIN_2x2] == windowId
+     || gBagMenu->windowIds[ITEMWIN_2x3] == windowId)
+    {
+        return Bag_MenuText;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+#endif
