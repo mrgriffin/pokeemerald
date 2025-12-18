@@ -131,59 +131,76 @@ static u32 AssignCostToRunner(void)
     return minCostProcess;
 }
 
-void TestRunner_CheckMemory(void)
+enum TestResult TestRunner_CheckMemoryLeak(void)
+{
+    const struct MemBlock *head = HeapHead();
+    const struct MemBlock *block = head;
+    do
+    {
+        if (block->magic != MALLOC_SYSTEM_ID
+         || !(EWRAM_START <= (uintptr_t)block->next && (uintptr_t)block->next < EWRAM_END)
+         || (block->next <= block && block->next != head))
+        {
+            Test_MgbaPrintf("gHeap corrupted block at %p", block);
+            return TEST_RESULT_ERROR;
+        }
+
+        if (block->allocated)
+        {
+            const char *location = MemBlockLocation(block);
+            if (location)
+            {
+                const char *cmpString = "src/generational_changes.c";
+                for (u32 charIndex = 0; charIndex < 26; charIndex++)
+                {
+                    if (cmpString[charIndex] != location[charIndex])
+                    {
+                        Test_MgbaPrintf("%s: %d bytes not freed", location, block->size);
+                        return TEST_RESULT_FAIL;
+                    }
+                }
+            }
+            else
+            {
+                Test_MgbaPrintf("<unknown>: %d bytes not freed", block->size);
+                return TEST_RESULT_FAIL;
+            }
+        }
+        block = block->next;
+    }
+    while (block != head);
+
+    return TEST_RESULT_PASS;
+}
+
+enum TestResult TestRunner_CheckTaskLeak(void)
+{
+    for (u32 i = 0; i < NUM_TASKS; i++)
+    {
+        if (gTasks[i].isActive)
+        {
+            Test_MgbaPrintf(":L%s:%d - %p: task not freed", gTestRunnerState.test->filename, SourceLine(0), gTasks[i].func);
+            return TEST_RESULT_FAIL;
+        }
+    }
+
+    return TEST_RESULT_PASS;
+}
+
+void TestRunner_CheckLeaks(void)
 {
     if (gTestRunnerState.result == TEST_RESULT_PASS
      && !gTestRunnerState.expectLeaks)
     {
-        int i;
-        const struct MemBlock *head = HeapHead();
-        const struct MemBlock *block = head;
-        do
-        {
-            if (block->magic != MALLOC_SYSTEM_ID
-             || !(EWRAM_START <= (uintptr_t)block->next && (uintptr_t)block->next < EWRAM_END)
-             || (block->next <= block && block->next != head))
-            {
-                Test_MgbaPrintf("gHeap corrupted block at %p", block);
-                gTestRunnerState.result = TEST_RESULT_ERROR;
-                break;
-            }
+        enum TestResult result;
 
-            if (block->allocated)
-            {
-                const char *location = MemBlockLocation(block);
-                if (location)
-                {
-                    const char *cmpString = "src/generational_changes.c";
-                    for (u32 charIndex = 0; charIndex < 26; charIndex++)
-                    {
-                        if (cmpString[charIndex] != location[charIndex])
-                        {
-                            Test_MgbaPrintf("%s: %d bytes not freed", location, block->size);
-                            gTestRunnerState.result = TEST_RESULT_FAIL;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    Test_MgbaPrintf("<unknown>: %d bytes not freed", block->size);
-                    gTestRunnerState.result = TEST_RESULT_FAIL;
-                }
-            }
-            block = block->next;
-        }
-        while (block != head);
+        result = TestRunner_CheckMemoryLeak();
+        if (result != TEST_RESULT_PASS)
+            gTestRunnerState.result = result;
 
-        for (i = 0; i < NUM_TASKS; i++)
-        {
-            if (gTasks[i].isActive)
-            {
-                Test_MgbaPrintf(":L%s:%d - %p: task not freed", gTestRunnerState.test->filename, SourceLine(0), gTasks[i].func);
-                gTestRunnerState.result = TEST_RESULT_FAIL;
-            }
-        }
+        result = TestRunner_CheckTaskLeak();
+        if (result != TEST_RESULT_PASS)
+            gTestRunnerState.result = result;
     }
 }
 
@@ -344,7 +361,7 @@ top:
             gTestRunnerState.tearDown = FALSE;
         }
 
-        TestRunner_CheckMemory();
+        TestRunner_CheckLeaks();
 
         if (gTestRunnerState.test->runner == &gAssumptionsRunner)
         {

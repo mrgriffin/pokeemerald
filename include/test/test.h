@@ -103,6 +103,10 @@ extern struct PersistentTestRunnerState gPersistentTestRunnerState;
 
 void CB2_TestRunner(void);
 
+enum TestResult TestRunner_CheckMemoryLeak(void);
+enum TestResult TestRunner_CheckTaskLeak(void);
+void TestRunner_CheckLeaks(void);
+
 void Test_ExpectedResult(enum TestResult);
 void Test_ExpectLeaks(bool32);
 void Test_ExpectCrash(bool32);
