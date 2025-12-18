@@ -38,6 +38,7 @@ u32 TestRunner_Battle_GetForcedEnvironment(void);
 void TestRunner_Overworld_MenuInputHasFocus(enum MenuInputType type, s32 value, uintptr_t context);
 
 u32 TestRunner_ReadKeys(u32 prevKeyInput);
+void TestRunner_BeforeResetHeap(void);
 
 #else
 
@@ -66,6 +67,7 @@ u32 TestRunner_ReadKeys(u32 prevKeyInput);
 #define TestRunner_Overworld_MenuInputHasFocus(...) (void)0
 
 #define TestRunner_ReadKeys(...) (u32)0
+#define TestRunner_BeforeResetHeap(...) (void)0
 
 #endif
 

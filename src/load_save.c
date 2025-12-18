@@ -12,6 +12,7 @@
 #include "random.h"
 #include "save_location.h"
 #include "script_pokemon_util.h"
+#include "test_runner.h"
 #include "trainer_hill.h"
 #include "gba/flash_internal.h"
 #include "decoration_inventory.h"
@@ -92,6 +93,8 @@ void SetSaveBlocksPointers(u16 offset)
 
 void MoveSaveBlocks_ResetHeap(void)
 {
+    TestRunner_BeforeResetHeap();
+
     void *vblankCB, *hblankCB;
     u32 encryptionKey;
     struct SaveBlock2 *saveBlock2Copy;

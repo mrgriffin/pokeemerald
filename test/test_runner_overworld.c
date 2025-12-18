@@ -571,6 +571,15 @@ u32 TestRunner_ReadKeys(u32 prevKeys)
     return keys;
 }
 
+void TestRunner_BeforeResetHeap(void)
+{
+    if (!gTestRunnerState.expectLeaks)
+    {
+        TestRunner_CheckMemoryLeak();
+        TestRunner_CheckTaskLeak();
+    }
+}
+
 void TestRunner_Overworld_MenuInputHasFocus(enum MenuInputType type, s32 value, uintptr_t context)
 {
     STATE.currentMenuInputType = type;
