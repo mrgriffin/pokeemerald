@@ -238,7 +238,7 @@ static s32 MenuTextIndex(enum MenuInputType type, uintptr_t context, const u8 *t
             for (u32 i = 0; (text_ = getText(i)); i++)
             {
                 StringExpandPlaceholders(expandedText_, text_);
-                if (StringCompare(expandedText_, text) == 0)
+                if (StringCompareWithoutExtCtrlCodes(expandedText_, text) == 0)
                     return i;
             }
         }
@@ -253,7 +253,7 @@ static s32 MenuTextIndex(enum MenuInputType type, uintptr_t context, const u8 *t
         {
             u8 expandedText_[32];
             StringExpandPlaceholders(expandedText_, list->template.items[i].name);
-            if (StringCompare(expandedText_, text) == 0)
+            if (StringCompareWithoutExtCtrlCodes(expandedText_, text) == 0)
                 return i;
         }
         return -1;
