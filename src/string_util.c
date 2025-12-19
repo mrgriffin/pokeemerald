@@ -355,7 +355,7 @@ u8 *ConvertIntToHexStringN(u8 *dest, s32 value, enum StringConvertMode mode, u8 
     return dest;
 }
 
-u8 *StringExpandPlaceholders(u8 *dest, const u8 *src)
+u8 *StringExpandPlaceholders_Internal(bool32 dry, u8 *dest, const u8 *src)
 {
     for (;;)
     {
@@ -368,12 +368,14 @@ u8 *StringExpandPlaceholders(u8 *dest, const u8 *src)
         case PLACEHOLDER_BEGIN:
             placeholderId = *src++;
             expandedString = GetExpandedPlaceholder(placeholderId);
-            dest = StringExpandPlaceholders(dest, expandedString);
+            dest = StringExpandPlaceholders_Internal(dry, dest, expandedString);
             break;
         case EXT_CTRL_CODE_BEGIN:
-            *dest++ = c;
+            if (!dry) *dest = c;
+            dest++;
             c = *src++;
-            *dest++ = c;
+            if (!dry) *dest = c;
+            dest++;
 
             switch (c)
             {
@@ -386,23 +388,40 @@ u8 *StringExpandPlaceholders(u8 *dest, const u8 *src)
             case EXT_CTRL_CODE_RESUME_MUSIC:
                 break;
             case EXT_CTRL_CODE_COLOR_HIGHLIGHT_SHADOW:
-                *dest++ = *src++;
+                if (!dry) *dest = *src;
+                dest++;
+                src++;
             case EXT_CTRL_CODE_PLAY_BGM:
-                *dest++ = *src++;
+                if (!dry) *dest = *src;
+                dest++;
+                src++;
             default:
-                *dest++ = *src++;
+                if (!dry) *dest = *src;
+                dest++;
+                src++;
             }
             break;
         case EOS:
-            *dest = EOS;
+            if (!dry) *dest = EOS;
             return dest;
         case CHAR_PROMPT_SCROLL:
         case CHAR_PROMPT_CLEAR:
         case CHAR_NEWLINE:
         default:
-            *dest++ = c;
+            if (!dry) *dest = c;
+            dest++;
         }
     }
+}
+
+u32 StringExpandPlaceholdersLength(const u8 *src)
+{
+    return (u32)StringExpandPlaceholders_Internal(TRUE, 0, src);
+}
+
+u8 *StringExpandPlaceholders(u8 *dest, const u8 *src)
+{
+    return StringExpandPlaceholders_Internal(FALSE, dest, src);
 }
 
 u8 *StringBraille(u8 *dest, const u8 *src)
