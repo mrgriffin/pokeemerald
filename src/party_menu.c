@@ -63,6 +63,7 @@
 #include "string_util.h"
 #include "strings.h"
 #include "task.h"
+#include "test_runner.h"
 #include "text.h"
 #include "text_window.h"
 #include "trade.h"
@@ -1683,6 +1684,8 @@ static void Task_HandleCancelChooseMonYesNoInput(u8 taskId)
 
 static u16 PartyMenuButtonHandler(s8 *slotPtr)
 {
+    TestRunner_MenuInputHasFocus(MENU_INPUT_PARTY, *slotPtr, 0);
+
     s8 movementDir;
 
     switch (gMain.newAndRepeatedKeys)

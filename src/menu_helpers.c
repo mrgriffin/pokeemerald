@@ -178,7 +178,7 @@ static void Task_CallYesOrNoCallback(u8 taskId)
 bool8 AdjustQuantityAccordingToDPadInput(s16 *quantity, u16 max)
 {
     s16 valBefore = *quantity;
-    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_QUANTITY, valBefore, max);
+    TestRunner_MenuInputHasFocus(MENU_INPUT_QUANTITY, valBefore, max);
 
     if (JOY_REPEAT(DPAD_ANY) == DPAD_UP)
     {

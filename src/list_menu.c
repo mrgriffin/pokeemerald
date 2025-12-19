@@ -391,7 +391,7 @@ s32 ListMenu_ProcessInput(u8 listTaskId)
 {
     struct ListMenu *list = (void *) gTasks[listTaskId].data;
 
-    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_LISTMENU, list->scrollOffset + list->selectedRow, listTaskId);
+    TestRunner_MenuInputHasFocus(MENU_INPUT_LISTMENU, list->scrollOffset + list->selectedRow, listTaskId);
 
     if (JOY_NEW(A_BUTTON))
     {

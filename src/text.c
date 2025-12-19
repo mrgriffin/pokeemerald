@@ -408,7 +408,7 @@ bool32 AddTextPrinter(struct TextPrinterTemplate *printerTemplate, u8 speed, voi
     sTempTextPrinter.minLetterSpacing = 0;
     sTempTextPrinter.japanese = 0;
 
-    TestRunner_Overworld_TextPrinterAdded(&sTempTextPrinter);
+    TestRunner_TextPrinterAdded(&sTempTextPrinter);
 
     GenerateFontHalfRowLookupTable(printerTemplate->fgColor, printerTemplate->bgColor, printerTemplate->shadowColor);
     if (speed != TEXT_SKIP_DRAW && speed != 0)
@@ -2435,15 +2435,15 @@ enum TextPrinterState TextPrinterState(void)
     {
         if (sTextPrinters[i].active)
         {
-            switch (*sTextPrinters[i].printerTemplate.currentChar)
+            switch (sTextPrinters[i].state)
             {
-            case CHAR_PROMPT_SCROLL:
-            case CHAR_PROMPT_CLEAR:
-            case EXT_CTRL_CODE_PAUSE_UNTIL_PRESS:
+            case RENDER_STATE_WAIT:
+            case RENDER_STATE_CLEAR:
+            case RENDER_STATE_SCROLL_START:
                 return TEXT_PRINTER_AWAIT_PRESS;
-            default:
-                return TEXT_PRINTER_ACTIVE;
             }
+
+            return TEXT_PRINTER_ACTIVE;
         }
     }
     return TEXT_PRINTER_INACTIVE;

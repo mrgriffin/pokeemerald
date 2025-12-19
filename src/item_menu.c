@@ -1802,7 +1802,7 @@ static void Task_ItemContext_MultipleRows(u8 taskId)
             if ((windowId = gBagMenu->windowIds[ITEMWIN_2x2]) != WINDOW_NONE
              || (windowId = gBagMenu->windowIds[ITEMWIN_2x3]) != WINDOW_NONE)
             {
-                TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_GRIDMENU, cursorPos, windowId);
+                TestRunner_MenuInputHasFocus(MENU_INPUT_GRIDMENU, cursorPos, windowId);
             }
         }
 

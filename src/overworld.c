@@ -593,6 +593,7 @@ void ApplyCurrentWarp(void)
     gSaveBlock1Ptr->location = sWarpDestination;
     sFixedDiveWarp = sDummyWarpData;
     sFixedHoleWarp = sDummyWarpData;
+    TestRunner_Overworld_BeforeWarp(&sWarpDestination);
 }
 
 static void ClearDiveAndHoleWarps(void)

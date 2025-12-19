@@ -622,7 +622,7 @@ void ShowStartMenu(void)
 
 static bool8 HandleStartMenuInput(void)
 {
-    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_MENU, sStartMenuCursorPos, GetStartMenuWindowId());
+    TestRunner_MenuInputHasFocus(MENU_INPUT_MENU, sStartMenuCursorPos, GetStartMenuWindowId());
 
     if (JOY_NEW(DPAD_UP))
     {

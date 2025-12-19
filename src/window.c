@@ -99,7 +99,7 @@ bool32 InitWindows(const struct WindowTemplate *templates)
             BgTileAllocOp(bgLayer, allocatedBaseBlock, templates[i].width * templates[i].height, 1);
         }
 
-        TestRunner_Overworld_WindowAdded(i);
+        TestRunner_WindowAdded(i);
     }
 
     return TRUE;
@@ -174,7 +174,7 @@ u32 AddWindow(const struct WindowTemplate *template)
         BgTileAllocOp(bgLayer, allocatedBaseBlock, gWindows[win].window.width * gWindows[win].window.height, 1);
     }
 
-    TestRunner_Overworld_WindowAdded(win);
+    TestRunner_WindowAdded(win);
 
     return win;
 }
@@ -213,7 +213,7 @@ int AddWindowWithoutTileMap(const struct WindowTemplate *template)
         BgTileAllocOp(bgLayer, allocatedBaseBlock, gWindows[win].window.width * gWindows[win].window.height, 1);
     }
 
-    TestRunner_Overworld_WindowAdded(win);
+    TestRunner_WindowAdded(win);
 
     return win;
 }
@@ -242,7 +242,7 @@ void RemoveWindow(u32 windowId)
         gWindows[windowId].tileData = NULL;
     }
 
-    TestRunner_Overworld_WindowRemoved(windowId);
+    TestRunner_WindowRemoved(windowId);
 }
 
 void RemoveAllWindowsOnBg(u32 bgId)
@@ -280,7 +280,7 @@ void FreeAllWindowBuffers(void)
             gWindows[i].tileData = NULL;
         }
 
-        TestRunner_Overworld_WindowRemoved(i);
+        TestRunner_WindowRemoved(i);
     }
 }
 

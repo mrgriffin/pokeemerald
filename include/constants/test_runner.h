@@ -8,6 +8,7 @@ enum MenuInputType
     MENU_INPUT_GRIDMENU,
     MENU_INPUT_LISTMENU,
     MENU_INPUT_QUANTITY,
+    MENU_INPUT_PARTY,
 };
 
 #endif

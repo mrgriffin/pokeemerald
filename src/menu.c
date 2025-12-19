@@ -1121,7 +1121,7 @@ u8 Menu_GetCursorPos(void)
 
 s8 Menu_ProcessInput(void)
 {
-    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_MENU, sMenu.cursorPos, sMenu.windowId);
+    TestRunner_MenuInputHasFocus(MENU_INPUT_MENU, sMenu.cursorPos, sMenu.windowId);
 
     if (JOY_NEW(A_BUTTON))
     {
@@ -1151,7 +1151,7 @@ s8 Menu_ProcessInput(void)
 
 s8 Menu_ProcessInputNoWrap(void)
 {
-    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_MENU, sMenu.cursorPos, sMenu.windowId);
+    TestRunner_MenuInputHasFocus(MENU_INPUT_MENU, sMenu.cursorPos, sMenu.windowId);
 
     u8 oldPos = sMenu.cursorPos;
 
@@ -1183,6 +1183,8 @@ s8 Menu_ProcessInputNoWrap(void)
 
 s8 ProcessMenuInput_other(void)
 {
+    TestRunner_MenuInputHasFocus(MENU_INPUT_MENU, sMenu.cursorPos, sMenu.windowId);
+
     if (JOY_NEW(A_BUTTON))
     {
         if (!sMenu.APressMuted)
@@ -1211,6 +1213,8 @@ s8 ProcessMenuInput_other(void)
 
 s8 Menu_ProcessInputNoWrapAround_other(void)
 {
+    TestRunner_MenuInputHasFocus(MENU_INPUT_MENU, sMenu.cursorPos, sMenu.windowId);
+
     u8 oldPos = sMenu.cursorPos;
 
     if (JOY_NEW(A_BUTTON))
@@ -1577,7 +1581,7 @@ static s8 UNUSED Menu_ProcessGridInput_NoSoundLimit(void)
 
 s8 Menu_ProcessGridInput(void)
 {
-    TestRunner_Overworld_MenuInputHasFocus(MENU_INPUT_GRIDMENU, sMenu.cursorPos, sMenu.windowId);
+    TestRunner_MenuInputHasFocus(MENU_INPUT_GRIDMENU, sMenu.cursorPos, sMenu.windowId);
 
     u8 oldPos = sMenu.cursorPos;
 

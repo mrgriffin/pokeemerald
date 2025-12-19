@@ -56,6 +56,8 @@ struct OverworldTestState
         struct { u16 keys; } interactEnd;
         struct { u8 state; } startMenuBegin;
     } currentCommandState;
+    bool8 didInitialWarp:1;
+    bool8 didWarp:1;
     // WARNING: currentMenuInput is lagged by a frame.
     enum MenuInputType currentMenuInputType:8;
     s32 currentMenuInputValue;
@@ -111,7 +113,6 @@ enum Opcode
     // OW-specific.
     OP_OW_FACE_DIRECTION,
     OP_OW_WALK_DIRECTION,
-    OP_OW_RUN_DIRECTION,
     OP_OW_INTERACT_BEGIN,
     OP_OW_INTERACT_END,
     OP_OW_START_MENU_BEGIN,
@@ -260,6 +261,7 @@ static u32 ColumnOfPrintedText(const struct PrintedText *printedText)
     return column;
 }
 
+// TODO: Define for '-1'.
 static s32 MenuTextIndex(enum MenuInputType type, uintptr_t context, const u8 *text)
 {
     u32 sourceLine = SourceLine(0);
@@ -311,6 +313,24 @@ static s32 MenuTextIndex(enum MenuInputType type, uintptr_t context, const u8 *t
     }
 
     case MENU_INPUT_QUANTITY:
+        return -1;
+
+    case MENU_INPUT_PARTY:
+        // TODO: What if the party menu isn't showing gPlayerParty, e.g.
+        // in a partner battle.
+        for (u32 i = 0; i < PARTY_SIZE; i++)
+        {
+            if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+                break;
+            u8 nickname[POKEMON_NAME_LENGTH + 1];
+            GetMonData(&gPlayerParty[i], MON_DATA_NICKNAME, nickname);
+            if (StringCompare(nickname, text) == 0)
+                return i;
+        }
+        if (StringCompare(gText_Confirm2, text) == 0)
+            return PARTY_SIZE;
+        else if (StringCompare(gText_Cancel, text) == 0)
+            return PARTY_SIZE + 1;
         return -1;
     }
 
@@ -389,6 +409,22 @@ static u32 Cmd_MenuSelect(u32 prevKeys, union CommandState *s)
         break;
     }
 
+    case MENU_INPUT_PARTY:
+        if (STATE.currentMenuInputValue < index)
+        {
+            return DPAD_DOWN;
+        }
+        else if (STATE.currentMenuInputValue > index)
+        {
+            return DPAD_UP;
+        }
+        else
+        {
+            NEXT_CMD;
+            return A_BUTTON;
+        }
+        break;
+
     case MENU_INPUT_NONE:
     case MENU_INPUT_QUANTITY:
     }
@@ -454,43 +490,10 @@ static u32 Cmd_Overworld_WalkDirection(u32, union CommandState *s)
     {
     case 0:
         if (objectEvent->playerCopyableMovement != COPY_MOVE_WALK
-         && objectEvent->playerCopyableMovement != COPY_MOVE_JUMP2) // ledge
+         && objectEvent->playerCopyableMovement != COPY_MOVE_JUMP2
+         && !STATE.didWarp) // ledge
         {
             return DirectionToDpad(cmd->direction);
-        }
-        else
-        {
-            s->walkDirection.state++;
-        }
-        break;
-    case 1:
-        if (objectEvent->heldMovementFinished)
-            NEXT_CMD;
-        break;
-    }
-
-    return 0;
-}
-
-static u32 Cmd_Overworld_RunDirection(u32, union CommandState *s)
-{
-    CMD_ARGS(u8 direction);
-
-    u32 sourceLine = SourceLine(0);
-    INVALID_IF(!FlagGet(FLAG_SYS_B_DASH), "cannot run without running shoes");
-
-    if (!Overworld_PlayerInputReady())
-        return 0;
-
-    const struct ObjectEvent *objectEvent = &gObjectEvents[gPlayerAvatar.objectEventId];
-
-    switch (s->walkDirection.state)
-    {
-    case 0:
-        if (objectEvent->playerCopyableMovement != COPY_MOVE_WALK
-         && objectEvent->playerCopyableMovement != COPY_MOVE_JUMP2) // ledge
-        {
-            return DirectionToDpad(cmd->direction | B_BUTTON);
         }
         else
         {
@@ -608,7 +611,6 @@ static const u32 (*sCommands[])(u32 prevKeys, union CommandState *) =
     [OP_MENU_QUANTITY] = Cmd_MenuQuantity,
     [OP_OW_FACE_DIRECTION] = Cmd_Overworld_FaceDirection,
     [OP_OW_WALK_DIRECTION] = Cmd_Overworld_WalkDirection,
-    [OP_OW_RUN_DIRECTION] = Cmd_Overworld_RunDirection,
     [OP_OW_INTERACT_BEGIN] = Cmd_Overworld_InteractBegin,
     [OP_OW_INTERACT_END] = Cmd_Overworld_InteractEnd,
     [OP_OW_START_MENU_BEGIN] = Cmd_Overworld_StartMenuBegin,
@@ -617,7 +619,10 @@ static const u32 (*sCommands[])(u32 prevKeys, union CommandState *) =
 
 u32 TestRunner_ReadKeys(u32 prevKeys)
 {
-    u32 keys = sCommands[STATE.commands[STATE.currentCommand]](prevKeys, &STATE.currentCommandState);
+    u32 currentCommand = STATE.currentCommand;
+    u32 keys = sCommands[STATE.commands[currentCommand]](prevKeys, &STATE.currentCommandState);
+    if (currentCommand != STATE.currentCommand)
+        STATE.didWarp = FALSE;
     STATE.currentMenuInputType = MENU_INPUT_NONE;
     return keys;
 }
@@ -662,7 +667,26 @@ static void DiscardPrintedTextsOnWindow(u32 windowId)
     }
 }
 
-void TestRunner_Overworld_MenuInputHasFocus(enum MenuInputType type, s32 value, uintptr_t context)
+static void DiscardPrintedTextOnWindowAtXY(u32 windowId, u32 x, u32 y, struct PrintedText **next)
+{
+    while (*next)
+    {
+        if ((*next)->windowId == windowId && (*next)->x == x && (*next)->y == y)
+        {
+            if ((*next)->freeText)
+                Free((*next)->text.as_mut);
+            Free(*next);
+            // WARNING: Use-after-free.
+            *next = (*next)->next;
+        }
+        else
+        {
+            next = &(*next)->next;
+        }
+    }
+}
+
+void TestRunner_MenuInputHasFocus(enum MenuInputType type, s32 value, uintptr_t context)
 {
     STATE.currentMenuInputType = type;
     STATE.currentMenuInputValue = value;
@@ -676,12 +700,12 @@ void TestRunner_Overworld_MenuInputHasFocus(enum MenuInputType type, s32 value, 
     }
 }
 
-void TestRunner_Overworld_WindowAdded(u32 windowId)
+void TestRunner_WindowAdded(u32 windowId)
 {
     DiscardPrintedTextsOnWindow(windowId);
 }
 
-void TestRunner_Overworld_WindowRemoved(u32 windowId)
+void TestRunner_WindowRemoved(u32 windowId)
 {
     DiscardPrintedTextsOnWindow(windowId);
 }
@@ -738,7 +762,7 @@ static bool32 MustExpandOrAllocateString(const u8 *string)
     return FALSE;
 }
 
-void TestRunner_Overworld_TextPrinterAdded(const struct TextPrinter *textPrinter)
+void TestRunner_TextPrinterAdded(const struct TextPrinter *textPrinter)
 {
     // Animated text, can't be a menu option.
     // TODO: Think of more filters to reduce memory usage.
@@ -761,6 +785,7 @@ void TestRunner_Overworld_TextPrinterAdded(const struct TextPrinter *textPrinter
             .next = STATE.printedTextHead,
         };
         STATE.printedTextHead = printedText;
+        DiscardPrintedTextOnWindowAtXY(printedText->windowId, printedText->x, printedText->y, &printedText->next);
 
         // Split on newlines. Needed for gText_YesNo.
         for (u32 i = 0; text[i] != EOS; i++)
@@ -776,6 +801,7 @@ void TestRunner_Overworld_TextPrinterAdded(const struct TextPrinter *textPrinter
             printedText->text.as_const = &text[i + 1];
             printedText->next = STATE.printedTextHead;
             STATE.printedTextHead = printedText;
+            DiscardPrintedTextOnWindowAtXY(printedText->windowId, printedText->x, printedText->y, &printedText->next);
         }
     }
     else
@@ -791,6 +817,16 @@ void TestRunner_Overworld_TextPrinterAdded(const struct TextPrinter *textPrinter
         };
         STATE.printedTextHead = printedText;
     }
+}
+
+// TODO: Rather than this we could probably get away with hooking fade-
+// ins?
+void TestRunner_Overworld_BeforeWarp(const struct WarpData *)
+{
+    if (!STATE.didInitialWarp)
+        STATE.didInitialWarp = TRUE;
+    else
+        STATE.didWarp = TRUE;
 }
 
 static void OverworldTest_Run(void *data)
@@ -874,7 +910,8 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
 /* TODO:
  * - Smaller commands for PRESS_KEY / HOLD_KEY.
  * - HOLD_KEYS(0, frames) => DELAY(frames).
- * - DELAY(0) / HOLD_KEYS(_, 0): error. */
+ * - DELAY(0) / HOLD_KEYS(_, 0): error.
+ * - Movements take a parameter for how many times to repeat? */
 
 #define DELAY(frames) OverworldTest_PushCommand(__LINE__, OP_DELAY, ARG_16, frames, ARG_END)
 #define PRESS_KEYS(keys) OverworldTest_PushCommand(__LINE__, OP_PRESS_KEYS, ARG_16, keys, ARG_END)
@@ -882,6 +919,7 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
 #define WAIT_FADE_IN OverworldTest_PushCommand(__LINE__, OP_WAIT_FADE_IN, ARG_END)
 
 // TODO: Support passing a pointer.
+// TODO: Support passing "second Wobbuffet" (i.e. 'SELECT("Wobbuffet", 2)').
 #define SELECT(text) OverworldTest_PushCommand(__LINE__, OP_MENU_SELECT, ARG_32, (static const u8[]) _(text), ARG_END)
 #define SELECT_INDEX(index) OverworldTest_PushCommand(__LINE__, OP_MENU_SELECT, ARG_32, index, ARG_END)
 #define QUANTITY(n) OverworldTest_PushCommand(__LINE__, OP_MENU_QUANTITY, ARG_16, n, ARG_END)
@@ -896,11 +934,6 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
 #define WALK_LEFT OverworldTest_PushCommand(__LINE__, OP_OW_WALK_DIRECTION, ARG_8, DIR_WEST, ARG_END)
 #define WALK_RIGHT OverworldTest_PushCommand(__LINE__, OP_OW_WALK_DIRECTION, ARG_8, DIR_EAST, ARG_END)
 
-#define RUN_DOWN OverworldTest_PushCommand(__LINE__, OP_OW_RUN_DIRECTION, ARG_8, DIR_SOUTH, ARG_END)
-#define RUN_UP OverworldTest_PushCommand(__LINE__, OP_OW_RUN_DIRECTION, ARG_8, DIR_NORTH, ARG_END)
-#define RUN_LEFT OverworldTest_PushCommand(__LINE__, OP_OW_RUN_DIRECTION, ARG_8, DIR_WEST, ARG_END)
-#define RUN_RIGHT OverworldTest_PushCommand(__LINE__, OP_OW_RUN_DIRECTION, ARG_8, DIR_EAST, ARG_END)
-
 #define INTERACT \
     for (bool32 _once = TRUE; \
          _once && (OverworldTest_PushCommand(__LINE__, OP_OW_INTERACT_BEGIN, ARG_END), TRUE); \
@@ -911,11 +944,25 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
          _once && (OverworldTest_PushCommand(__LINE__, OP_OW_START_MENU_BEGIN, ARG_END), TRUE); \
          OverworldTest_PushCommand(__LINE__, OP_OW_START_MENU_END, ARG_END), _once = FALSE)
 
+// test_test_runner.c, check that walk down only fires once.
+//OVERWORLD_TEST("OVERWORLD")
+//{
+//    GIVEN {
+//        ON_MAP(MAP_PETALBURG_CITY_MART, 4, 7);
+//    } WHEN {
+//        WALK_DOWN;
+//    } THEN {
+//        // TODO: Check that the player is where we expect.
+//    }
+//}
+
 OVERWORLD_TEST("OVERWORLD")
 {
     GIVEN {
         ON_MAP(MAP_PETALBURG_CITY_MART, -1, -1);
         SetMoney(&gSaveBlock1Ptr->money, 3000);
+        CreateMon(&gPlayerParty[0], SPECIES_WOBBUFFET, 100, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+        FlagSet(FLAG_SYS_POKEMON_GET);
     } WHEN {
         WALK_UP;
         WALK_LEFT;
@@ -934,6 +981,41 @@ OVERWORLD_TEST("OVERWORLD")
             SELECT("TOSS");
             QUANTITY(1);
             SELECT("YES");
+            PRESS_KEYS(A_BUTTON);
+            SELECT("CLOSE BAG");
+        }
+        WALK_DOWN;
+        WALK_DOWN;
+        WALK_DOWN;
+        WALK_DOWN;
+        WALK_DOWN;
+
+        WALK_DOWN;
+        WALK_DOWN;
+        WALK_DOWN;
+        WALK_DOWN;
+        WALK_LEFT;
+        WALK_LEFT;
+        WALK_LEFT;
+        WALK_LEFT;
+        WALK_LEFT;
+        WALK_UP;
+
+        WALK_UP;
+        WALK_UP;
+        WALK_UP;
+        WALK_UP;
+        INTERACT {
+            SELECT("YES");
+        }
+        START_MENU {
+            SELECT("POKéMON");
+            SELECT("Wobbuffet");
+            SELECT("SUMMARY");
+            WAIT_FADE_IN;
+            PRESS_KEYS(B_BUTTON);
+            SELECT("CANCEL");
+            SELECT("CANCEL");
         }
     }
 }
