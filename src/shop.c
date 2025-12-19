@@ -1317,18 +1317,3 @@ void CreateDecorationShop2Menu(const u16 *itemsForSale)
     SetShopItemsForSale(itemsForSale);
     SetShopMenuCallback(ScriptContext_Enable);
 }
-
-#if TESTING
-static const u8 *Pokemart_MenuText(u32 index)
-{
-    if (index < sMartInfo.itemCount)
-        return sMartInfo.menuActions[index].text;
-    else
-        return NULL;
-}
-
-MenuText IsPokemartMenuWindow(u32 windowId)
-{
-    return sMartInfo.windowId == windowId ? Pokemart_MenuText : NULL;
-}
-#endif

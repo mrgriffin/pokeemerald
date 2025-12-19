@@ -2327,23 +2327,13 @@ void HBlankCB_DoublePopupWindow(void)
 }
 
 #if TESTING
+u32 GetMenuMaxCursorPos(void)
+{
+    return sMenu.maxCursorPos;
+}
+
 u32 GetGridMenuColumns(void)
 {
     return sMenu.columns;
-}
-
-static const u8 *YesNo_MenuText(u32 index)
-{
-    switch (index)
-    {
-    case 0: return gText_Yes;
-    case 1: return gText_No;
-    default: return NULL;
-    }
-}
-
-MenuText IsYesNoMenuWindow(u32 windowId)
-{
-    return windowId == sYesNoWindowId ? YesNo_MenuText : NULL;
 }
 #endif

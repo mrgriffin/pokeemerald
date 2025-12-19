@@ -8,8 +8,4 @@ void CreateDecorationShop1Menu(const u16 *itemsForSale);
 void CreateDecorationShop2Menu(const u16 *itemsForSale);
 void CB2_ExitSellMenu(void);
 
-#if TESTING
-MenuText IsPokemartMenuWindow(u32 windowId);
-#endif
-
 #endif // GUARD_SHOP_H

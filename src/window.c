@@ -4,6 +4,7 @@
 #include "bg.h"
 #include "blit.h"
 #include "decompress.h"
+#include "test_runner.h"
 
 COMMON_DATA void *gWindowBgTilemapBuffers[NUM_BACKGROUNDS] = {0};
 extern u32 gWindowTileAutoAllocEnabled;
@@ -97,6 +98,8 @@ bool32 InitWindows(const struct WindowTemplate *templates)
             gWindows[i].window.baseBlock = allocatedBaseBlock;
             BgTileAllocOp(bgLayer, allocatedBaseBlock, templates[i].width * templates[i].height, 1);
         }
+
+        TestRunner_Overworld_WindowAdded(i);
     }
 
     return TRUE;
@@ -171,6 +174,8 @@ u32 AddWindow(const struct WindowTemplate *template)
         BgTileAllocOp(bgLayer, allocatedBaseBlock, gWindows[win].window.width * gWindows[win].window.height, 1);
     }
 
+    TestRunner_Overworld_WindowAdded(win);
+
     return win;
 }
 
@@ -208,6 +213,8 @@ int AddWindowWithoutTileMap(const struct WindowTemplate *template)
         BgTileAllocOp(bgLayer, allocatedBaseBlock, gWindows[win].window.width * gWindows[win].window.height, 1);
     }
 
+    TestRunner_Overworld_WindowAdded(win);
+
     return win;
 }
 
@@ -234,6 +241,8 @@ void RemoveWindow(u32 windowId)
         Free(gWindows[windowId].tileData);
         gWindows[windowId].tileData = NULL;
     }
+
+    TestRunner_Overworld_WindowRemoved(windowId);
 }
 
 void RemoveAllWindowsOnBg(u32 bgId)
@@ -270,6 +279,8 @@ void FreeAllWindowBuffers(void)
             Free(gWindows[i].tileData);
             gWindows[i].tileData = NULL;
         }
+
+        TestRunner_Overworld_WindowRemoved(i);
     }
 }
 

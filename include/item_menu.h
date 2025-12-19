@@ -122,8 +122,4 @@ void CloseItemMessage(u8 taskId);
 void ItemMenu_RotomCatalog(u8 taskId);
 void SortItemsInBag(struct BagPocket *pocket, enum BagSortOptions type);
 
-#if TESTING
-MenuText IsBagMenuWindow(u32 windowId);
-#endif
-
 #endif //GUARD_ITEM_MENU_H

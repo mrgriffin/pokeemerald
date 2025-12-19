@@ -2,11 +2,11 @@
 #include "global.h"
 #include "event_data.h"
 #include "field_message_box.h"
-#include "item_menu.h"
 #include "list_menu.h"
 #include "load_save.h"
 #include "main.h"
 #include "main_menu.h"
+#include "malloc.h"
 #include "menu.h"
 #include "menu_helpers.h"
 #include "money.h"
@@ -14,8 +14,6 @@
 #include "palette.h"
 #include "script.h"
 #include "script_menu.h"
-#include "shop.h"
-#include "start_menu.h"
 #include "string_util.h"
 #include "strings.h"
 #include "text.h"
@@ -26,6 +24,19 @@
 
 #define INVALID(fmt, ...) Test_ExitWithResult(TEST_RESULT_INVALID, sourceLine, ":L%s:%d: " fmt, gTestRunnerState.test->filename, sourceLine, ##__VA_ARGS__)
 #define INVALID_IF(c, fmt, ...) do { if (c) Test_ExitWithResult(TEST_RESULT_INVALID, sourceLine, ":L%s:%d: " fmt, gTestRunnerState.test->filename, sourceLine, ##__VA_ARGS__); } while (0)
+
+struct PrintedText
+{
+    u8 windowId;
+    u8 x;
+    u8 y;
+    bool8 freeText:1;
+    union {
+        const u8 *as_const;
+        u8 *as_mut;
+    } text;
+    struct PrintedText *next;
+};
 
 // NOTE: 'commands' could be a cache of the next 128 bytes, and when
 // exhausted we could call the function again to refill them.
@@ -49,6 +60,7 @@ struct OverworldTestState
     enum MenuInputType currentMenuInputType:8;
     s32 currentMenuInputValue;
     uintptr_t currentMenuInputContext;
+    struct PrintedText *printedTextHead;
 };
 
 EWRAM_DATA struct OverworldTestState gOverworldTestState = {0};
@@ -215,6 +227,39 @@ static u32 TryWaitTextPrinters(u32 prevKeys, u8 *waitTextPrintersState)
     return 0;
 }
 
+static u32 RowOfPrintedText(const struct PrintedText *printedText)
+{
+    u32 row = 0;
+    for (const struct PrintedText *current = STATE.printedTextHead; current; current = current->next)
+    {
+        if (current->windowId != printedText->windowId)
+            continue;
+        if (current->x != printedText->x)
+            continue;
+        if (current->y < printedText->y)
+            row++;
+    }
+    return row;
+}
+
+static u32 ColumnOfPrintedText(const struct PrintedText *printedText)
+{
+    u32 column = 0;
+    for (const struct PrintedText *current = STATE.printedTextHead; current; current = current->next)
+    {
+        if (current->windowId != printedText->windowId)
+            continue;
+        if (current->y != printedText->y)
+            continue;
+        // Exclude the cursor.
+        if (current->text.as_const[0] == CHAR_BLACK_TRIANGLE)
+            continue;
+        if (current->x < printedText->x)
+            column++;
+    }
+    return column;
+}
+
 static s32 MenuTextIndex(enum MenuInputType type, uintptr_t context, const u8 *text)
 {
     u32 sourceLine = SourceLine(0);
@@ -225,32 +270,38 @@ static s32 MenuTextIndex(enum MenuInputType type, uintptr_t context, const u8 *t
         return -1;
 
     case MENU_INPUT_MENU:
+    {
+        for (const struct PrintedText *current = STATE.printedTextHead; current; current = current->next)
+        {
+            if (current->windowId != STATE.currentMenuInputContext)
+                continue;
+            if (StringCompareWithoutExtCtrlCodes(current->text.as_const, text) != 0)
+                continue;
+            return RowOfPrintedText(current);
+        }
+        return -1;
+    }
+
     case MENU_INPUT_GRIDMENU:
     {
-        const u8 *(*getText)(u32 index);
-        if ((getText = IsYesNoMenuWindow(context))
-         || (getText = IsPokemartMenuWindow(context))
-         || (getText = IsStartMenuWindow(context))
-         || (getText = IsBagMenuWindow(context)))
+        for (const struct PrintedText *current = STATE.printedTextHead; current; current = current->next)
         {
-            const u8 *text_;
-            u8 expandedText_[32];
-            for (u32 i = 0; (text_ = getText(i)); i++)
-            {
-                StringExpandPlaceholders(expandedText_, text_);
-                if (StringCompareWithoutExtCtrlCodes(expandedText_, text) == 0)
-                    return i;
-            }
+            if (current->windowId != STATE.currentMenuInputContext)
+                continue;
+            if (StringCompareWithoutExtCtrlCodes(current->text.as_const, text) != 0)
+                continue;
+            return RowOfPrintedText(current) * GetGridMenuColumns() + ColumnOfPrintedText(current);
         }
         return -1;
     }
 
     case MENU_INPUT_LISTMENU:
     {
-        struct ListMenu *list = (void *) gTasks[context].data;
+        const struct ListMenu *list = (void *)gTasks[context].data;
         INVALID_IF(list->template.isDynamic, "MENU_INPUT_LISTMENU isDynamic unimplemented");
         for (u32 i = 0; i < list->template.totalItems; i++)
         {
+            // XXX: Use StringExpandPlaceholdersLength.
             u8 expandedText_[32];
             StringExpandPlaceholders(expandedText_, list->template.items[i].name);
             if (StringCompareWithoutExtCtrlCodes(expandedText_, text) == 0)
@@ -573,10 +624,41 @@ u32 TestRunner_ReadKeys(u32 prevKeys)
 
 void TestRunner_BeforeResetHeap(void)
 {
+    struct PrintedText *current = STATE.printedTextHead;
+    while (current)
+    {
+        if (current->freeText)
+            Free(current->text.as_mut);
+        Free(current);
+        // WARNING: Use-after-free.
+        current = current->next;
+    }
+    STATE.printedTextHead = NULL;
+
     if (!gTestRunnerState.expectLeaks)
     {
         TestRunner_CheckMemoryLeak();
         TestRunner_CheckTaskLeak();
+    }
+}
+
+static void DiscardPrintedTextsOnWindow(u32 windowId)
+{
+    struct PrintedText **next = &STATE.printedTextHead;
+    while (*next)
+    {
+        if ((*next)->windowId == windowId)
+        {
+            if ((*next)->freeText)
+                Free((*next)->text.as_mut);
+            Free(*next);
+            // WARNING: Use-after-free.
+            *next = (*next)->next;
+        }
+        else
+        {
+            next = &(*next)->next;
+        }
     }
 }
 
@@ -585,6 +667,130 @@ void TestRunner_Overworld_MenuInputHasFocus(enum MenuInputType type, s32 value, 
     STATE.currentMenuInputType = type;
     STATE.currentMenuInputValue = value;
     STATE.currentMenuInputContext = context;
+
+    // Eagerly discard printed texts where possible.
+    if (type == MENU_INPUT_LISTMENU)
+    {
+        const struct ListMenu *list = (void *)gTasks[context].data;
+        DiscardPrintedTextsOnWindow(list->template.windowId);
+    }
+}
+
+void TestRunner_Overworld_WindowAdded(u32 windowId)
+{
+    DiscardPrintedTextsOnWindow(windowId);
+}
+
+void TestRunner_Overworld_WindowRemoved(u32 windowId)
+{
+    DiscardPrintedTextsOnWindow(windowId);
+}
+
+static bool32 MustExpandOrAllocateString(const u8 *string)
+{
+    switch ((uintptr_t)string >> 24)
+    {
+    case 0x02: // EWRAM
+    case 0x03: // IWRAM
+        return TRUE;
+    }
+
+    enum { MODE_NORMAL, MODE_EXT_CTRL_CODE, MODE_PLACEHOLDER } mode = MODE_NORMAL;
+    for (u32 i = 0; string[i] != EOS; i++)
+    {
+        switch (mode)
+        {
+        case MODE_NORMAL:
+            switch (string[i])
+            {
+            case CHAR_DYNAMIC:
+                return TRUE;
+            case EXT_CTRL_CODE_BEGIN:
+                mode = MODE_EXT_CTRL_CODE;
+                break;
+            case PLACEHOLDER_BEGIN:
+                mode = MODE_PLACEHOLDER;
+                break;
+            // Options on multiple lines.
+            case CHAR_NEWLINE:
+                return TRUE;
+            }
+            break;
+
+        case MODE_EXT_CTRL_CODE:
+            i += GetExtCtrlCodeLength(string[i]);
+            mode = MODE_NORMAL;
+            break;
+
+        case MODE_PLACEHOLDER:
+            switch (string[i])
+            {
+            case PLACEHOLDER_ID_STRING_VAR_1:
+            case PLACEHOLDER_ID_STRING_VAR_2:
+            case PLACEHOLDER_ID_STRING_VAR_3:
+                return TRUE;
+            }
+            mode = MODE_NORMAL;
+            break;
+        }
+    }
+
+    return FALSE;
+}
+
+void TestRunner_Overworld_TextPrinterAdded(const struct TextPrinter *textPrinter)
+{
+    // Animated text, can't be a menu option.
+    // TODO: Think of more filters to reduce memory usage.
+    if (textPrinter->textSpeed != 0 && textPrinter->textSpeed != TEXT_SKIP_DRAW)
+        return;
+
+    // TODO: If the exact (windowId, x, y) already exists, replace it.
+    if (MustExpandOrAllocateString(textPrinter->printerTemplate.currentChar))
+    {
+        u32 length = StringExpandPlaceholdersLength(textPrinter->printerTemplate.currentChar);
+        u8 *text = Alloc(length + 1);
+        StringExpandPlaceholders(text, textPrinter->printerTemplate.currentChar);
+        struct PrintedText *printedText = Alloc(sizeof(*printedText));
+        *printedText = (struct PrintedText) {
+            .windowId = textPrinter->printerTemplate.windowId,
+            .x = textPrinter->printerTemplate.x,
+            .y = textPrinter->printerTemplate.y,
+            .freeText = TRUE,
+            .text.as_mut = text,
+            .next = STATE.printedTextHead,
+        };
+        STATE.printedTextHead = printedText;
+
+        // Split on newlines. Needed for gText_YesNo.
+        for (u32 i = 0; text[i] != EOS; i++)
+        {
+            if (text[i] != CHAR_NEWLINE)
+                continue;
+
+            text[i] = EOS;
+            printedText = Alloc(sizeof(*printedText));
+            *printedText = *STATE.printedTextHead;
+            printedText->y += gFonts[textPrinter->printerTemplate.fontId].maxLetterHeight + textPrinter->printerTemplate.lineSpacing;
+            printedText->freeText = FALSE;
+            printedText->text.as_const = &text[i + 1];
+            printedText->next = STATE.printedTextHead;
+            STATE.printedTextHead = printedText;
+        }
+    }
+    else
+    {
+        struct PrintedText *printedText = Alloc(sizeof(*printedText));
+        *printedText = (struct PrintedText) {
+            .windowId = textPrinter->printerTemplate.windowId,
+            .x = textPrinter->printerTemplate.x,
+            .y = textPrinter->printerTemplate.y,
+            .freeText = FALSE,
+            .text.as_const = textPrinter->printerTemplate.currentChar,
+            .next = STATE.printedTextHead,
+        };
+        STATE.printedTextHead = printedText;
+    }
 }
 
 static void OverworldTest_Run(void *data)

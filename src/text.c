@@ -11,6 +11,7 @@
 #include "palette.h"
 #include "sound.h"
 #include "string_util.h"
+#include "test_runner.h"
 #include "text.h"
 #include "window.h"
 #include "constants/songs.h"
@@ -407,6 +408,8 @@ bool32 AddTextPrinter(struct TextPrinterTemplate *printerTemplate, u8 speed, voi
     sTempTextPrinter.minLetterSpacing = 0;
     sTempTextPrinter.japanese = 0;
 
+    TestRunner_Overworld_TextPrinterAdded(&sTempTextPrinter);
+
     GenerateFontHalfRowLookupTable(printerTemplate->fgColor, printerTemplate->bgColor, printerTemplate->shadowColor);
     if (speed != TEXT_SKIP_DRAW && speed != 0)
     {
@@ -430,6 +433,7 @@ bool32 AddTextPrinter(struct TextPrinterTemplate *printerTemplate, u8 speed, voi
         sTextPrinters[printerTemplate->windowId].active = FALSE;
     }
     gDisableTextPrinters = FALSE;
+
     return TRUE;
 }
 

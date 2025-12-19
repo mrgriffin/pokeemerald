@@ -3032,28 +3032,3 @@ static s32 CompareItemsByIndex(enum Pocket pocketId, struct ItemSlot item1, stru
 
     return 0; // Cannot have multiple stacks of indexed items
 }
-
-#if TESTING
-static const u8 *Bag_MenuText(u32 index)
-{
-    if (index < gBagMenu->contextMenuNumItems)
-        return sItemMenuActions[gBagMenu->contextMenuItemsPtr[index]].text;
-    else
-        return NULL;
-}
-
-MenuText IsBagMenuWindow(u32 windowId)
-{
-    if (gBagMenu->windowIds[ITEMWIN_1x1] == windowId
-     || gBagMenu->windowIds[ITEMWIN_1x2] == windowId
-     || gBagMenu->windowIds[ITEMWIN_2x2] == windowId
-     || gBagMenu->windowIds[ITEMWIN_2x3] == windowId)
-    {
-        return Bag_MenuText;
-    }
-    else
-    {
-        return NULL;
-    }
-}
-#endif

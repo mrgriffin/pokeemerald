@@ -14,6 +14,7 @@ extern const bool8 gTestRunnerSkipIsFail;
 #include "constants/test_runner.h"
 
 enum Gimmick;
+struct TextPrinter;
 
 void TestRunner_Battle_RecordAbilityPopUp(u32 battlerId, enum Ability ability);
 void TestRunner_Battle_RecordAnimation(u32 animType, u32 animId);
@@ -36,6 +37,9 @@ u32 TestRunner_Battle_GetChosenGimmick(u32 side, u32 partyIndex);
 u32 TestRunner_Battle_GetForcedEnvironment(void);
 
 void TestRunner_Overworld_MenuInputHasFocus(enum MenuInputType type, s32 value, uintptr_t context);
+void TestRunner_Overworld_WindowAdded(u32 windowId);
+void TestRunner_Overworld_WindowRemoved(u32 windowId);
+void TestRunner_Overworld_TextPrinterAdded(const struct TextPrinter *);
 
 u32 TestRunner_ReadKeys(u32 prevKeyInput);
 void TestRunner_BeforeResetHeap(void);
@@ -65,6 +69,9 @@ void TestRunner_BeforeResetHeap(void);
 #define TestRunner_Battle_GetForcedEnvironment(...) (u8)0
 
 #define TestRunner_Overworld_MenuInputHasFocus(...) (void)0
+#define TestRunner_Overworld_WindowAdded(...) (void)0
+#define TestRunner_Overworld_WindowRemoved(...) (void)0
+#define TestRunner_Overworld_TextPrinterAdded(...) (void)0
 
 #define TestRunner_ReadKeys(...) (u32)0
 #define TestRunner_BeforeResetHeap(...) (void)0

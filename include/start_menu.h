@@ -13,8 +13,4 @@ void SaveForBattleTowerLink(void);
 void HideStartMenu(void);
 void AppendToList(u8 *list, u8 *pos, u8 newEntry);
 
-#if TESTING
-MenuText IsStartMenuWindow(u32 windowId);
-#endif
-
 #endif // GUARD_START_MENU_H
