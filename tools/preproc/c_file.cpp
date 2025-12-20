@@ -155,16 +155,42 @@ void CFile::TryConvertString()
     long oldPos = m_pos;
     long oldLineNum = m_lineNum;
     bool noTerminator = false;
+    bool cString = false;
+    bool silent = false;
+    const char *error = NULL;
 
     if (m_buffer[m_pos] != '_' || (m_pos > 0 && IsIdentifierChar(m_buffer[m_pos - 1])))
         return;
 
     m_pos++;
 
-    if (m_buffer[m_pos] == '_')
+    while (true)
     {
-        noTerminator = true;
-        m_pos++;
+        if (m_buffer[m_pos] == '_')
+        {
+            if (noTerminator)
+                error = "duplicate '_' suffix";
+            noTerminator = true;
+            m_pos++;
+        }
+        else if (m_buffer[m_pos] == 'c')
+        {
+            if (cString)
+                error = "duplicate 'c' suffix";
+            cString = true;
+            m_pos++;
+        }
+        else if (m_buffer[m_pos] == 's')
+        {
+            if (silent)
+                error = "duplicate 's' suffix";
+            silent = true;
+            m_pos++;
+        }
+        else
+        {
+            break;
+        }
     }
 
     SkipWhitespace();
@@ -176,15 +202,25 @@ void CFile::TryConvertString()
         return;
     }
 
+    if (error)
+        RaiseError(error);
+
     m_pos++;
 
     SkipWhitespace();
 
-    std::printf("{ ");
+    if (cString)
+        std::printf("\"");
+    else
+        std::printf("{ ");
 
+    int parens = 1;
     while (1)
     {
         SkipWhitespace();
+
+        if (m_buffer[m_pos] == '(')
+            parens++;
 
         if (m_buffer[m_pos] == '"')
         {
@@ -202,17 +238,29 @@ void CFile::TryConvertString()
             }
 
             for (int i = 0; i < length; i++)
-                printf("0x%02X, ", s[i]);
+            {
+                if (cString)
+                    printf("\\x%02X", s[i]);
+                else
+                    printf("0x%02X, ", s[i]);
+            }
         }
         else if (m_buffer[m_pos] == ')')
         {
             m_pos++;
-            break;
+            if (--parens == 0)
+                break;
+        }
+        else if (m_pos >= m_size)
+        {
+            RaiseError("unexpected EOF");
+        }
+        else if (silent)
+        {
+            m_pos++;
         }
         else
         {
-            if (m_pos >= m_size)
-                RaiseError("unexpected EOF");
             if (IsAsciiPrintable(m_buffer[m_pos]))
                 RaiseError("unexpected character '%c'", m_buffer[m_pos]);
             else
@@ -220,10 +268,18 @@ void CFile::TryConvertString()
         }
     }
 
-    if (noTerminator)
-        std::printf(" }");
+    if (cString)
+    {
+        if (!noTerminator)
+            std::printf("\xFF");
+        std::printf("\"");
+    }
     else
-        std::printf("0xFF }");
+    {
+        if (!noTerminator)
+            std::printf("0xFF");
+        std::printf(" }");
+    }
 }
 
 bool CFile::CheckIdentifier(const std::string& ident)
