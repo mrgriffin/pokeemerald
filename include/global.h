@@ -114,7 +114,11 @@
 #define UNPACK(data, shift, mask) ( ((data) & (mask)) >> (shift) )
 
 // Macros for checking the joypad
+#if TESTING
+#define TEST_BUTTON(field, button) (gMain.testedKeys |= (button), ((field) & (button)))
+#else
 #define TEST_BUTTON(field, button) ((field) & (button))
+#endif
 #define JOY_NEW(button) TEST_BUTTON(gMain.newKeys,  button)
 #define JOY_HELD(button)  TEST_BUTTON(gMain.heldKeys, button)
 #define JOY_HELD_RAW(button) TEST_BUTTON(gMain.heldKeysRaw, button)

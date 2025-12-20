@@ -196,30 +196,39 @@ static u32 Cmd_WaitFadeIn(u32, union CommandState *s)
 static u32 TryWaitTextPrinters(u32 prevKeys, u8 *waitTextPrintersState)
 {
     if (gPaletteFade.active)
+    {
+        *waitTextPrintersState = 0;
         return 0;
+    }
 
     switch (TextPrinterState())
     {
     case TEXT_PRINTER_INACTIVE:
-        if (*waitTextPrintersState > 0)
+        // If the game would only accept exactly A or B for 30 frames,
+        // try an A press to advance.
+        if (gMain.testedKeys == (A_BUTTON | B_BUTTON))
         {
-            // Try an A press if we are stuck for 30 frames.
-            if (--(*waitTextPrintersState) == 0)
+            if (*waitTextPrintersState < 30)
+                (*waitTextPrintersState)++;
+            if (*waitTextPrintersState == 30 && prevKeys == 0)
             {
-                if (prevKeys == 0)
-                    return A_BUTTON;
-                else // Would be a hold, try next frame.
-                    *waitTextPrintersState = 1;
+                (*waitTextPrintersState)++;
+                return A_BUTTON;
             }
+        }
+        else
+        {
+            *waitTextPrintersState = 0;
         }
         break;
 
     case TEXT_PRINTER_ACTIVE:
-        *waitTextPrintersState = 30;
+        *waitTextPrintersState = 0;
         // Hold A to try and speed up.
         return A_BUTTON;
 
     case TEXT_PRINTER_AWAIT_PRESS:
+        *waitTextPrintersState = 0;
         if (prevKeys == 0)
             return A_BUTTON;
         break;
@@ -946,52 +955,55 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
          _once && (OverworldTest_PushCommand(__LINE__, OP_OW_START_MENU_BEGIN, ARG_END), TRUE); \
          OverworldTest_PushCommand(__LINE__, OP_OW_START_MENU_END, ARG_END), _once = FALSE)
 
+#if 0
 // test_test_runner.c, check that walk down only fires once.
-//OVERWORLD_TEST("OVERWORLD")
-//{
-//    GIVEN {
-//        ON_MAP(MAP_PETALBURG_CITY_MART, 4, 7);
-//    } WHEN {
-//        WALK_DOWN;
-//    } THEN {
-//        // TODO: Check that the player is where we expect.
-//    }
-//}
+OVERWORLD_TEST("OVERWORLD")
+{
+    GIVEN {
+        ON_MAP(MAP_PETALBURG_CITY_MART, 4, 7);
+    } WHEN {
+        WALK_DOWN;
+    } THEN {
+        // TODO: Check that the player is where we expect.
+    }
+}
 
 // test_test_runner.c, check that all SELECT forms work.
-//OVERWORLD_TEST("OVERWORLD")
-//{
-//    static const u8 sText_Wobbuffet[] = _("Wobbuffet");
-//    GIVEN {
-//        ON_MAP(MAP_OLDALE_TOWN, -1, -1);
-//        CreateMon(&gPlayerParty[0], SPECIES_WOBBUFFET, 100, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
-//        CreateMon(&gPlayerParty[1], SPECIES_WOBBUFFET, 100, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
-//        FlagSet(FLAG_SYS_POKEMON_GET);
-//    } WHEN {
-//        START_MENU {
-//            SELECT("POKéMON");
-//
-//            SELECT("Wobbuffet");
-//            PRESS_KEYS(B_BUTTON);
-//
-//            SELECT(0);
-//            PRESS_KEYS(B_BUTTON);
-//
-//            SELECT(sText_Wobbuffet);
-//            PRESS_KEYS(B_BUTTON);
-//
-//            SELECT(GetSpeciesName(SPECIES_WOBBUFFET));
-//            PRESS_KEYS(B_BUTTON);
-//
-//            // TODO: Be able to select among duplicates. Compile-time
-//            // error to do 'SELECT(integer, _)'.
-//            //SELECT("Wobbuffet", 1);
-//            //DELAY(30);
-//            //PRESS_KEYS(B_BUTTON);
-//        }
-//    }
-//}
+OVERWORLD_TEST("OVERWORLD")
+{
+    static const u8 sText_Wobbuffet[] = _("Wobbuffet");
+    GIVEN {
+        ON_MAP(MAP_OLDALE_TOWN, -1, -1);
+        CreateMon(&gPlayerParty[0], SPECIES_WOBBUFFET, 100, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+        CreateMon(&gPlayerParty[1], SPECIES_WOBBUFFET, 100, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+        FlagSet(FLAG_SYS_POKEMON_GET);
+    } WHEN {
+        START_MENU {
+            SELECT("POKéMON");
 
+            SELECT("Wobbuffet");
+            PRESS_KEYS(B_BUTTON);
+
+            SELECT(0);
+            PRESS_KEYS(B_BUTTON);
+
+            SELECT(sText_Wobbuffet);
+            PRESS_KEYS(B_BUTTON);
+
+            SELECT(GetSpeciesName(SPECIES_WOBBUFFET));
+            PRESS_KEYS(B_BUTTON);
+
+            // TODO: Be able to select among duplicates. Compile-time
+            // error to do 'SELECT(integer, _)'.
+            //SELECT("Wobbuffet", 1);
+            //DELAY(30);
+            //PRESS_KEYS(B_BUTTON);
+        }
+    }
+}
+#endif
+
+#if 1
 OVERWORLD_TEST("OVERWORLD")
 {
     GIVEN {
@@ -1055,3 +1067,4 @@ OVERWORLD_TEST("OVERWORLD")
         //}
     }
 }
+#endif
