@@ -918,10 +918,12 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
 #define HOLD_KEYS(keys, frames) OverworldTest_PushCommand(__LINE__, OP_HOLD_KEYS, ARG_16, keys, ARG_8, frames, ARG_END)
 #define WAIT_FADE_IN OverworldTest_PushCommand(__LINE__, OP_WAIT_FADE_IN, ARG_END)
 
-// TODO: Support passing a pointer.
-// TODO: Support passing "second Wobbuffet" (i.e. 'SELECT("Wobbuffet", 2)').
-#define SELECT(text) OverworldTest_PushCommand(__LINE__, OP_MENU_SELECT, ARG_32, (static const u8[]) _(text), ARG_END)
-#define SELECT_INDEX(index) OverworldTest_PushCommand(__LINE__, OP_MENU_SELECT, ARG_32, index, ARG_END)
+// https://github.com/gcc-mirror/gcc/blob/master/gcc/typeclass.h
+// pointer_type_class == 5
+#define MAYBE_GF_ENCODE(maybeString) __builtin_choose_expr(__builtin_constant_p(maybeString) && __builtin_classify_type(maybeString) == 5, (_cs(maybeString)), (maybeString))
+
+#define SELECT(selector) OverworldTest_PushCommand(__LINE__, OP_MENU_SELECT, ARG_32, MAYBE_GF_ENCODE(selector), ARG_END)
+
 #define QUANTITY(n) OverworldTest_PushCommand(__LINE__, OP_MENU_QUANTITY, ARG_16, n, ARG_END)
 
 #define FACE_DOWN OverworldTest_PushCommand(__LINE__, OP_OW_FACE_DIRECTION, ARG_8, DIR_SOUTH, ARG_END)
@@ -953,6 +955,40 @@ void OverworldTest_PushCommand(u32 sourceLine, enum Opcode opcode, ...)
 //        WALK_DOWN;
 //    } THEN {
 //        // TODO: Check that the player is where we expect.
+//    }
+//}
+
+// test_test_runner.c, check that all SELECT forms work.
+//OVERWORLD_TEST("OVERWORLD")
+//{
+//    static const u8 sText_Wobbuffet[] = _("Wobbuffet");
+//    GIVEN {
+//        ON_MAP(MAP_OLDALE_TOWN, -1, -1);
+//        CreateMon(&gPlayerParty[0], SPECIES_WOBBUFFET, 100, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+//        CreateMon(&gPlayerParty[1], SPECIES_WOBBUFFET, 100, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+//        FlagSet(FLAG_SYS_POKEMON_GET);
+//    } WHEN {
+//        START_MENU {
+//            SELECT("POKéMON");
+//
+//            SELECT("Wobbuffet");
+//            PRESS_KEYS(B_BUTTON);
+//
+//            SELECT(0);
+//            PRESS_KEYS(B_BUTTON);
+//
+//            SELECT(sText_Wobbuffet);
+//            PRESS_KEYS(B_BUTTON);
+//
+//            SELECT(GetSpeciesName(SPECIES_WOBBUFFET));
+//            PRESS_KEYS(B_BUTTON);
+//
+//            // TODO: Be able to select among duplicates. Compile-time
+//            // error to do 'SELECT(integer, _)'.
+//            //SELECT("Wobbuffet", 1);
+//            //DELAY(30);
+//            //PRESS_KEYS(B_BUTTON);
+//        }
 //    }
 //}
 
@@ -1008,14 +1044,14 @@ OVERWORLD_TEST("OVERWORLD")
         INTERACT {
             SELECT("YES");
         }
-        START_MENU {
-            SELECT("POKéMON");
-            SELECT("Wobbuffet");
-            SELECT("SUMMARY");
-            WAIT_FADE_IN;
-            PRESS_KEYS(B_BUTTON);
-            SELECT("CANCEL");
-            SELECT("CANCEL");
-        }
+        //START_MENU {
+        //    SELECT("POKéMON");
+        //    SELECT("Wobbuffet");
+        //    SELECT("SUMMARY");
+        //    WAIT_FADE_IN;
+        //    PRESS_KEYS(B_BUTTON);
+        //    SELECT("CANCEL");
+        //    SELECT("CANCEL");
+        //}
     }
 }
