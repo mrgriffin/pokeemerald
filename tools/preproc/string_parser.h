@@ -28,7 +28,7 @@
 class StringParser
 {
 public:
-    StringParser(char* buffer, long size) : m_buffer(buffer), m_size(size), m_pos(0) {}
+    StringParser(const char* buffer, long size, bool capitalize=false) : m_buffer(buffer), m_size(size), m_pos(0), m_capitalize(capitalize) {}
     int ParseString(long srcPos, unsigned char* dest, int &destLength);
 
 private:
@@ -38,9 +38,10 @@ private:
         int size;
     };
 
-    char* m_buffer;
+    const char* m_buffer;
     long m_size;
     long m_pos;
+    bool m_capitalize;
 
     Integer ReadInteger();
     Integer ReadDecimal();

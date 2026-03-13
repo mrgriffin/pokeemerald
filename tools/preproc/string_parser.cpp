@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <cstdarg>
+#include <cwctype>
 #include <stdexcept>
 #include "preproc.h"
 #include "string_parser.h"
@@ -73,6 +74,22 @@ std::string StringParser::ReadCharOrEscape()
     UnicodeChar unicodeChar = DecodeUtf8(&m_buffer[m_pos]);
     m_pos += unicodeChar.encodingLength;
     std::int32_t code = unicodeChar.code;
+    std::int32_t capCode = unicodeChar.code;
+
+    if (!isEscape && m_capitalize)
+    {
+        // We assume that 32-bit wchar_t means UTF-32.
+        // NOTE: Non-WSL Windows has 16-bit wchar_t.
+        if (sizeof(wchar_t) == 4)
+        {
+            capCode = std::towupper(code);
+        }
+        else
+        {
+            if (IsAscii(c))
+              capCode = std::toupper(code);
+        }
+    }
 
     if (code == -1)
         RaiseError("invalid encoding in UTF-8 string");
@@ -80,7 +97,16 @@ std::string StringParser::ReadCharOrEscape()
     if (isEscape && code >= 128)
         RaiseError("escapes using non-ASCII characters are invalid");
 
-    sequence = isEscape ? g_charmap->Escape(code) : g_charmap->Char(code);
+    if (isEscape)
+    {
+        sequence = g_charmap->Escape(code);
+    }
+    else
+    {
+        sequence = g_charmap->Char(capCode);
+        if (sequence.length() == 0)
+            sequence = g_charmap->Char(code);
+    }
 
     if (sequence.length() == 0)
     {
@@ -117,7 +143,6 @@ std::string StringParser::ReadBracketedConstants()
 
             if (sequence.length() == 0)
             {
-                m_buffer[m_pos] = 0;
                 RaiseError("unknown constant '%s'", &m_buffer[startPos]);
             }
 

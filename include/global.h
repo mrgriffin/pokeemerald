@@ -44,6 +44,9 @@
 #define _(x)        {x}
 #define __(x)       {x}
 #define COMPOUND_STRING(x) 0
+#define _CAPPABLE(x, c) {x}
+#define __CAPPABLE(x, c) {x}
+#define COMPOUND_STRING_CAPPABLE(x, c) 0
 #define INCBIN(...) {0}
 #define INCBIN_U8   INCBIN
 #define INCBIN_U16  INCBIN

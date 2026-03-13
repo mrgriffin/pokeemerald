@@ -264,9 +264,14 @@ void CFile::SkipWhitespace()
         ;
 }
 
-std::vector<unsigned char> CFile::ConvertString()
+std::vector<unsigned char> CFile::ConvertString(bool allowCapitalize)
 {
+    std::vector<char> unconverted;
     std::vector<unsigned char> converted;
+    bool capitalize = false;
+    bool parsedArgument = false;
+
+    unconverted.push_back('"');
 
     while (true)
     {
@@ -274,23 +279,56 @@ std::vector<unsigned char> CFile::ConvertString()
 
         if (m_buffer[m_pos] == '"')
         {
-            unsigned char s[kMaxStringLength];
-            int length = 0;
-            StringParser stringParser(m_buffer, m_size);
-            try
+            long start = m_pos++;
+            enum Mode { MODE_NORMAL, MODE_ESCAPE, MODE_BRACKET } mode = MODE_NORMAL;
+            while (m_pos < m_size)
             {
-                m_pos += stringParser.ParseString(m_pos, s, length);
+                char c = m_buffer[m_pos++];
+                if (mode == MODE_NORMAL)
+                {
+                    if (c == '"')
+                        break;
+                    else if (c == '\\')
+                        mode = MODE_ESCAPE;
+                    else if (c == '{')
+                        mode = MODE_BRACKET;
+                }
+                else if (mode == MODE_ESCAPE)
+                {
+                    mode = MODE_NORMAL;
+                }
+                else // mode == MODE_BRACKET
+                {
+                    if (c == '}')
+                        mode = MODE_NORMAL;
+                }
             }
-            catch (std::runtime_error& e)
-            {
-                RaiseError(e.what());
-            }
-            converted.insert(converted.end(), s, s + length);
+            unconverted.insert(unconverted.end(), m_buffer + start + 1, m_buffer + m_pos - 1);
+            if (m_pos >= m_size)
+                RaiseError("unexpected EOF");
         }
         else if (m_buffer[m_pos] == ')')
         {
+            if (allowCapitalize && !parsedArgument)
+                RaiseError("expected capitalization argument");
             m_pos++;
             break;
+        }
+        else if (m_buffer[m_pos] == ',' && allowCapitalize && !parsedArgument)
+        {
+            m_pos++;
+            SkipWhitespace();
+            if (m_pos >= m_size)
+                RaiseError("unexpected EOF");
+            if (m_buffer[m_pos] == '0')
+                parsedArgument = true;
+            else if (m_buffer[m_pos] == '1')
+                parsedArgument = capitalize = true;
+            else if (IsAsciiPrintable(m_buffer[m_pos]))
+                RaiseError("unexpected character '%c'", m_buffer[m_pos]);
+            else
+                RaiseError("unexpected character '\\x%02X'", m_buffer[m_pos]);
+            m_pos++;
         }
         else
         {
@@ -303,6 +341,23 @@ std::vector<unsigned char> CFile::ConvertString()
         }
     }
 
+    unconverted.push_back('"');
+    unconverted.push_back('\0');
+    size_t consumed = 0;
+    StringParser stringParser(unconverted.data(), unconverted.size() - 1, capitalize);
+    try
+    {
+        unsigned char s[kMaxStringLength];
+        int length;
+        consumed = stringParser.ParseString(0, s, length);
+        converted.insert(converted.end(), s, s + length);
+    }
+    catch (std::runtime_error& e)
+    {
+        RaiseError(e.what());
+    }
+    if (consumed != unconverted.size() - 1)
+        RaiseError("Quick-parse inconsistent with ParseString");
     return converted;
 }
 
@@ -311,6 +366,8 @@ void CFile::TryConvertString()
     long oldPos = m_pos;
     auto oldLocation = m_location;
     bool noTerminator = false;
+    bool allowCapitalize = false;
+    std::string cappable = "CAPPABLE";
 
     if (m_buffer[m_pos] != '_' || (m_pos > 0 && IsIdentifierChar(m_buffer[m_pos - 1])))
         return;
@@ -321,6 +378,12 @@ void CFile::TryConvertString()
     {
         noTerminator = true;
         m_pos++;
+    }
+
+    if (CheckIdentifier(cappable))
+    {
+        m_pos += cappable.length();
+        allowCapitalize = true;
     }
 
     SkipWhitespace();
@@ -338,7 +401,7 @@ void CFile::TryConvertString()
 
     printf("{ ");
 
-    std::vector<unsigned char> converted = ConvertString();
+    std::vector<unsigned char> converted = ConvertString(allowCapitalize);
     for (std::size_t i = 0; i < converted.size(); i++)
         printf("0x%02X, ", converted[i]);
 
@@ -360,12 +423,20 @@ void CFile::TryConvertCompoundString()
 {
     long oldPos = m_pos;
     auto oldLocation = m_location;
+    bool allowCapitalize = false;
     std::string ident = "COMPOUND_STRING";
+    std::string cappable = "_CAPPABLE";
 
     if ((m_pos > 0 && IsIdentifierChar(m_buffer[m_pos - 1])) || !CheckIdentifier(ident))
         return;
 
     m_pos += ident.length();
+
+    if (CheckIdentifier(cappable))
+    {
+        m_pos += cappable.length();
+        allowCapitalize = true;
+    }
 
     SkipWhitespace();
 
@@ -377,7 +448,7 @@ void CFile::TryConvertCompoundString()
     }
 
     m_pos++;
-    std::vector<unsigned char> converted = ConvertString();
+    std::vector<unsigned char> converted = ConvertString(allowCapitalize);
     converted.push_back(0xFF);
 
     std::uint64_t hash = fnv1a(converted);

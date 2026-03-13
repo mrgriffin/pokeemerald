@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <clocale>
 #include <string>
 #include <stack>
 #include <unistd.h>
@@ -228,6 +229,10 @@ int main(int argc, char **argv)
     charmap = argv[optind + 1];
 
     g_charmap = new Charmap(charmap);
+
+    // For m_capitalize in StringParser::ReadCharOrEscape
+    if (sizeof(wchar_t) == 4)
+        std::setlocale(LC_ALL, "C.UTF-8");
 
 #ifdef _WIN32
 	// On Windows, piping from stdout can break newlines. Treat stdout as binary stream to avoid this.
