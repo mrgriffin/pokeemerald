@@ -215,7 +215,7 @@ top:
 
         gTestRunnerState.filterMode = DetectFilterMode(gTestRunnerArgv);
 
-        RotateEncryptionKey_ResetHeap();
+        ResetHeap();
         SetSaveBlocksPointers();
 
         gIntrTable[7] = Intr_Timer2;

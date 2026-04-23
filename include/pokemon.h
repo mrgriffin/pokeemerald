@@ -38,7 +38,6 @@ enum MonData {
     MON_DATA_HIDDEN_NATURE,
     MON_DATA_HP_LOST,
     MON_DATA_DAYS_SINCE_FORM_CHANGE,
-    MON_DATA_ENCRYPT_SEPARATOR,
     MON_DATA_NICKNAME,
     MON_DATA_NICKNAME10,
     MON_DATA_SPECIES,
@@ -939,5 +938,9 @@ struct BoxPokemon *GetSelectedBoxMonFromPcOrParty(void);
 u32 GiveScriptedMonToPlayer(struct Pokemon *mon, u8 slot);
 void ChangePokemonNicknameWithCallback(void (*callback)(void));
 bool32 HasShedinjaHPHandling(enum Species species);
+void EncryptMon(struct Pokemon *mon);
+void DecryptMon(struct Pokemon *mon);
+void EncryptBoxMon(struct BoxPokemon *boxMon);
+void DecryptBoxMon(struct BoxPokemon *boxMon);
 
 #endif // GUARD_POKEMON_H
