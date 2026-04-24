@@ -1309,6 +1309,10 @@ ARM_FUNC NOINLINE static const struct SubstructOrder *SubstructOrder(u32 persona
     return &sSubstructOrders[personality % ARRAY_COUNT(sSubstructOrders)];
 }
 
+// WARNING: Must be called from Thumb and stomps on FIQ registers.
+enum FastShuffleSubstructsMode { SHUFFLE_ENCRYPT, SHUFFLE_DECRYPT };
+extern void FastShuffleSubstructs(struct BoxPokemon *, enum FastShuffleSubstructsMode);
+
 void EncryptMon(struct Pokemon *mon)
 {
     EncryptBoxMon(&mon->box);
@@ -1316,13 +1320,26 @@ void EncryptMon(struct Pokemon *mon)
 
 void EncryptBoxMon(struct BoxPokemon *boxMon)
 {
-    union PokemonSubstruct decrypted[4];
-    memcpy(decrypted, boxMon->secure.substructs, sizeof(decrypted));
-    const struct SubstructOrder *substructOrder = SubstructOrder(boxMon->personality);
-    boxMon->secure.substructs[0] = decrypted[substructOrder->encrypt[0]];
-    boxMon->secure.substructs[1] = decrypted[substructOrder->encrypt[1]];
-    boxMon->secure.substructs[2] = decrypted[substructOrder->encrypt[2]];
-    boxMon->secure.substructs[3] = decrypted[substructOrder->encrypt[3]];
+    if (!boxMon->hasSpecies)
+        return;
+
+    if (offsetof(struct BoxPokemon, personality) == 0
+     && sizeof(boxMon->personality) == 4
+     && offsetof(struct BoxPokemon, secure.substructs) == 32
+     && sizeof(union PokemonSubstruct) == 12)
+    {
+        FastShuffleSubstructs(boxMon, SHUFFLE_ENCRYPT);
+    }
+    else
+    {
+        union PokemonSubstruct decrypted[4];
+        memcpy(decrypted, boxMon->secure.substructs, sizeof(decrypted));
+        const struct SubstructOrder *substructOrder = SubstructOrder(boxMon->personality);
+        boxMon->secure.substructs[0] = decrypted[substructOrder->encrypt[0]];
+        boxMon->secure.substructs[1] = decrypted[substructOrder->encrypt[1]];
+        boxMon->secure.substructs[2] = decrypted[substructOrder->encrypt[2]];
+        boxMon->secure.substructs[3] = decrypted[substructOrder->encrypt[3]];
+    }
 
     u32 checksum = 0;
 
@@ -1342,13 +1359,8 @@ void DecryptMon(struct Pokemon *mon)
 
 void DecryptBoxMon(struct BoxPokemon *boxMon)
 {
-    union PokemonSubstruct encrypted[4];
-    memcpy(encrypted, boxMon->secure.substructs, sizeof(encrypted));
-    const struct SubstructOrder *substructOrder = SubstructOrder(boxMon->personality);
-    boxMon->secure.substructs[0] = encrypted[substructOrder->decrypt[0]];
-    boxMon->secure.substructs[1] = encrypted[substructOrder->decrypt[1]];
-    boxMon->secure.substructs[2] = encrypted[substructOrder->decrypt[2]];
-    boxMon->secure.substructs[3] = encrypted[substructOrder->decrypt[3]];
+    if (!boxMon->hasSpecies)
+        return;
 
     u32 checksum = 0;
 
@@ -1359,6 +1371,24 @@ void DecryptBoxMon(struct BoxPokemon *boxMon)
     }
 
     checksum = checksum & 0xFFFF;
+
+    if (offsetof(struct BoxPokemon, personality) == 0
+     && sizeof(boxMon->personality) == 4
+     && offsetof(struct BoxPokemon, secure.substructs) == 32
+     && sizeof(union PokemonSubstruct) == 12)
+    {
+        FastShuffleSubstructs(boxMon, SHUFFLE_DECRYPT);
+    }
+    else
+    {
+        union PokemonSubstruct encrypted[4];
+        memcpy(encrypted, boxMon->secure.substructs, sizeof(encrypted));
+        const struct SubstructOrder *substructOrder = SubstructOrder(boxMon->personality);
+        boxMon->secure.substructs[0] = encrypted[substructOrder->decrypt[0]];
+        boxMon->secure.substructs[1] = encrypted[substructOrder->decrypt[1]];
+        boxMon->secure.substructs[2] = encrypted[substructOrder->decrypt[2]];
+        boxMon->secure.substructs[3] = encrypted[substructOrder->decrypt[3]];
+    }
 
     if (checksum != boxMon->checksum)
     {
