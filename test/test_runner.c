@@ -185,7 +185,7 @@ void TestRunner_CheckMemory(void)
         {
             if (gTasks[i].isActive)
             {
-                Test_MgbaPrintf(":L%s:%d - %p: task not freed", gTestRunnerState.test->filename, SourceLine(0), gTasks[i].func);
+                Test_MgbaPrintf(":L%s:%d: %p: task not freed", gTestRunnerState.test->filename, SourceLine(0), gTasks[i].func);
                 gTestRunnerState.result = TEST_RESULT_FAIL;
 
                 if (gTestRunnerState.expectedFailState == EXPECT_FAIL_OPEN)
