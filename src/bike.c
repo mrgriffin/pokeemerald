@@ -48,7 +48,7 @@ static u8 GetBikeCollision(u8);
 static u8 GetBikeCollisionAt(struct ObjectEvent *, s16, s16, u8, u8);
 static bool8 IsRunningDisallowedByMetatile(u8);
 static void Bike_TryAdvanceCyclingRoadCollisions();
-static u8 CanBikeFaceDirOnMetatile(u8, u8);
+static bool8 CanBikeFaceDirOnMetatile(u8, u8);
 static bool8 WillPlayerCollideWithCollision(u8, u8);
 static void Bike_SetBikeStill(void);
 

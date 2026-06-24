@@ -37,8 +37,8 @@ static void HoldContestPainting(void);
 static void InitContestPaintingWindow(void);
 static void InitContestPaintingBg(void);
 static void InitContestPaintingVars(bool8);
-static void CreateContestPaintingPicture(u8, u8);
-static void PrintContestPaintingCaption(u8, u8);
+static void CreateContestPaintingPicture(u8, bool8);
+static void PrintContestPaintingCaption(u8, bool8);
 static void VBlankCB_ContestPainting(void);
 static void _InitContestMonPixels(u8 *spriteGfx, u16 *palette, u16 (*destPixels)[64][64]);
 
@@ -164,7 +164,7 @@ static const u16 sBgPalette[] = {RGB_BLACK, RGB_BLACK};
 void SetContestWinnerForPainting(int contestWinnerId)
 {
     u8 *saveIdx = &gCurContestWinnerSaveIdx;
-    u8 *isForArtist = &gCurContestWinnerIsForArtist;
+    bool8 *isForArtist = &gCurContestWinnerIsForArtist;
     gCurContestWinner = gSaveBlock1Ptr->contestWinners[contestWinnerId - 1];
     *saveIdx = contestWinnerId - 1;
     *isForArtist = FALSE;

@@ -50,7 +50,7 @@ static void ContestEffect_BetterWhenAudienceExcited(void);
 static void ContestEffect_DontExciteAudience(void);
 static void JamByMoveCategory(u8);
 static bool8 CanUnnerveContestant(u8);
-static u8 WasAtLeastOneOpponentJammed(void);
+static bool8 WasAtLeastOneOpponentJammed(void);
 static void JamContestant(u8, u8);
 static s16 RoundTowardsZero(s16);
 static s16 RoundUp(s16);
@@ -135,7 +135,7 @@ static void ContestEffect_UserLessEasilyStartled(void)
 // Slightly startles the POKéMON in front.
 static void ContestEffect_StartleFrontMon(void)
 {
-    u8 idx = 0;
+    bool8 wasJammed = FALSE;
     u8 a = eContestAppealResults.contestant;
 
     if (eContestAppealResults.turnOrder[a] != 0)
@@ -149,9 +149,9 @@ static void ContestEffect_StartleFrontMon(void)
         }
         eContestAppealResults.jamQueue[0] = i;
         eContestAppealResults.jamQueue[1] = CONTESTANT_NONE;
-        idx = WasAtLeastOneOpponentJammed();
+        wasJammed = WasAtLeastOneOpponentJammed();
     }
-    if (idx == 0)
+    if (wasJammed == FALSE)
         SetContestantEffectStringID2(eContestAppealResults.contestant, CONTEST_STRING_MESSED_UP2);
     SetContestantEffectStringID(eContestAppealResults.contestant, CONTEST_STRING_ATTEMPT_STARTLE);
 }
@@ -159,7 +159,7 @@ static void ContestEffect_StartleFrontMon(void)
 // Slightly startles those that have made appeals.
 static void ContestEffect_StartlePrevMons(void)
 {
-    u8 idx = 0;
+    u8 wasJammed = FALSE;
     u8 contestant = eContestAppealResults.contestant;
 
     if (eContestAppealResults.turnOrder[contestant] != 0)
@@ -173,9 +173,9 @@ static void ContestEffect_StartlePrevMons(void)
         }
 
         eContestAppealResults.jamQueue[j] = CONTESTANT_NONE;
-        idx = WasAtLeastOneOpponentJammed();
+        wasJammed = WasAtLeastOneOpponentJammed();
     }
-    if (idx == 0)
+    if (wasJammed == FALSE)
         SetContestantEffectStringID2(eContestAppealResults.contestant, CONTEST_STRING_MESSED_UP2);
     SetContestantEffectStringID(eContestAppealResults.contestant, CONTEST_STRING_ATTEMPT_STARTLE);
 }

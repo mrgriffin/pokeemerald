@@ -174,11 +174,11 @@ void FreeSearchResultSubstruct1(void)
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS);
 }
 
-static bool32 HandleConditionSearchInput_WaitSetup(struct Pokenav_SearchResults *menu)
+static u32 HandleConditionSearchInput_WaitSetup(struct Pokenav_SearchResults *menu)
 {
     if (!IsLoopedTaskActive(menu->loopedTaskId))
         menu->callback = HandleConditionSearchInput;
-    return FALSE;
+    return 0;
 }
 
 static u32 HandleConditionSearchInput(struct Pokenav_SearchResults *menu)

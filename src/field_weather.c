@@ -58,7 +58,7 @@ static void Task_WeatherInit(u8 taskId);
 static void Task_WeatherMain(u8 taskId);
 static void None_Init(void);
 static void None_Main(void);
-static u8 None_Finish(void);
+static bool8 None_Finish(void);
 
 EWRAM_DATA struct Weather gWeather = {0};
 EWRAM_DATA static u8 ALIGNED(2) sFieldEffectPaletteColorMapTypes[32] = {0};
@@ -257,9 +257,9 @@ static void None_Main(void)
 {
 }
 
-static u8 None_Finish(void)
+static bool8 None_Finish(void)
 {
-    return 0;
+    return FALSE;
 }
 
 // Builds two tables that contain color maps, used for directly transforming

@@ -56,7 +56,7 @@ struct Pokenav_RibbonsSummaryList
 
 struct Pokenav_RibbonsSummaryMenu
 {
-    u32 (*callback)(void);
+    bool32 (*callback)(void);
     u32 loopedTaskId;
     u16 nameWindowId;
     u16 ribbonCountWindowId;
@@ -530,7 +530,7 @@ void CreateRibbonsSummaryLoopedTask(s32 id)
     menu->callback = GetCurrentLoopedTaskActive;
 }
 
-u32 IsRibbonsSummaryLoopedTaskActive(void)
+bool32 IsRibbonsSummaryLoopedTaskActive(void)
 {
     struct Pokenav_RibbonsSummaryMenu *menu = GetSubstructPtr(POKENAV_SUBSTRUCT_RIBBONS_SUMMARY_MENU);
     return menu->callback();

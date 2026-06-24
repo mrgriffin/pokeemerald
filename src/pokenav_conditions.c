@@ -191,7 +191,7 @@ static u8 ConditionGraphHandleDpadInput(struct Pokenav_ConditionMenu *menu)
     return ret;
 }
 
-static u8 SwitchConditionSummaryIndex(u8 moveUp)
+static u8 SwitchConditionSummaryIndex(bool8 moveUp)
 {
     u16 newLoadId;
     bool8 wasNotLastMon, isNotLastMon;

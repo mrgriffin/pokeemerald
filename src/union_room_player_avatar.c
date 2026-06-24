@@ -20,7 +20,7 @@ static EWRAM_DATA struct UnionRoomObject *sUnionObjWork = NULL;
 static EWRAM_DATA u32 sUnionObjRefreshTimer = 0;
 
 static u8 CreateTask_AnimateUnionRoomPlayers(void);
-static u32 IsUnionRoomPlayerInvisible(u32, u32);
+static bool32 IsUnionRoomPlayerInvisible(u32, u32);
 static void SetUnionRoomObjectFacingDirection(s32, s32, u8);
 
 // + 2 is just to match, those elements are empty and never read

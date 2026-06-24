@@ -36,8 +36,8 @@ struct MysteryGiftLink
     u16 sendSize;
     void *recvBuffer;
     const void *sendBuffer;
-    u32 (*recvFunc)(struct MysteryGiftLink *);
-    u32 (*sendFunc)(struct MysteryGiftLink *);
+    bool32 (*recvFunc)(struct MysteryGiftLink *);
+    bool32 (*sendFunc)(struct MysteryGiftLink *);
 };
 
 void MysteryGiftLink_Init(struct MysteryGiftLink *link, u32 sendPlayerId, u32 recvPlayerId);

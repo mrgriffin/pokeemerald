@@ -583,7 +583,7 @@ static void DigitalDisplay_Idle(struct Task *);
 static void Task_DigitalDisplay(u8);
 static void CreateReelSymbolSprites(void);
 static void CreateCreditPayoutNumberSprites(void);
-static void CreateCoinNumberSprite(s16, s16, u8, s16);
+static void CreateCoinNumberSprite(s16, s16, bool8, s16);
 static void CreateReelBackgroundSprite(void);
 static void CreateReelTimePikachuSprite(void);
 static void DestroyReelTimePikachuSprite(void);
@@ -4562,7 +4562,7 @@ static void SpriteCB_ReelTimeSmoke(struct Sprite *sprite)
     sprite->y2 -= (sprite->sMoveY >> 8);
 }
 
-static u8 IsReelTimeSmokeAnimFinished(void)
+static bool8 IsReelTimeSmokeAnimFinished(void)
 {
     return gSprites[sSlotMachine->reelTimeSmokeSpriteId].sAnimFinished;
 }

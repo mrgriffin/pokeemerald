@@ -325,7 +325,7 @@ extern u8 gNumLinkContestPlayers;
 extern u8 gHighestRibbonRank;
 extern struct ContestResources *gContestResources;
 extern struct ContestWinner gCurContestWinner;
-extern u8 gCurContestWinnerIsForArtist;
+extern bool8 gCurContestWinnerIsForArtist;
 extern u8 gCurContestWinnerSaveIdx;
 extern u32 gContestRngValue;
 

@@ -176,7 +176,7 @@ void CreateConditionGraphMenuLoopedTask(s32 id)
     menu->callback = GetConditionGraphMenuLoopedTaskActive;
 }
 
-u32 IsConditionGraphMenuLoopedTaskActive(void)
+bool32 IsConditionGraphMenuLoopedTaskActive(void)
 {
     struct Pokenav_ConditionMenuGfx *menu = GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX);
     return menu->callback();

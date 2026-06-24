@@ -23,8 +23,8 @@ struct SendRecvHeader
     u16 size;
 };
 
-static u32 MGL_Receive(struct MysteryGiftLink *);
-static u32 MGL_Send(struct MysteryGiftLink *);
+static bool32 MGL_Receive(struct MysteryGiftLink *);
+static bool32 MGL_Send(struct MysteryGiftLink *);
 
 u32 MysteryGiftLink_Recv(struct MysteryGiftLink *link)
 {

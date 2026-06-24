@@ -291,9 +291,9 @@ static const ContestAICmdFunc sContestAICmdTable[] =
 };
 
 static void ContestAI_DoAIProcessing(void);
-static bool8 GetContestantIdByTurn(u8);
+static u8 GetContestantIdByTurn(u8);
 static void AIStackPushVar(const u8 *);
-static u8 AIStackPop(void);
+static bool8 AIStackPop(void);
 
 void ContestAI_ResetAI(u8 contestantAI)
 {

@@ -341,7 +341,7 @@ static bool32 ShouldPlayAgain(void);
 static void AddJumpScore(int);
 static int GetPlayersAtJumpPeak(void);
 static bool32 AreLinkQueuesEmpty(void);
-static int GetNumPlayersForBonus(u8 *);
+static int GetNumPlayersForBonus(bool8 *);
 static void ClearUnreadField(void);
 static int GetScoreBonus(int);
 static void TryUpdateExcellentsRecord(u16);
@@ -2205,7 +2205,7 @@ static bool32 AreLinkQueuesEmpty(void)
     return !gRfu.recvQueue.count && !gRfu.sendQueue.count;
 }
 
-static int GetNumPlayersForBonus(u8 *atJumpPeak)
+static int GetNumPlayersForBonus(bool8 *atJumpPeak)
 {
     int i = 0;
     int flags = 0;

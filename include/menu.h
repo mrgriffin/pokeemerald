@@ -37,6 +37,7 @@ struct MenuAction
     union {
         void (*void_u8)(u8);
         u8 (*u8_void)(void);
+        bool8 (*bool8_void)(void);
     } func;
 };
 

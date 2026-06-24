@@ -1129,7 +1129,8 @@ static void CreateMysteryGiftTask(void)
 static void Task_MysteryGift(u8 taskId)
 {
     struct MysteryGiftTaskData *data = (void *)gTasks[taskId].data;
-    u32 successMsg, input;
+    bool32 successMsg;
+    u32 input;
     const u8 *msg;
 
     switch (data->state)

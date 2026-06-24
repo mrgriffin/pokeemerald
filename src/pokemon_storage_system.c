@@ -3906,7 +3906,7 @@ static void StartDisplayMonMosaicEffect(void)
     }
 }
 
-static u8 IsDisplayMosaicActive(void)
+static bool8 IsDisplayMosaicActive(void)
 {
     return sStorage->displayMonSprite->oam.mosaic;
 }

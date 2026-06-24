@@ -107,7 +107,7 @@ static bool8 PushBoulder_End(struct Task *, struct ObjectEvent *, struct ObjectE
 
 static void DoPlayerMatJump(void);
 static void DoPlayerAvatarSecretBaseMatJump(u8);
-static u8 PlayerAvatar_DoSecretBaseMatJump(struct Task *, struct ObjectEvent *);
+static bool8 PlayerAvatar_DoSecretBaseMatJump(struct Task *, struct ObjectEvent *);
 
 static void DoPlayerMatSpin(void);
 static void PlayerAvatar_DoSecretBaseMatSpin(u8);
@@ -121,22 +121,22 @@ static void Task_StopSurfingInit(u8);
 static void Task_WaitStopSurfing(u8);
 
 static void Task_Fishing(u8);
-static u8 Fishing_Init(struct Task *);
-static u8 Fishing_GetRodOut(struct Task *);
-static u8 Fishing_WaitBeforeDots(struct Task *);
-static u8 Fishing_InitDots(struct Task *);
-static u8 Fishing_ShowDots(struct Task *);
-static u8 Fishing_CheckForBite(struct Task *);
-static u8 Fishing_GotBite(struct Task *);
-static u8 Fishing_WaitForA(struct Task *);
-static u8 Fishing_CheckMoreDots(struct Task *);
-static u8 Fishing_MonOnHook(struct Task *);
-static u8 Fishing_StartEncounter(struct Task *);
-static u8 Fishing_NotEvenNibble(struct Task *);
-static u8 Fishing_GotAway(struct Task *);
-static u8 Fishing_NoMon(struct Task *);
-static u8 Fishing_PutRodAway(struct Task *);
-static u8 Fishing_EndNoMon(struct Task *);
+static bool8 Fishing_Init(struct Task *);
+static bool8 Fishing_GetRodOut(struct Task *);
+static bool8 Fishing_WaitBeforeDots(struct Task *);
+static bool8 Fishing_InitDots(struct Task *);
+static bool8 Fishing_ShowDots(struct Task *);
+static bool8 Fishing_CheckForBite(struct Task *);
+static bool8 Fishing_GotBite(struct Task *);
+static bool8 Fishing_WaitForA(struct Task *);
+static bool8 Fishing_CheckMoreDots(struct Task *);
+static bool8 Fishing_MonOnHook(struct Task *);
+static bool8 Fishing_StartEncounter(struct Task *);
+static bool8 Fishing_NotEvenNibble(struct Task *);
+static bool8 Fishing_GotAway(struct Task *);
+static bool8 Fishing_NoMon(struct Task *);
+static bool8 Fishing_PutRodAway(struct Task *);
+static bool8 Fishing_EndNoMon(struct Task *);
 static void AlignFishingAnimationFrames(void);
 
 static u8 TrySpinPlayerForWarp(struct ObjectEvent *, s16 *);
@@ -1553,7 +1553,7 @@ static void DoPlayerAvatarSecretBaseMatJump(u8 taskId)
 }
 
 // because data[0] is used to call this, it can be inferred that there may have been multiple mat jump functions at one point, so the name for these groups of functions is appropriate in assuming the sole use of mat jump.
-static u8 PlayerAvatar_DoSecretBaseMatJump(struct Task *task, struct ObjectEvent *objectEvent)
+static bool8 PlayerAvatar_DoSecretBaseMatJump(struct Task *task, struct ObjectEvent *objectEvent)
 {
     gPlayerAvatar.preventStep = TRUE;
     if (ObjectEventClearHeldMovementIfFinished(objectEvent))

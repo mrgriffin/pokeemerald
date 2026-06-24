@@ -431,7 +431,7 @@ bool32 IsMatchCallLoopedTaskActive(void);
 void FreeMatchCallSubstruct2(void);
 
 // pokenav_region_map.c
-u32 PokenavCallback_Init_RegionMap(void);
+bool32 PokenavCallback_Init_RegionMap(void);
 u32 GetRegionMapCallback(void);
 bool32 OpenPokenavRegionMap(void);
 void CreateRegionMapLoopedTask(s32 index);
@@ -461,7 +461,7 @@ void *GetConditionMonPal(u8 loadId);
 // pokenav_conditions_gfx.c
 bool32 OpenConditionGraphMenu(void);
 void CreateConditionGraphMenuLoopedTask(s32 id);
-u32 IsConditionGraphMenuLoopedTaskActive(void);
+bool32 IsConditionGraphMenuLoopedTaskActive(void);
 void FreeConditionGraphMenuSubstruct2(void);
 u8 GetMonMarkingsData(void);
 
@@ -493,7 +493,7 @@ u32 GetRibbonsSummaryMenuCallback(void);
 void FreeRibbonsSummaryScreen1(void);
 bool32 OpenRibbonsSummaryMenu(void);
 void CreateRibbonsSummaryLoopedTask(s32 id);
-u32 IsRibbonsSummaryLoopedTaskActive(void);
+bool32 IsRibbonsSummaryLoopedTaskActive(void);
 void FreeRibbonsSummaryScreen2(void);
 
 #endif // GUARD_POKENAV_H

@@ -356,9 +356,9 @@ static void CreateCursorSprite(void);
 static void SetCursorPos(s16, s16);
 static void GetCursorPos(s16 *x, s16 *y);
 static void MoveCursorToOKButton(void);
-static void SetCursorInvisibility(u8);
+static void SetCursorInvisibility(bool8);
 static void SetCursorFlashing(bool8);
-static u8 IsCursorAnimFinished(void);
+static bool8 IsCursorAnimFinished(void);
 static u8 GetCurrentPageColumnCount(void);
 static void CreatePageSwapButtonSprites(void);
 static void StartPageSwapButtonAnim(void);
@@ -366,8 +366,8 @@ static void SetPageSwapButtonGfx(u8, struct Sprite *, struct Sprite *);
 static void CreateBackOkSprites(void);
 static void CreateTextEntrySprites(void);
 static void CreateInputTargetIcon(void);
-static u8 HandleKeyboardEvent(void);
-static u8 SwapKeyboardPage(void);
+static bool8 HandleKeyboardEvent(void);
+static bool8 SwapKeyboardPage(void);
 static u8 GetInputEvent(void);
 static void SetInputState(u8);
 static void DrawTextEntryBox(void);
@@ -1249,7 +1249,7 @@ static void StartPageSwapButtonAnim(void)
     sprite->sPage = sNamingScreen->currentPage;
 }
 
-static u8 (*const sPageSwapSpriteFuncs[])(struct Sprite *) =
+static bool8 (*const sPageSwapSpriteFuncs[])(struct Sprite *) =
 {
     PageSwapSprite_Init,
     PageSwapSprite_Idle,

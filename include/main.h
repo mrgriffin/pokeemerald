@@ -52,7 +52,7 @@ extern struct Main gMain;
 extern u16 gKeyRepeatContinueDelay;
 extern bool8 gSoftResetDisabled;
 extern IntrFunc gIntrTable[];
-extern u8 gLinkVSyncDisabled;
+extern bool8 gLinkVSyncDisabled;
 extern u32 IntrMain_Buffer[];
 extern s8 gPcmDmaCounter;
 

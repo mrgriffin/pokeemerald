@@ -96,7 +96,7 @@ static void SetPyramidObjectPositionsUniformly(u8);
 static bool8 SetPyramidObjectPositionsInAndNearSquare(u8, u8);
 static bool8 SetPyramidObjectPositionsNearSquare(u8, u8);
 static bool8 TrySetPyramidObjectEventPositionInSquare(u8, u8 *, u8, u8);
-static bool8 TrySetPyramidObjectEventPositionAtCoords(bool8, u8, u8, u8 *, u8, u8);
+static bool8 TrySetPyramidObjectEventPositionAtCoords(u8, u8, u8, u8 *, u8, u8);
 
 // Const rom data.
 #define ABILITY_RANDOM 2 // For wild mons data.

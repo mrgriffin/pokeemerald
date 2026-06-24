@@ -259,7 +259,7 @@ static u8 GetActivePartnersInfo(struct WirelessLink_URoom *);
 static bool32 HandleContactFromOtherPlayer(struct WirelessLink_URoom *);
 static bool32 UR_RunTextPrinters(void);
 static s32 GetUnionRoomPlayerGender(s32, struct RfuPlayerList *);
-static s32 UnionRoomGetPlayerInteractionResponse(struct RfuPlayerList *, u8, u8, u32);
+static s32 UnionRoomGetPlayerInteractionResponse(struct RfuPlayerList *, bool8, u8, u32);
 static void HandleCancelActivity(bool32);
 static s32 ListMenuHandler_AllItemsAvailable(u8 *, u8 *, u8 *, const struct WindowTemplate *, const struct ListMenuTemplate *);
 static s32 TradeBoardMenuHandler(u8 *, u8 *, u8 *, u8 *, const struct WindowTemplate *, const struct ListMenuTemplate *, struct RfuPlayerList *);
@@ -2585,7 +2585,7 @@ static void Task_RunUnionRoom(u8 taskId)
             }
             else // UR_INTERACT_PLAYER_# (1-8)
             {
-                taskData[0] = 0;
+                taskData[0] = FALSE;
                 taskData[1] = gSpecialVar_Result - 1;
                 uroom->state = UR_STATE_INTERACT_WITH_PLAYER;
                 gSpecialVar_Result = 0;

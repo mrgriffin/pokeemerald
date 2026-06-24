@@ -132,7 +132,7 @@ static s8 GetNumRound2Points(u8, bool8);
 static void AddContestTextPrinter(int, u8 *, int);
 static void AllocContestResults(void);
 static void FreeContestResults(void);
-static void LoadAllContestMonIcons(u8, u8);
+static void LoadAllContestMonIcons(u8, bool8);
 static void CreateResultsTextWindowSprites(void);
 static void TryCreateWirelessSprites(void);
 static void Task_StartShowContestResults(u8 taskId);

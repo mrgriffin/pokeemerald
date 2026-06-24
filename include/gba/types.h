@@ -24,12 +24,15 @@ typedef volatile s64 vs64;
 typedef float  f32;
 typedef double f64;
 
-typedef u8  bool8;
-typedef u16 bool16;
-typedef u32 bool32;
-typedef vu8  vbool8;
-typedef vu16 vbool16;
-typedef vu32 vbool32;
+enum Bool { FALSE, TRUE };
+
+typedef enum Bool __attribute__((mode(QI))) bool8;
+typedef enum Bool __attribute__((mode(HI))) bool16;
+typedef enum Bool __attribute__((mode(SI))) bool32;
+
+typedef volatile bool8 vbool8;
+typedef volatile bool16 vbool16;
+typedef volatile bool32 vbool32;
 
 struct BgCnt
 {

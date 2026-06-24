@@ -171,7 +171,7 @@ static const struct SpriteTemplate sCityZoomTextSpriteTemplate =
     .callback = SpriteCB_CityZoomText,
 };
 
-u32 PokenavCallback_Init_RegionMap(void)
+bool32 PokenavCallback_Init_RegionMap(void)
 {
     struct Pokenav_RegionMapMenu *state = AllocSubstruct(POKENAV_SUBSTRUCT_REGION_MAP_STATE, sizeof(struct Pokenav_RegionMapMenu));
     if (!state)

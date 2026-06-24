@@ -392,7 +392,7 @@ static void FlashSelectionOnWheel(u8);
 static void DrawGridBackground(u8);
 static u8 GetMultiplier(u8);
 static void UpdateWheelPosition(void);
-static void LoadOrFreeMiscSpritePalettesAndSheets(u8);
+static void LoadOrFreeMiscSpritePalettesAndSheets(bool8);
 static void CreateGridSprites(void);
 static void ShowHideGridIcons(bool8, u8);
 static void CreateGridBallSprites(void);
