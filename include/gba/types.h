@@ -3,6 +3,27 @@
 
 #include <stdint.h>
 
+/* SIZED_TYPEDEFS(enumType, ident8, ident16, ident32)
+ *
+ * Creates aliases of 'enumType' with the specified names. If '_' is
+ * passed for an identifier, it is skipped.
+ *
+ * e.g. SIZED_TYPEDEFS(enum Bool, bool8, bool16, bool32);
+ *      SIZED_TYPEDEFS(enum SpeciesId, _, species16, species32); */
+#define SIZED_TYPEDEFS(enumType, ident8, ident16, ident32) \
+    SIZED_TYPEDEF(8, enumType, ident8, SIZED_TYPEDEF_ISSKIP##ident8, SIZED_TYPEDEF_KEEP); \
+    SIZED_TYPEDEF(16, enumType, ident16, SIZED_TYPEDEF_ISSKIP##ident16, SIZED_TYPEDEF_KEEP); \
+    SIZED_TYPEDEF(32, enumType, ident32, SIZED_TYPEDEF_ISSKIP##ident32, SIZED_TYPEDEF_KEEP)
+
+#define SIZED_TYPEDEF(bits, ...) SIZED_TYPEDEF##bits(__VA_ARGS__)
+#define SIZED_TYPEDEF8(enumType, ident8, _, wrap, ...) wrap(typedef enumType __attribute__((mode(QI))) ident8)
+#define SIZED_TYPEDEF16(enumType, ident16, _, wrap, ...) wrap(typedef enumType __attribute__((mode(HI))) ident16)
+#define SIZED_TYPEDEF32(enumType, ident32, _, wrap, ...) wrap(typedef enumType ident32)
+
+#define SIZED_TYPEDEF_ISSKIP_ , SIZED_TYPEDEF_DROP
+#define SIZED_TYPEDEF_KEEP(...) __VA_ARGS__
+#define SIZED_TYPEDEF_DROP(...)
+
 typedef uint8_t   u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -25,10 +46,7 @@ typedef float  f32;
 typedef double f64;
 
 enum Bool { FALSE, TRUE };
-
-typedef enum Bool __attribute__((mode(QI))) bool8;
-typedef enum Bool __attribute__((mode(HI))) bool16;
-typedef enum Bool __attribute__((mode(SI))) bool32;
+SIZED_TYPEDEFS(enum Bool, bool8, bool16, bool32);
 
 typedef volatile bool8 vbool8;
 typedef volatile bool16 vbool16;
