@@ -56,6 +56,45 @@ std::string StringParser::ReadCharOrEscape()
 
             return sequence;
         }
+        else if (m_buffer[m_pos] == '{')
+        {
+            m_pos++;
+            long startPos = m_pos;
+
+            while (m_buffer[m_pos] != '}')
+            {
+                if (m_buffer[m_pos] == '\0')
+                {
+                    if (m_pos >= m_size)
+                        RaiseError("unexpected EOF in bracketed escape");
+                    else
+                        RaiseError("unexpected null character in bracketed escape");
+                }
+                else if (m_buffer[m_pos] == '\n')
+                {
+                    RaiseError("unexpected newline in bracketed escape");
+                }
+                else if (m_buffer[m_pos] == '"')
+                {
+                    RaiseError("unexpected '\"' in bracketed escape");
+                }
+
+                m_pos++;
+            }
+
+            std::string escapeSequence(&m_buffer[startPos], m_pos - startPos);
+            m_pos++;
+
+            if (escapeSequence == "POKE")
+            {
+                if (m_capitalize)
+                    return "\xCA\xC9\xC5\x1B"; // POKé
+                else
+                    return "\xCA\xE3\xDF\x1B"; // Poké
+            }
+
+            RaiseError("unknown bracketed escape '{%s}'", escapeSequence.c_str());
+        }
     }
 
     unsigned char c = m_buffer[m_pos];

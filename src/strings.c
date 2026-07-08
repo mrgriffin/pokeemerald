@@ -3,6 +3,8 @@
 #include "battle_pyramid_bag.h"
 #include "item_menu.h"
 
+#define P_CAPITALIZE_UI TRUE
+
 ALIGNED(4)
 const u8 gText_ExpandedPlaceholder_Empty[] = _("");
 const u8 gText_ExpandedPlaceholder_Kun[] = _("");
@@ -933,17 +935,17 @@ const u8 gText_TimeColon2[] = _("Time:"); // Unused
 const u8 gText_GameTime[] = _("Game time"); // Unused
 const u8 gText_RTCTime[] = _("RTC time"); // Unused
 const u8 gText_UpdatedTime[] = _("Updated time"); // Unused
-const u8 gText_MenuPokedex[] = _("POKéDEX");
-const u8 gText_MenuPokemon[] = _("POKéMON");
-const u8 gText_MenuBag[] = _("BAG");
-const u8 gText_MenuPokenav[] = _("POKéNAV");
-const u8 gText_MenuPlayer[] = _("{PLAYER}");
-const u8 gText_MenuSave[] = _("SAVE");
-const u8 gText_MenuOption[] = _("OPTION");
-const u8 gText_MenuExit[] = _("EXIT");
-const u8 gText_MenuRetire[] = _("RETIRE");
-const u8 gText_MenuRest[] = _("REST");
-const u8 gText_MenuDexNav[] = _("DEXNAV");
+const u8 gText_MenuPokedex[] = _CAPPABLE("\{POKE}dex", P_CAPITALIZE_UI);
+const u8 gText_MenuPokemon[] = _CAPPABLE("\{POKE}mon", P_CAPITALIZE_UI);
+const u8 gText_MenuBag[] = _CAPPABLE("Bag", P_CAPITALIZE_UI);
+const u8 gText_MenuPokenav[] = _CAPPABLE("\{POKE}Nav", P_CAPITALIZE_UI);
+const u8 gText_MenuPlayer[] = _CAPPABLE("{PLAYER}", P_CAPITALIZE_UI);
+const u8 gText_MenuSave[] = _CAPPABLE("Save", P_CAPITALIZE_UI);
+const u8 gText_MenuOption[] = _CAPPABLE("Option", P_CAPITALIZE_UI);
+const u8 gText_MenuExit[] = _CAPPABLE("Exit", P_CAPITALIZE_UI);
+const u8 gText_MenuRetire[] = _CAPPABLE("Retire", P_CAPITALIZE_UI);
+const u8 gText_MenuRest[] = _CAPPABLE("Rest", P_CAPITALIZE_UI);
+const u8 gText_MenuDexNav[] = _CAPPABLE("DexNav", P_CAPITALIZE_UI);
 const u8 gText_SafariBallStock[] = _("SAFARI BALLS\nStock: {STR_VAR_1}");
 const u8 gText_MenuSafariStats[] = _("{STR_VAR_1}/{STR_VAR_2}\nBALLS  {STR_VAR_3}");
 const u8 gText_BattlePyramidFloor[] = _("Battle Pyramid\n{STR_VAR_1}");

@@ -295,7 +295,10 @@ std::vector<unsigned char> CFile::ConvertString(bool allowCapitalize)
                 }
                 else if (mode == MODE_ESCAPE)
                 {
-                    mode = MODE_NORMAL;
+                    if (c == '{')
+                        mode = MODE_BRACKET;
+                    else
+                        mode = MODE_NORMAL;
                 }
                 else // mode == MODE_BRACKET
                 {
