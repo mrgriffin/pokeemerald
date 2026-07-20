@@ -418,3 +418,40 @@ void StringParser::SkipWhitespace()
     while (m_buffer[m_pos] == '\t' || m_buffer[m_pos] == ' ')
         m_pos++;
 }
+
+long QuickParseString(const char *buffer, long pos, long size)
+{
+    if (buffer[pos] != '\"')
+        return size;
+    pos++;
+
+    enum { MODE_NORMAL, MODE_ESCAPE, MODE_BRACKET } mode = MODE_NORMAL;
+
+    while (pos < size)
+    {
+        char c = buffer[pos++];
+        if (mode == MODE_NORMAL)
+        {
+            if (c == '"')
+                break;
+            else if (c == '\\')
+                mode = MODE_ESCAPE;
+            else if (c == '{')
+                mode = MODE_BRACKET;
+        }
+        else if (mode == MODE_ESCAPE)
+        {
+            if (c == '{')
+                mode = MODE_BRACKET;
+            else
+                mode = MODE_NORMAL;
+        }
+        else // mode == MODE_BRACKET
+        {
+            if (c == '}')
+                mode = MODE_NORMAL;
+        }
+    }
+
+    return pos;
+}

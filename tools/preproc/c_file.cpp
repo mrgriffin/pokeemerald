@@ -264,88 +264,11 @@ void CFile::SkipWhitespace()
         ;
 }
 
-std::vector<unsigned char> CFile::ConvertString(bool allowCapitalize)
+void CFile::ConvertStringFragment(std::vector<char>& unconverted, std::vector<unsigned char>& converted, bool capitalize)
 {
-    std::vector<char> unconverted;
-    std::vector<unsigned char> converted;
-    bool capitalize = false;
-    bool parsedArgument = false;
-
-    unconverted.push_back('"');
-
-    while (true)
-    {
-        SkipWhitespace();
-
-        if (m_buffer[m_pos] == '"')
-        {
-            long start = m_pos++;
-            enum Mode { MODE_NORMAL, MODE_ESCAPE, MODE_BRACKET } mode = MODE_NORMAL;
-            while (m_pos < m_size)
-            {
-                char c = m_buffer[m_pos++];
-                if (mode == MODE_NORMAL)
-                {
-                    if (c == '"')
-                        break;
-                    else if (c == '\\')
-                        mode = MODE_ESCAPE;
-                    else if (c == '{')
-                        mode = MODE_BRACKET;
-                }
-                else if (mode == MODE_ESCAPE)
-                {
-                    if (c == '{')
-                        mode = MODE_BRACKET;
-                    else
-                        mode = MODE_NORMAL;
-                }
-                else // mode == MODE_BRACKET
-                {
-                    if (c == '}')
-                        mode = MODE_NORMAL;
-                }
-            }
-            unconverted.insert(unconverted.end(), m_buffer + start + 1, m_buffer + m_pos - 1);
-            if (m_pos >= m_size)
-                RaiseError("unexpected EOF");
-        }
-        else if (m_buffer[m_pos] == ')')
-        {
-            if (allowCapitalize && !parsedArgument)
-                RaiseError("expected capitalization argument");
-            m_pos++;
-            break;
-        }
-        else if (m_buffer[m_pos] == ',' && allowCapitalize && !parsedArgument)
-        {
-            m_pos++;
-            SkipWhitespace();
-            if (m_pos >= m_size)
-                RaiseError("unexpected EOF");
-            if (m_buffer[m_pos] == '0')
-                parsedArgument = true;
-            else if (m_buffer[m_pos] == '1')
-                parsedArgument = capitalize = true;
-            else if (IsAsciiPrintable(m_buffer[m_pos]))
-                RaiseError("unexpected character '%c'", m_buffer[m_pos]);
-            else
-                RaiseError("unexpected character '\\x%02X'", m_buffer[m_pos]);
-            m_pos++;
-        }
-        else
-        {
-            if (m_pos >= m_size)
-                RaiseError("unexpected EOF");
-            if (IsAsciiPrintable(m_buffer[m_pos]))
-                RaiseError("unexpected character '%c'", m_buffer[m_pos]);
-            else
-                RaiseError("unexpected character '\\x%02X'", m_buffer[m_pos]);
-        }
-    }
-
     unconverted.push_back('"');
     unconverted.push_back('\0');
+
     size_t consumed = 0;
     StringParser stringParser(unconverted.data(), unconverted.size() - 1, capitalize);
     try
@@ -359,8 +282,92 @@ std::vector<unsigned char> CFile::ConvertString(bool allowCapitalize)
     {
         RaiseError(e.what());
     }
+
     if (consumed != unconverted.size() - 1)
-        RaiseError("Quick-parse inconsistent with ParseString");
+        RaiseError("QuickParseString inconsistent with ParseString");
+
+    unconverted.clear();
+    unconverted.push_back('"');
+}
+
+std::vector<unsigned char> CFile::ConvertString(bool allowCapitalize)
+{
+    std::vector<char> unconverted = { '"' };
+    std::vector<unsigned char> converted;
+    bool capitalize = false;
+    bool allowComma = false;
+    bool allowRParen = true;
+
+    while (true)
+    {
+        SkipWhitespace();
+
+        if (m_buffer[m_pos] == '"')
+        {
+            long start = m_pos;
+            m_pos = QuickParseString(m_buffer, start, m_size);
+            if (m_pos >= m_size)
+                RaiseError("unexpected EOF");
+            unconverted.insert(unconverted.end(), m_buffer + start + 1, m_buffer + m_pos - 1);
+            allowComma = allowCapitalize;
+            allowRParen = true;
+        }
+        else if (m_buffer[m_pos] == ')')
+        {
+            if (!allowRParen)
+                RaiseError(allowComma ? "expected capitalization argument" : "expected quoted string");
+            ConvertStringFragment(unconverted, converted, capitalize);
+            m_pos++;
+            break;
+        }
+        else if (m_buffer[m_pos] == ',')
+        {
+            if (!allowComma)
+                RaiseError("unexpected character ','");
+            m_pos++;
+
+            SkipWhitespace();
+            if (m_pos >= m_size)
+                RaiseError("unexpected EOF");
+            if (m_buffer[m_pos] == '0')
+                capitalize = false;
+            else if (m_buffer[m_pos] == '1')
+                capitalize = true;
+            else
+                goto unexpected;
+            m_pos++;
+
+            ConvertStringFragment(unconverted, converted, capitalize);
+
+            SkipWhitespace();
+            if (m_buffer[m_pos] == ',')
+            {
+                m_pos++;
+                allowComma = false;
+                allowRParen = false;
+            }
+            else if (m_buffer[m_pos] == ')')
+            {
+                m_pos++;
+                break;
+            }
+            else
+            {
+                goto unexpected;
+            }
+        }
+        else
+        {
+unexpected:
+            if (m_pos >= m_size)
+                RaiseError("unexpected EOF");
+            if (IsAsciiPrintable(m_buffer[m_pos]))
+                RaiseError("unexpected character '%c'", m_buffer[m_pos]);
+            else
+                RaiseError("unexpected character '\\x%02X'", m_buffer[m_pos]);
+        }
+    }
+
     return converted;
 }
 

@@ -96,17 +96,17 @@ const struct SpeciesInfo gSpeciesInfoGen3[] =
         .eggGroups = MON_EGG_GROUPS(EGG_GROUP_MONSTER, EGG_GROUP_DRAGON),
         .abilities = { ABILITY_OVERGROW, ABILITY_NONE, ABILITY_UNBURDEN },
         .bodyColor = BODY_COLOR_GREEN,
-        .speciesName = _("Grovyle"),
+        .speciesName = _CAPPABLE("Grovyle", P_CAPITALIZE),
         .cryId = CRY_GROVYLE,
         .natDexNum = NATIONAL_DEX_GROVYLE,
         .categoryName = _("Wood Gecko"),
         .height = 9,
         .weight = 216,
-        .description = COMPOUND_STRING(
+        .description = COMPOUND_STRING_CAPPABLE(
             "Leaves grow out of this Pokémon's body.\n"
-            "They help obscure a Grovyle from the eyes\n"
+            "They help obscure a ", 0, "Grovyle", P_CAPITALIZE, " from the eyes\n"
             "of its enemies while it is in a thickly\n"
-            "overgrown forest."),
+            "overgrown forest.", 0),
         .pokemonScale = 360,
         .pokemonOffset = 5,
         .trainerScale = 256,

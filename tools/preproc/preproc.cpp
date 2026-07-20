@@ -89,7 +89,14 @@ void PreprocAsmFile(std::string filename, bool isStdin, bool doEnum, bool doSize
         case Directive::String:
         {
             unsigned char s[kMaxStringLength];
-            int length = stack.top().ReadString(s);
+            int length = stack.top().ReadString(s, false);
+            PrintAsmBytes(s, length);
+            break;
+        }
+        case Directive::StringCappable:
+        {
+            unsigned char s[kMaxStringLength];
+            int length = stack.top().ReadString(s, true);
             PrintAsmBytes(s, length);
             break;
         }

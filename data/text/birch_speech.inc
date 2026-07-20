@@ -1,9 +1,18 @@
+#define T_CAPITALIZE 0
+
 gText_Birch_Welcome::
 	.string "Hi! Sorry to keep you waiting!\p"
-	.string "Welcome to the world of POKéMON!\p"
-	.string "My name is BIRCH.\p"
-	.string "But everyone calls me the POKéMON\n"
-	.string "PROFESSOR.\p"
+	.string "Welcome to the world of "
+	.string_cappable "\{POKE}mon", T_CAPITALIZE
+	.string "!\p"
+	.string "My name is "
+	.string_cappable "Birch", T_CAPITALIZE
+	.string ".\p"
+	.string "But everyone calls me the "
+	.string_cappable "\{POKE}mon", T_CAPITALIZE
+	.string "\n"
+	.string_cappable "Professor", T_CAPITALIZE
+	.string ".\p"
 	.string "$"
 
 gText_Birch_Pokemon::

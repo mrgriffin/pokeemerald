@@ -58,6 +58,7 @@ private:
     bool ConsumeNewline();
     void Newline();
     void SkipWhitespace();
+    void ConvertStringFragment(std::vector<char>& unconverted, std::vector<unsigned char>& converted, bool capitalize);
     std::vector<unsigned char> ConvertString(bool capitalize);
     void TryConvertString();
     void TryConvertCompoundString();

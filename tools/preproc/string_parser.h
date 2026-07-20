@@ -53,4 +53,6 @@ private:
     void RaiseError(const char* format, ...);
 };
 
+long QuickParseString(const char *buffer, long pos, long size);
+
 #endif // STRING_PARSER_H

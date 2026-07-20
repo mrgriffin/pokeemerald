@@ -137,6 +137,9 @@ bool AsmFile::CheckForDirective(std::string name)
     if (i < length)
         return false;
 
+    if (m_pos + i >= m_size || IsIdentifierChar(m_buffer[m_pos + i]))
+        return false;
+
     m_pos += length;
 
     return true;
@@ -152,6 +155,8 @@ Directive AsmFile::GetDirective()
         return Directive::Include;
     else if (CheckForDirective(".string"))
         return Directive::String;
+    else if (m_doEnum && CheckForDirective(".string_cappable"))
+        return Directive::StringCappable;
     else if (CheckForDirective(".braille"))
         return Directive::Braille;
     else if (CheckForDirective("enum"))
@@ -286,34 +291,55 @@ std::string AsmFile::ReadPath()
 }
 
 // Reads a charmap string.
-int AsmFile::ReadString(unsigned char* s)
+int AsmFile::ReadString(unsigned char* s, bool allowCapitalize)
 {
     SkipWhitespace();
 
-    int length;
-    StringParser stringParser(m_buffer, m_size);
+    long start = m_pos;
+    long end = m_pos = QuickParseString(m_buffer, m_pos, m_size);
 
+    int padLength = 0;
+    bool capitalize = false;
+    if (ConsumeComma())
+    {
+        SkipWhitespace();
+
+        if (!allowCapitalize)
+        {
+            padLength = ReadPadLength();
+        }
+        else
+        {
+            int argument = ReadPadLength();
+            if (argument == 0)
+                capitalize = false;
+            else if (argument == 1)
+                capitalize = true;
+            else
+                RaiseError("unexpected capitalization argument: %d", argument);
+        }
+    }
+
+    int length;
+    StringParser stringParser(m_buffer, m_size, capitalize);
+
+    size_t consumed = 0;
     try
     {
-        m_pos += stringParser.ParseString(m_pos, s, length);
+        consumed = stringParser.ParseString(start, s, length);
     }
     catch (std::runtime_error& e)
     {
         RaiseError(e.what());
     }
 
+    if (consumed != (size_t)(end - start))
+        RaiseError("QuickParseString inconsistent with ParseString");
+
+    while (length < padLength)
+        s[length++] = CHAR_SPACE;
+
     SkipWhitespace();
-
-    if (ConsumeComma())
-    {
-        SkipWhitespace();
-        int padLength = ReadPadLength();
-
-        while (length < padLength)
-        {
-            s[length++] = CHAR_SPACE;
-        }
-    }
 
     ExpectEmptyRestOfLine();
 

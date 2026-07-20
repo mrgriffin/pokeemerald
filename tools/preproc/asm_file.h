@@ -30,6 +30,7 @@ enum class Directive
 {
     Include,
     String,
+    StringCappable,
     Braille,
     Enum,
     Macro,
@@ -58,7 +59,7 @@ public:
     Label GetLabel();
     std::string PeekSection();
     std::string ReadPath();
-    int ReadString(unsigned char* s);
+    int ReadString(unsigned char* s, bool allowCapitalize);
     int ReadBraille(unsigned char* s);
     bool IsAtEnd();
     void OutputLine();
