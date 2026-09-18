@@ -30,11 +30,17 @@ FastUnsafeCopy32:
 	//   u16 offsets[n_frames]; // relative to &src->offsets, not src
 	// }
 	// followed by compressed data frames:
-	// struct RLFrame {
-	//   u16 copy_halfwords: 7; // copy_halfwords
-	//   u16 copy_halfwords_nonzero: 1; // copy_halfwords != 0
-	//   u16 zerofill_halfwords: 8;
-	//   u16 data[copy_halfwords];
+	// union RLFrame {
+	//   struct {
+	//     u16 zero: 1; // literally 0
+	//     u16 zerofill_halfwords: 15;
+	//   }
+	//   struct {
+	//     u16 one: 1; // literally 1
+	//     u16 zerofill_halfwords: 8;
+	//     u16 copy_halfwords_m1: 7; // copy_halfwords - 1
+	//   }
+	//   u16 data[copy_halfwords]; // if first struct, length is 0
 	// }
 
 	@ r0 = src (word aligned)
@@ -57,28 +63,35 @@ RlFastUncompUnsafe:
 	add r3, r2, r3, lsl #5 // r3 = dst + (frame_size_tiles << 5) = dst + frame_size_bytes
 
 	adr r0, .LRlFastUncompUnsafePool
-	ldmia r0!, {r4, r5}
+	ldmia r0, {r4, r5}
 
 	// r0: &0x0000
 	// r1: frame
 	// r2: dest
 	// r3: end
-	// r4: (DMA_ENABLE << 16) | 0x7F
+	// r4: DMA_ENABLE << 16
 	// r5: REG_DMA3SAD
 .LRlFastUncompUnsafeLoop:
-	ldrh r6, [r1], #2 // r6 = (zerofill_halfwords << 8) | (copy_halfwords << 1) | copy_halfwords_nonzero
+	//    r6 = (zerofill_halfwords << 1) | 0
+	// or r6 = ((copy_halfwords - 1) << 9) | (zerofill_halfwords << 1) | 1
+	ldrh r6, [r1], #2
 
-	ands r7, r4, r6, ror #1 // r7 = (copy_halfwords_nonzero << 31) | copy_halfwords
-	stmiami r5, {r1, r2, r7}
-	addmi r1, r1, r7, lsl #1
-	addmi r2, r2, r7, lsl #1
+	//    C = 0 and r6 = zerofill_halfwords and Z = zerofill_halfwords == 0
+	// or C == 1 and r6 = ((copy_halfwords - 1) << 8) | zerofill_halfwords
+	lsrs r6, #1
 
-	// If copy_halfwords is zero, then those bits are part of
-	// zero_halfwords. This is a win for sprites with more than 510b
-	// (~16 tiles) transparency at the start, e.g. Dudunsparse.
-	lsrspl r6, #1
-	// HINT: If the previous lsrs executed, N will not be set.
-	lsrsmi r6, #8
+	// HINT: If C is 1, do a copy DMA.
+	// HINT: C is 1 so adc adds one to (copy_halfwords - 1).
+	adccs r7, r4, r6, lsr #8 // r7 = (DMA_ENABLE << 16) | copy_halfwords
+	stmiacs r5, {r1, r2, r7}
+	addcs r1, r1, r7, lsl #1
+	addcs r2, r2, r7, lsl #1
+
+	// HINT: If C is 1, mask out copy_halfwords and compute Z.
+	// If C is 0, all the bits are zero_halfwords and Z is already
+	// computed.
+	andscs r6, #0xFF
+	// HINT: Is Z is 0, do a zero-fill DMA.
 	orrne r7, r6, (DMA_ENABLE | DMA_SRC_FIXED) << 16
 	stmiane r5, {r0, r2, r7}
 	addne r2, r2, r6, lsl #1
@@ -89,10 +102,10 @@ RlFastUncompUnsafe:
 	pop {r4-r7}
 	bx lr
 
+	// HINT: ldrh .LRlFastUncompUnsafePool == 0x0000
 .LRlFastUncompUnsafePool:
-	.word (DMA_ENABLE << 16) | 0x7F
+	.word DMA_ENABLE << 16
 	.word REG_DMA3SAD
-	.word 0
 
 	.section .text @Copied to stack on run-time
 	.align 2

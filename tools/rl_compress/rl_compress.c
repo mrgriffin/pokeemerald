@@ -16,7 +16,7 @@
 // Longest single run of zero-fill / copy bytes
 #define MAX_ZERO_RUN_SHORT 255
 #define MAX_ZERO_RUN_LONG 1024 // HINT: This could be as long as 32767
-#define MAX_COPY_RUN 127
+#define MAX_COPY_RUN 128
 
 static uint16_t frame_buf[MAX_FRAME_SIZE / sizeof(uint16_t)];
 static uint16_t comp_buf[MAX_COMP_FRAME_SIZE / sizeof(uint16_t)];
@@ -79,7 +79,7 @@ static void rl_compress(uint16_t const *uncomp, uint16_t *out, size_t len, size_
         uint16_t zero_run;
         if (copy_run != 0) {
             zero_run = find_zero_run(read_ptr + copy_run, end, MAX_ZERO_RUN_SHORT);
-            *write_ptr++ = (copy_run << 1) | 1 | (zero_run << 8);
+            *write_ptr++ = ((copy_run - 1) << 9) | (zero_run << 1) | 1;
         }
         else {
             zero_run = find_zero_run(read_ptr + copy_run, end, MAX_ZERO_RUN_LONG);
