@@ -14,7 +14,8 @@
 #define MAX_COMP_FRAME_SIZE (MAX_FRAME_SIZE * 2) // Worst case compression ratio should be well below 2x
 
 // Longest single run of zero-fill / copy bytes
-#define MAX_ZERO_RUN 255
+#define MAX_ZERO_RUN_SHORT 255
+#define MAX_ZERO_RUN_LONG 1024 // HINT: This could be as long as 32767
 #define MAX_COPY_RUN 127
 
 static uint16_t frame_buf[MAX_FRAME_SIZE / sizeof(uint16_t)];
@@ -26,13 +27,13 @@ static uint16_t comp_frame_sizes[MAX_FRAMES + 1];
 // HINT: Change to 'true' to see a per-file summary of lengths. This is
 // useful for tweaking the algorithm.
 static bool log_stats = false;
-static uint16_t stats_zero_lengths[MAX_ZERO_RUN + 1];
+static uint16_t stats_zero_lengths[MAX_ZERO_RUN_LONG + 1];
 static uint16_t stats_copy_lengths[MAX_COPY_RUN + 1];
 
-// Count a run of zero halfwords up to MAX_ZERO_RUN
-static uint8_t find_zero_run(uint16_t const *data, uint16_t const *end) {
-    uint8_t run = 0;
-    while (run < MAX_ZERO_RUN && data < end && *data == 0x0000) {
+// Count a run of zero halfwords up to max_zero_run
+static uint16_t find_zero_run(uint16_t const *data, uint16_t const *end, uint16_t max_zero_run) {
+    uint16_t run = 0;
+    while (run < max_zero_run && data < end && *data == 0x0000) {
         data++;
         run++;
     }
@@ -75,9 +76,16 @@ static void rl_compress(uint16_t const *uncomp, uint16_t *out, size_t len, size_
 
     while (read_ptr < end) {
         uint8_t copy_run = find_copy_run(read_ptr, end);
-        uint8_t zero_run = find_zero_run(read_ptr + copy_run, end);
+        uint16_t zero_run;
+        if (copy_run != 0) {
+            zero_run = find_zero_run(read_ptr + copy_run, end, MAX_ZERO_RUN_SHORT);
+            *write_ptr++ = (copy_run << 1) | 1 | (zero_run << 8);
+        }
+        else {
+            zero_run = find_zero_run(read_ptr + copy_run, end, MAX_ZERO_RUN_LONG);
+            *write_ptr++ = zero_run << 1;
+        }
 
-        *write_ptr++ = (copy_run << 1) | (copy_run != 0) | (zero_run << 8);
         memcpy(write_ptr, read_ptr, copy_run * sizeof(*read_ptr));
         write_ptr += copy_run;
         read_ptr += copy_run + zero_run;
@@ -230,7 +238,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (log_stats) {
-        for (int i = 0; i < MAX_ZERO_RUN + 1; i++)
+        for (int i = 0; i < MAX_ZERO_RUN_LONG + 1; i++)
         {
             if (stats_zero_lengths[i] > 0)
                 fprintf(stderr, "zero-fill %d halfwords: %d\n", i, stats_zero_lengths[i]);

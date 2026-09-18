@@ -73,7 +73,12 @@ RlFastUncompUnsafe:
 	addmi r1, r1, r7, lsl #1
 	addmi r2, r2, r7, lsl #1
 
-	lsrs r6, #8 // r6 = zerofill_halfwords
+	// If copy_halfwords is zero, then those bits are part of
+	// zero_halfwords. This is a win for sprites with more than 510b
+	// (~16 tiles) transparency at the start, e.g. Dudunsparse.
+	lsrspl r6, #1
+	// HINT: If the previous lsrs executed, N will not be set.
+	lsrsmi r6, #8
 	orrne r7, r6, (DMA_ENABLE | DMA_SRC_FIXED) << 16
 	stmiane r5, {r0, r2, r7}
 	addne r2, r2, r6, lsl #1
