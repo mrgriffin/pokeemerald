@@ -14,7 +14,8 @@
 #define MAX_COMP_FRAME_SIZE (MAX_FRAME_SIZE * 2) // Worst case compression ratio should be well below 2x
 
 // Longest single run of zero-fill / copy bytes
-#define MAX_RUN 255
+#define MAX_ZERO_RUN 255
+#define MAX_COPY_RUN 127
 
 static uint16_t frame_buf[MAX_FRAME_SIZE / sizeof(uint16_t)];
 static uint16_t comp_buf[MAX_COMP_FRAME_SIZE / sizeof(uint16_t)];
@@ -25,34 +26,46 @@ static uint16_t comp_frame_sizes[MAX_FRAMES + 1];
 // HINT: Change to 'true' to see a per-file summary of lengths. This is
 // useful for tweaking the algorithm.
 static bool log_stats = false;
-static uint16_t stats_zero_lengths[MAX_RUN + 1];
-static uint16_t stats_copy_lengths[MAX_RUN + 1];
+static uint16_t stats_zero_lengths[MAX_ZERO_RUN + 1];
+static uint16_t stats_copy_lengths[MAX_COPY_RUN + 1];
 
-// Count a run of zero halfwords up to MAX_RUN
+// Count a run of zero halfwords up to MAX_ZERO_RUN
 static uint8_t find_zero_run(uint16_t const *data, uint16_t const *end) {
     uint8_t run = 0;
-    while (run < MAX_RUN && data < end && *data == 0x0000) {
+    while (run < MAX_ZERO_RUN && data < end && *data == 0x0000) {
         data++;
         run++;
     }
     return run;
 }
 
-// Count a run of halfwords to copy up to MAX_RUN
-// Single instances of zero halfwords are included in the copy because
-// either way it costs two bytes, and this choice reduces the number of
-// rlz_loop iterations in the decompressor.
-// TODO: If the the loop exits due to 'run == MAX_RUN' then rewind to
-// the last zero and split there: this has a chance to save two bytes.
+// Count a run of halfwords to copy up to MAX_COPY_RUN
 static uint8_t find_copy_run(uint16_t const *data, uint16_t const *end) {
     uint8_t run = 0;
-    while (run < MAX_RUN && data < end) {
+    uint8_t zero_run = 0;
+    for (;;) {
+        if (data == end)
+            return run;
+
+        // If the max length is reached, only copy until the most recent
+        // zero halfword (if any). This may make better use of the next
+        // frame.
+        if (run == MAX_COPY_RUN)
+            return zero_run > 0 ? zero_run : run;
+        if (data[0] == 0x0000)
+            zero_run = run;
+
+        // If the next two halfwords are zeros, end the run so that they
+        // are part of the next frame's zero. Single instances of zero
+        // halfwords are included in the copy because either way they
+        // would cost two bytes, and this way reduces the number of
+        // rlz_loop iterations in the decompressor.
         if (data[0] == 0x0000 && data + 1 < end && data[1] == 0x0000)
-            break;
+            return run;
+
         data++;
         run++;
     }
-    return run;
 }
 
 static void rl_compress(uint16_t const *uncomp, uint16_t *out, size_t len, size_t *comp_size) {
@@ -64,7 +77,7 @@ static void rl_compress(uint16_t const *uncomp, uint16_t *out, size_t len, size_
         uint8_t zero_run = find_zero_run(read_ptr, end);
         uint8_t copy_run = find_copy_run(read_ptr + zero_run, end);
 
-        *write_ptr++ = zero_run | (copy_run << 8);
+        *write_ptr++ = zero_run | (copy_run << 9) | ((copy_run != 0) << 8);
         memcpy(write_ptr, read_ptr + zero_run, copy_run * sizeof(*read_ptr));
         write_ptr += copy_run;
         read_ptr += zero_run + copy_run;
@@ -217,12 +230,12 @@ int main(int argc, char *argv[]) {
     }
 
     if (log_stats) {
-        for (int i = 0; i < MAX_RUN + 1; i++)
+        for (int i = 0; i < MAX_ZERO_RUN + 1; i++)
         {
             if (stats_zero_lengths[i] > 0)
                 fprintf(stderr, "zero-fill %d halfwords: %d\n", i, stats_zero_lengths[i]);
         }
-        for (int i = 0; i < MAX_RUN + 1; i++)
+        for (int i = 0; i < MAX_COPY_RUN + 1; i++)
         {
             if (stats_copy_lengths[i] > 0)
                 fprintf(stderr, "copy %d halfwords: %d\n", i, stats_copy_lengths[i]);

@@ -32,7 +32,8 @@ FastUnsafeCopy32:
 	// followed by compressed data frames:
 	// struct RLFrame {
 	//   u16 zerofill_halfwords: 8;
-	//   u16 copy_halfwords: 8;
+	//   u16 copy_halfwords: 7;
+	//   u16 copy_halfwords_nonzero: 1; // copy_halfwords != 0
 	//   u16 data[copy_halfwords];
 	// }
 
@@ -58,10 +59,10 @@ RlFastUncompUnsafe:
 	mov r5, REG_BASE
 	orr r5, OFFSET_REG_DMA3SAD
 
-	mov r6, #0
+	mov r6, DMA_ENABLE << 16
 
 rlz_loop:
-	ldrh r2, [r0], #2 // zerofill_halfwords | (copy_halfwords << 8)
+	ldrh r2, [r0], #2 // zerofill_halfwords | (copy_halfwords << 9) | (copy_halfwords_nonzero << 8)
 
 // fill stage
 // TODO: Consider DMA. We'd need a source address in IWRAM (probably PC-
@@ -69,19 +70,16 @@ rlz_loop:
 	and r3, r2, #0xFF
 branch_fill_loop:
 	subs r3, #1
+	// HINT: The least significant halfword of r6 is 0x0000.
 	strhge r6, [r1], #2
 	bgt branch_fill_loop
 
 // copy stage
-// HINT: copies are very common so rather than branch and pay a 1 cycle
-// penalty on non-zero-sized copies, pay a 1 cycle penalty on zero-sized
-// copies (a branch costs 3 cycles: 4 - 3 = 1).
-	lsrs r2, #8
-	orrne r2, DMA_ENABLE << 16
-	stmiane r5, {r0, r1, r2}
-	// HINT: DMA_ENABLE << 16 is the MSB, so 'lsl #1' clears it.
-	addne r0, r0, r2, lsl #1
-	addne r1, r1, r2, lsl #1
+	orrs r2, r6, r2, lsr #9
+	// HINT: copy_halfwords_nonzero is in C.
+	stmiacs r5, {r0, r1, r2}
+	addcs r0, r0, r2, lsl #1
+	addcs r1, r1, r2, lsl #1
 
 	cmp r1, r4
 	bne rlz_loop
