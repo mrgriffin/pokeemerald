@@ -1,5 +1,7 @@
 	.syntax unified
 
+	.include "constants/gba_constants.inc"
+
 	.arm
 	.section .iwram.code, "ax", %progbits
 	.align 2
@@ -23,87 +25,68 @@ FastUnsafeCopy32:
 
 	// header (see src):
 	// struct RLFrameHeader {
-	//   u16 n_frames: 8;
 	//   u16 frame_size_tiles: 8;
-	//   struct Offset {
-	//     u16 offset: 15;
-	//     u16 start_fill_mode: 1; TODO: is this actually a thing?
-	//   }[n_frames];
+	//   u16 n_frames: 8;
+	//   u16 offsets[n_frames]; // relative to &src->offsets, not src
 	// }
-	// followed by n_frames compressed data frames
-	// they are built as follows:
-	// [n] <data>
-	// where n signifies the amount of 0 bytes to fill in fill mode
-	// or the amount of bytes to copy from the compressed stream in copy mode
-	// after a fill mode [n] follows a copy mode [n]
-	// after a copy mode [n] follow <n> bytes of data, as well as a fill mode [n]
-	// if the stream is fully decompressed an additional [n] is omitted,
-	// the decompressor has to terminate then.
+	// followed by compressed data frames:
+	// struct RLFrame {
+	//   u16 zerofill_halfwords: 8;
+	//   u16 copy_halfwords: 8;
+	//   u16 data[copy_halfwords];
+	// }
 
 	@ r0 = src (word aligned)
 	@ r1 = dst (word aligned)
 	@ r2 = frame_index
 
 RlFastUncompUnsafe:
-	push {r4-r7}
-	ldrh r3, [r0] // frame size in tiles and number of frames
-	and r5, r3, #0xFF00 // frame_size_tiles - 1
-	add r5, r5, #0x100 // frame_size_tiles
-	lsr r5, r5, #3 // frame_size_bytes
+	ldrh r3, [r0], #2 // r3 = (frame_size_tiles - 1) | (n_frames << 8)
+	cmp r2, r3, lsr #8 // check if frame_index is out of bounds
+	bxge lr
 
-// check if frame_index is out of bounds
-	and r3, r3, #0x00FF
-	cmp r2, r3
-	bge decompress_done
+	push {r4-r6}
 
-	lsl r2, r2, #1 // index of offset compound - 2
-	
-// opt: we can omit this by reframing the offset to index from 2 and using incrementing ldrh above
-	add r2, #2
+	lsl r2, r2, #1
+	ldrh r2, [r0, r2]
+	add r0, r2 // r0 = src->offset + src->offset[frame_index]
 
-	ldrh r2, [r0, r2] // offset compound
+	and r4, r3, #0x00FF // r4 = frame_size_tiles - 1
+	add r4, r4, #0x01 // r4 = frame_size_tiles
+	add r4, r1, r4, lsl #5 // r4 = dst + (frame_size_tiles << 5) = dst + frame_size_bytes
 
-	add r0, r2, r0
-	add r5, r5, r1 // r5 = dst + frame_size_bytes
+	mov r5, REG_BASE
+	orr r5, OFFSET_REG_DMA3SAD
 
-	mov r6, #0 // for filling
-	mov r7, #0x4000000
-	orr r7, #0xD4 // dma3_sad
-	mov r3, #(0x8000 << 16)
+	mov r6, #0
 
 rlz_loop:
-	ldrh r4, [r0], #2 // first 8 byte: number of fill hwords, second 8 byte: number of copy hwords
+	ldrh r2, [r0], #2 // zerofill_halfwords | (copy_halfwords << 8)
 
 // fill stage
-// (can probably be faster by improving the store loop,
-// but alignment is tricky and there's a bunch of small fill compounds)
-	and r2, r4, #0xFF
-
+// TODO: Consider DMA. We'd need a source address in IWRAM (probably PC-
+// relative), and to set DMA_SRC_FIXED.
+	and r3, r2, #0xFF
 branch_fill_loop:
-    subs r2, r2, #1
+	subs r3, #1
 	strhge r6, [r1], #2
 	bgt branch_fill_loop
 
-// copy stage (can probably be faster by using DMA)
-	lsrs r2, r4, #8
-	beq skip_dma
-	orr r4, r2, r3
-	stmia r7, {r0, r1, r4} // dma
-	//sub r7, #12
-	lsl r2, #1
-	add r0, r2
-	add r1, r2
-//branch_copy_loop:
-//	subs r2, r2, #1
-//	ldrhge r4, [r0], #2
-//	strhge r4, [r1], #2
-//	bgt branch_copy_loop
-skip_dma:
-	cmp r1, r5
+// copy stage
+// HINT: copies are very common so rather than branch and pay a 1 cycle
+// penalty on non-zero-sized copies, pay a 1 cycle penalty on zero-sized
+// copies (a branch costs 3 cycles: 4 - 3 = 1).
+	lsrs r2, #8
+	orrne r2, DMA_ENABLE << 16
+	stmiane r5, {r0, r1, r2}
+	// HINT: DMA_ENABLE << 16 is the MSB, so 'lsl #1' clears it.
+	addne r0, r0, r2, lsl #1
+	addne r1, r1, r2, lsl #1
+
+	cmp r1, r4
 	bne rlz_loop
 
-decompress_done:
-	pop {r4-r7}
+	pop {r4-r6}
 	bx lr
 
 	.section .text @Copied to stack on run-time

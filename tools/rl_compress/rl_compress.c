@@ -174,9 +174,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    header_buf[0] = (uint8_t)frame_num;
-    header_buf[1] = (uint8_t)(frame_size / 32 - 1); // 0-based last tile index
-    uint32_t off = 2 + frame_num * 2;
+    header_buf[0] = (uint8_t)(frame_size / 32 - 1); // 0-based last tile index
+    header_buf[1] = (uint8_t)frame_num;
+    uint32_t off = frame_num * 2; // HINT: offset relative to header_buf[2].
     uint8_t *header_write_ptr = header_buf + 2;
     for (size_t i = 0; i < frame_num; i++) {
         if (off > UINT16_MAX) {

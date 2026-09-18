@@ -1416,10 +1416,10 @@ void RlFastUncomp(const u8 *src, u8 *dst, u32 frame, u16 size)
 
 u16 GetRlFastUncompSize(const u8 *src)
 {
-    return (src[1] + 1) * TILE_SIZE_4BPP;
+    return (src[0] + 1) * TILE_SIZE_4BPP;
 }
 
 u8 GetRlFastUncompFrames(const u8 *src)
 {
-    return src[0];
+    return src[1];
 }
