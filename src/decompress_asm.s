@@ -31,61 +31,63 @@ FastUnsafeCopy32:
 	// }
 	// followed by compressed data frames:
 	// struct RLFrame {
-	//   u16 zerofill_halfwords: 8;
-	//   u16 copy_halfwords: 7;
+	//   u16 copy_halfwords: 7; // copy_halfwords
 	//   u16 copy_halfwords_nonzero: 1; // copy_halfwords != 0
+	//   u16 zerofill_halfwords: 8;
 	//   u16 data[copy_halfwords];
 	// }
 
 	@ r0 = src (word aligned)
-	@ r1 = dst (word aligned)
-	@ r2 = frame_index
+	@ r1 = frame_index
+	@ r2 = dst (word aligned)
 
 RlFastUncompUnsafe:
 	ldrh r3, [r0], #2 // r3 = (frame_size_tiles - 1) | (n_frames << 8)
-	cmp r2, r3, lsr #8 // check if frame_index is out of bounds
+	cmp r1, r3, lsr #8 // check if frame_index is out of bounds
 	bxge lr
 
-	push {r4-r6}
+	push {r4-r7}
 
-	lsl r2, r2, #1
-	ldrh r2, [r0, r2]
-	add r0, r2 // r0 = src->offset + src->offset[frame_index]
+	lsl r1, #1
+	ldrh r1, [r0, r1]
+	add r1, r0 // r1 = src->offset + src->offset[frame_index]
 
-	and r4, r3, #0x00FF // r4 = frame_size_tiles - 1
-	add r4, r4, #0x01 // r4 = frame_size_tiles
-	add r4, r1, r4, lsl #5 // r4 = dst + (frame_size_tiles << 5) = dst + frame_size_bytes
+	and r3, #0x00FF // r3 = frame_size_tiles - 1
+	add r3, #0x01 // r3 = frame_size_tiles
+	add r3, r2, r3, lsl #5 // r3 = dst + (frame_size_tiles << 5) = dst + frame_size_bytes
 
-	mov r5, REG_BASE
-	orr r5, OFFSET_REG_DMA3SAD
+	adr r0, .LRlFastUncompUnsafePool
+	ldmia r0!, {r4, r5}
 
-	mov r6, DMA_ENABLE << 16
+	// r0: &0x0000
+	// r1: frame
+	// r2: dest
+	// r3: end
+	// r4: (DMA_ENABLE << 16) | 0x7F
+	// r5: REG_DMA3SAD
+.LRlFastUncompUnsafeLoop:
+	ldrh r6, [r1], #2 // r6 = (zerofill_halfwords << 8) | (copy_halfwords << 1) | copy_halfwords_nonzero
 
-rlz_loop:
-	ldrh r2, [r0], #2 // zerofill_halfwords | (copy_halfwords << 9) | (copy_halfwords_nonzero << 8)
+	ands r7, r4, r6, ror #1 // r7 = (copy_halfwords_nonzero << 31) | copy_halfwords
+	stmiami r5, {r1, r2, r7}
+	addmi r1, r1, r7, lsl #1
+	addmi r2, r2, r7, lsl #1
 
-// fill stage
-// TODO: Consider DMA. We'd need a source address in IWRAM (probably PC-
-// relative), and to set DMA_SRC_FIXED.
-	and r3, r2, #0xFF
-branch_fill_loop:
-	subs r3, #1
-	// HINT: The least significant halfword of r6 is 0x0000.
-	strhge r6, [r1], #2
-	bgt branch_fill_loop
+	lsrs r6, #8 // r6 = zerofill_halfwords
+	orrne r7, r6, (DMA_ENABLE | DMA_SRC_FIXED) << 16
+	stmiane r5, {r0, r2, r7}
+	addne r2, r2, r6, lsl #1
 
-// copy stage
-	orrs r2, r6, r2, lsr #9
-	// HINT: copy_halfwords_nonzero is in C.
-	stmiacs r5, {r0, r1, r2}
-	addcs r0, r0, r2, lsl #1
-	addcs r1, r1, r2, lsl #1
+	cmp r2, r3
+	bne .LRlFastUncompUnsafeLoop
 
-	cmp r1, r4
-	bne rlz_loop
-
-	pop {r4-r6}
+	pop {r4-r7}
 	bx lr
+
+.LRlFastUncompUnsafePool:
+	.word (DMA_ENABLE << 16) | 0x7F
+	.word REG_DMA3SAD
+	.word 0
 
 	.section .text @Copied to stack on run-time
 	.align 2

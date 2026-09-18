@@ -74,13 +74,13 @@ static void rl_compress(uint16_t const *uncomp, uint16_t *out, size_t len, size_
     uint16_t const *end = uncomp + len / sizeof(*uncomp);
 
     while (read_ptr < end) {
-        uint8_t zero_run = find_zero_run(read_ptr, end);
-        uint8_t copy_run = find_copy_run(read_ptr + zero_run, end);
+        uint8_t copy_run = find_copy_run(read_ptr, end);
+        uint8_t zero_run = find_zero_run(read_ptr + copy_run, end);
 
-        *write_ptr++ = zero_run | (copy_run << 9) | ((copy_run != 0) << 8);
-        memcpy(write_ptr, read_ptr + zero_run, copy_run * sizeof(*read_ptr));
+        *write_ptr++ = (copy_run << 1) | (copy_run != 0) | (zero_run << 8);
+        memcpy(write_ptr, read_ptr, copy_run * sizeof(*read_ptr));
         write_ptr += copy_run;
-        read_ptr += zero_run + copy_run;
+        read_ptr += copy_run + zero_run;
 
         stats_zero_lengths[zero_run]++;
         stats_copy_lengths[copy_run]++;
